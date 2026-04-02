@@ -108,4 +108,37 @@ print(f==h or  g==e) #at least one is true
 print(not(c!=d))
 
 #Strings
+name: str = 'Charmane\'s'
+fruit: str = "apple"
+quote: str =" Quote - \"I love me \""
+print(name +" Beauty "+ fruit + quote)
+poem: str = """
+Roses are red,
+Violets are'nt orange
+I can't find my keys
+"""
+
+print(poem)
+
+#Type Conversion
+txt_value: str = '100'
+int_value: int = 50
+print(int(txt_value)+ int_value)
+print(txt_value + str(int_value))
+
+print(type(5.5+1))
+print(int(5))
+
+#Simple Adder Project
+
+print("Welcome to your simple adder!")
+print("---------------------------------------------")
+j: str =(input("Enter a value for j :"))
+k: str = input("Enter a value for k :")
+
+print("-----------------------------------------------")
+print("The result is :",int(j) + int(k))
+
+
+
 
