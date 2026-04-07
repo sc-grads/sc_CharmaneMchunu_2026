@@ -1,5 +1,6 @@
 from datetime import datetime, time
 import time
+import sys
 
 
 # print("Hello Bob") #Greets the user
@@ -147,6 +148,16 @@ def show_time():
 show_time()
 time.sleep(5)
 show_time()
+
+total: int = 0
+while True:
+    user_input: str = input("Please enter a number: ")
+
+    if user_input =='0':
+        print('Total :', total)
+        sys.exit()
+
+    total +=int(user_input)    
 
 
 
