@@ -141,23 +141,57 @@ import sys
 # greet()
 # greet()
 
-def show_time():
-    now: datetime = datetime.now()
-    print(f'Time : {now:%H:%M:%S}')
+# def show_time():
+#     now: datetime = datetime.now()
+#     print(f'Time : {now:%H:%M:%S}')
+#
+# show_time()
+# time.sleep(5)
+# show_time()
+#
+# total: int = 0
+# while True:
+#     user_input: str = input("Please enter a number: ")
+#
+#     if user_input =='0':
+#         print('Total :', total)
+#         sys.exit()
+#
+#     total +=int(user_input)
+#
+# class Connection:
+#     def __init__(self,connection_type:str,cost:float)->None:
+#         print(f'{connection_type} connection established! (Cost: {cost}/h)')
+#         self.connection_type = connection_type
+#         self.cost = cost
+#
+#     def close_connection(self)->None:
+#         print(f'Closing {self.connection_type} connection ...!')
+#
+#     def main(self) -> None:
+#         internet: Connection = Connection('internet',2)
+#         satelitte: Connection = Connection('satelitte',20)
+#         satelitte.close_connection()
+#         internet.close_connection()
+#
+class Car:
+    def __init__(self,brand: str,car_id: int, colour:str) -> None:
+        self.brand = brand
+        self.car_id = car_id
+        self.colour = colour
 
-show_time()
-time.sleep(5)
-show_time()
+    def __eq__(self, other:Self)->bool :
+        print('Current: ',self.__dict__)
+        print('Other: ',other.__dict__)
+        return self.__dict__== other.__dict__
 
-total: int = 0
-while True:
-    user_input: str = input("Please enter a number: ")
+def main() -> None:
+    car1: Car = Car('Mario',1,'red')
+    car2: Car = Car('Mario',1,'red')
 
-    if user_input =='0':
-        print('Total :', total)
-        sys.exit()
+    print(car1==car2)
 
-    total +=int(user_input)    
+
 
 
 
