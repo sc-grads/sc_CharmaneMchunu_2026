@@ -1,0 +1,4 @@
+Pipeline started: Mon Apr 13 11:50:12 SAST 2026
+C:\Users\Charmaine Mchunu\AppData\Local\Python\pythoncore-3.14-64\python.exe: can't open file 'C:\\sc_CharmaneMchunu_2026\\Projects 2026\\Sales Data Processing and Business Insights System\\project\\process_data.py': [Errno 2] No such file or directory
+STATUS :FAILED
+Pipeline ended: Mon Apr 13 11:50:13 SAST 2026
