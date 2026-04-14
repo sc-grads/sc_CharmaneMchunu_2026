@@ -80,6 +80,82 @@ def display_sales_data(sales_data_frame)-> None:
     pd.set_option("display.width", None)
     print(sales_data_frame[["transaction_id", "date", "product", "category","quantity", "price", "region", "salesperson", "revenue", "month"]])
 
+def save_cleaned_data(sales_data_frame):
+    """
+    Save the fully cleaned dataset as a CSV file in the output folder.
+    This is the file that will be used as the base for all summary reports.
+    """
+    output_path = "output/clean_sales.csv"
+    sales_data_frame.to_csv(output_path, index=False)
+    print(f"Cleaned data saved to {output_path}")
+
+
+def generate_sales_by_region(sales_data_frame):
+    """
+    Group all transactions by region and add up the total revenue and total
+    quantity sold for each one. This shows which region is bringing in the
+    most money for the business.
+    """
+    sales_by_region = sales_data_frame.groupby("region").agg(
+        total_revenue=("revenue", "sum"),
+        total_quantity=("quantity", "sum"),
+        total_transactions=("transaction_id", "count")
+    ).reset_index()
+
+    sales_by_region.to_csv("reports/sales_by_region.csv", index=False)
+    print("Saved reports/sales_by_region.csv")
+    return sales_by_region
+
+
+def generate_sales_by_product(sales_data_frame):
+    """
+    Group all transactions by product and calculate total revenue, total
+    quantity sold and number of transactions. This shows which products
+    are selling the most and generating the most revenue.
+    """
+    sales_by_product = sales_data_frame.groupby("product").agg(
+        total_revenue=("revenue", "sum"),
+        total_quantity=("quantity", "sum"),
+        total_transactions=("transaction_id", "count")
+    ).reset_index()
+
+    sales_by_product.to_csv("reports/sales_by_product.csv", index=False)
+    print("Saved reports/sales_by_product.csv")
+    return sales_by_product
+
+
+def generate_monthly_revenue(sales_data_frame):
+    """
+    Group all transactions by month and calculate total revenue for each one.
+    This shows which months are the strongest and helps spot seasonal trends
+    in the business.
+    """
+    monthly_revenue = sales_data_frame.groupby("month").agg(
+        total_revenue=("revenue", "sum"),
+        total_transactions=("transaction_id", "count")
+    ).reset_index()
+
+    monthly_revenue.to_csv("reports/monthly_revenue.csv", index=False)
+    print("Saved reports/monthly_revenue.csv")
+    return monthly_revenue
+
+
+def generate_salesperson_performance(sales_data_frame):
+    """
+    Group all transactions by salesperson and calculate total revenue, total
+    quantity sold and number of transactions. This shows who is performing
+    well and who might need support.
+    """
+    salesperson_performance = sales_data_frame.groupby("salesperson").agg(
+        total_revenue=("revenue", "sum"),
+        total_quantity=("quantity", "sum"),
+        total_transactions=("transaction_id", "count")
+    ).reset_index()
+
+    salesperson_performance.to_csv("reports/salesperson_performance.csv", index=False)
+    print("Saved reports/salesperson_performance.csv")
+    return salesperson_performance
+
 def main():
     sales_data_frame = load_sales_data("data/Messy_Sales_Data.csv")
     sales_data_frame = remove_duplicates(sales_data_frame)
@@ -88,6 +164,11 @@ def main():
     sales_data_frame = add_calculated_columns(sales_data_frame)
     display_sales_data(sales_data_frame)   
 
+    save_cleaned_data(sales_data_frame)
+    generate_sales_by_region(sales_data_frame)
+    generate_sales_by_product(sales_data_frame)
+    generate_monthly_revenue(sales_data_frame)
+    generate_salesperson_performance(sales_data_frame)
+
 if __name__ == "__main__":
     main()     
-
