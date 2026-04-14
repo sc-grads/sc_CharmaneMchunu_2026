@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/venv/bin/python3" "$0" "$@"
+'''exec' "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/venv/bin/python" "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re
