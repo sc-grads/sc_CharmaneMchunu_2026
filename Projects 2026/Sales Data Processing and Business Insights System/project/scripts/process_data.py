@@ -1,23 +1,6 @@
 import pandas as pd
 
 
-# sales_data_frame = pd.read_csv("data/Messy_Sales_Data.csv")
-# #print(sales_data_frame)
-
-# # Convert date
-# sales_data_frame["date"] = pd.to_datetime(sales_data_frame["date"])
-
-# #
-
-# # calculate revenue
-# sales_data_frame["revenue"] = sales_data_frame["quantity"] * sales_data_frame["price"]
-# sales_data_frame["month"] = sales_data_frame["date"].dt.strftime("%B")  # show it as names instead of the number much better that way January, February
-# pd.set_option("display.max_columns", None)
-# pd.set_option("display.width", None)# will show me all columns and all data without truncation cause the other column was not showing
-
-#print(sales_data_frame[["transaction_id", "date", "product", "category", "quantity", "price", "region", "salesperson", "revenue", "month"]])
-
-
 def load_sales_data(filepath):
     """
     Open the sales CSV file and make sure the date column is treated as a real date, not just text. Without this , we cannot extract the month name later
