@@ -46,3 +46,170 @@
 2026-04-16 08:32:40,845,INFO,Saved reports/monthly_revenue.csv
 2026-04-16 08:32:40,863,INFO,Saved reports/salesperson_performance.csv
 2026-04-16 08:32:40,864,INFO,Pipeline completed successfully
+2026-04-16 11:01:31,585,INFO,Pipeline started
+2026-04-16 11:01:31,586,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-16 11:01:31,604,INFO,Loaded 52 rows successfully
+2026-04-16 11:01:31,605,INFO,Creating data inspection table...
+2026-04-16 11:01:31,646,INFO,Duplicate rows found: 2
+2026-04-16 11:01:31,647,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-16 11:01:31,648,INFO,Fixed 0 invalid region value(s)
+2026-04-16 11:01:31,652,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-16 11:01:31,653,INFO,Filled 2 missing quantity value(s) with 0
+2026-04-16 11:01:31,656,INFO,Added revenue and month columns
+2026-04-16 11:01:31,676,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-16 11:01:31,691,INFO,Saved reports/sales_by_region.csv
+2026-04-16 11:01:31,700,INFO,Saved reports/sales_by_product.csv
+2026-04-16 11:01:31,709,INFO,Saved reports/monthly_revenue.csv
+2026-04-16 11:01:31,717,INFO,Saved reports/salesperson_performance.csv
+2026-04-16 11:01:31,717,INFO,Pipeline completed successfully
+2026-04-16 11:06:28,445,INFO,Pipeline started
+2026-04-16 11:06:28,445,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-16 11:06:28,468,INFO,Loaded 52 rows successfully
+2026-04-16 11:06:28,469,INFO,Creating data inspection table...
+2026-04-16 11:06:28,512,INFO,Duplicate rows found: 2
+2026-04-16 11:06:28,514,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-16 11:06:28,515,INFO,Fixed 0 invalid region value(s)
+2026-04-16 11:06:28,520,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-16 11:06:28,520,INFO,Filled 2 missing quantity value(s) with 0
+2026-04-16 11:06:28,522,INFO,Added revenue and month columns
+2026-04-16 11:06:28,544,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-16 11:06:28,563,INFO,Saved reports/sales_by_region.csv
+2026-04-16 11:06:28,572,INFO,Saved reports/sales_by_product.csv
+2026-04-16 11:06:28,582,INFO,Saved reports/monthly_revenue.csv
+2026-04-16 11:06:28,592,INFO,Saved reports/salesperson_performance.csv
+2026-04-16 11:06:28,592,INFO,Pipeline completed successfully
+2026-04-16 11:22:50,130,INFO,Pipeline started
+2026-04-16 11:22:50,131,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-16 11:22:50,167,INFO,Loaded 52 rows successfully
+2026-04-16 11:22:50,168,INFO,Creating data inspection table...
+2026-04-16 11:22:50,249,INFO,Duplicate rows found: 2
+2026-04-16 11:22:50,252,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-16 11:22:50,253,INFO,Fixed 0 invalid region value(s)
+2026-04-16 11:22:50,263,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-16 11:22:50,263,INFO,Filled 2 missing quantity value(s) with 0
+2026-04-16 11:22:50,270,INFO,Added revenue and month columns
+2026-04-16 11:22:50,310,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-16 11:22:50,341,INFO,Saved reports/sales_by_region.csv
+2026-04-16 11:22:50,358,INFO,Saved reports/sales_by_product.csv
+2026-04-16 11:22:50,374,INFO,Saved reports/monthly_revenue.csv
+2026-04-16 11:22:50,392,INFO,Saved reports/salesperson_performance.csv
+2026-04-16 11:22:50,393,INFO,Pipeline completed successfully
+2026-04-16 11:52:18,247,INFO,Pipeline started
+2026-04-16 11:52:18,248,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-16 11:52:18,265,INFO,Loaded 52 rows successfully
+2026-04-16 11:52:18,265,INFO,Creating data inspection table...
+2026-04-16 11:52:18,300,INFO,Duplicate rows found: 2
+2026-04-16 11:52:18,302,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-16 11:52:18,302,INFO,Fixed 0 invalid region value(s)
+2026-04-16 11:52:18,306,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-16 11:52:18,306,INFO,Filled 2 missing quantity value(s) with 0
+2026-04-16 11:52:18,308,INFO,Added revenue and month columns
+2026-04-16 11:52:18,326,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-16 11:52:18,340,INFO,Saved reports/sales_by_region.csv
+2026-04-16 11:52:18,348,INFO,Saved reports/sales_by_product.csv
+2026-04-16 11:52:18,356,INFO,Saved reports/monthly_revenue.csv
+2026-04-16 11:52:18,363,INFO,Saved reports/salesperson_performance.csv
+2026-04-16 11:52:18,364,INFO,Pipeline completed successfully
+2026-04-16 11:52:36,385,INFO,Pipeline started
+2026-04-16 11:52:36,386,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-16 11:52:36,402,INFO,Loaded 52 rows successfully
+2026-04-16 11:52:36,403,INFO,Creating data inspection table...
+2026-04-16 11:52:36,438,INFO,Duplicate rows found: 2
+2026-04-16 11:52:36,440,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-16 11:52:36,440,INFO,Fixed 0 invalid region value(s)
+2026-04-16 11:52:36,444,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-16 11:52:36,444,INFO,Filled 2 missing quantity value(s) with 0
+2026-04-16 11:52:36,446,INFO,Added revenue and month columns
+2026-04-16 11:52:36,464,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-16 11:52:36,478,INFO,Saved reports/sales_by_region.csv
+2026-04-16 11:52:36,487,INFO,Saved reports/sales_by_product.csv
+2026-04-16 11:52:36,495,INFO,Saved reports/monthly_revenue.csv
+2026-04-16 11:52:36,504,INFO,Saved reports/salesperson_performance.csv
+2026-04-16 11:52:36,504,INFO,Pipeline completed successfully
+2026-04-16 12:02:13,131,INFO,Pipeline started
+2026-04-16 12:02:13,131,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-16 12:02:13,147,INFO,Loaded 52 rows successfully
+2026-04-16 12:02:13,148,INFO,Creating data inspection table...
+2026-04-16 12:02:13,183,INFO,Duplicate rows found: 2
+2026-04-16 12:02:13,185,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-16 12:02:13,185,INFO,Fixed 0 invalid region value(s)
+2026-04-16 12:02:13,189,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-16 12:02:13,189,INFO,Filled 2 missing quantity value(s) with 0
+2026-04-16 12:02:13,191,INFO,Added revenue and month columns
+2026-04-16 12:02:13,209,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-16 12:02:13,223,INFO,Saved reports/sales_by_region.csv
+2026-04-16 12:02:13,231,INFO,Saved reports/sales_by_product.csv
+2026-04-16 12:02:13,238,INFO,Saved reports/monthly_revenue.csv
+2026-04-16 12:02:13,245,INFO,Saved reports/salesperson_performance.csv
+2026-04-16 12:02:13,245,INFO,Pipeline completed successfully
+2026-04-16 12:03:36,842,INFO,Pipeline started
+2026-04-16 12:03:36,842,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-16 12:03:36,859,INFO,Loaded 52 rows successfully
+2026-04-16 12:03:36,859,INFO,Creating data inspection table...
+2026-04-16 12:03:36,895,INFO,Duplicate rows found: 2
+2026-04-16 12:03:36,897,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-16 12:03:36,897,INFO,Fixed 0 invalid region value(s)
+2026-04-16 12:03:36,902,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-16 12:03:36,902,INFO,Filled 2 missing quantity value(s) with 0
+2026-04-16 12:03:36,904,INFO,Added revenue and month columns
+2026-04-16 12:03:36,923,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-16 12:03:36,936,INFO,Saved reports/sales_by_region.csv
+2026-04-16 12:03:36,945,INFO,Saved reports/sales_by_product.csv
+2026-04-16 12:03:36,952,INFO,Saved reports/monthly_revenue.csv
+2026-04-16 12:03:36,960,INFO,Saved reports/salesperson_performance.csv
+2026-04-16 12:03:36,960,INFO,Pipeline completed successfully
+2026-04-16 12:05:45,640,INFO,Pipeline started
+2026-04-16 12:05:45,641,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-16 12:05:45,657,INFO,Loaded 52 rows successfully
+2026-04-16 12:05:45,657,INFO,Creating data inspection table...
+2026-04-16 12:05:45,693,INFO,Duplicate rows found: 2
+2026-04-16 12:05:45,695,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-16 12:05:45,695,INFO,Fixed 0 invalid region value(s)
+2026-04-16 12:05:45,698,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-16 12:05:45,698,INFO,Filled 2 missing quantity value(s) with 0
+2026-04-16 12:05:45,701,INFO,Added revenue and month columns
+2026-04-16 12:05:45,719,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-16 12:05:45,733,INFO,Saved reports/sales_by_region.csv
+2026-04-16 12:05:45,741,INFO,Saved reports/sales_by_product.csv
+2026-04-16 12:05:45,749,INFO,Saved reports/monthly_revenue.csv
+2026-04-16 12:05:45,757,INFO,Saved reports/salesperson_performance.csv
+2026-04-16 12:05:45,757,INFO,Pipeline completed successfully
+2026-04-16 14:52:14,680,INFO,Pipeline started
+2026-04-16 14:52:14,680,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-16 14:52:14,695,INFO,Loaded 52 rows successfully
+2026-04-16 14:52:14,695,INFO,Creating data inspection table...
+2026-04-16 14:52:14,731,INFO,Duplicate rows found: 2
+2026-04-16 14:52:14,733,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-16 14:52:14,733,INFO,Fixed 0 invalid region value(s)
+2026-04-16 14:52:14,737,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-16 14:52:14,738,INFO,Filled 2 missing quantity value(s) with 0
+2026-04-16 14:52:14,741,INFO,Added revenue and month columns
+2026-04-16 14:52:14,760,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-16 14:52:14,775,INFO,Saved reports/sales_by_region.csv
+2026-04-16 14:52:14,783,INFO,Saved reports/sales_by_product.csv
+2026-04-16 14:52:14,791,INFO,Saved reports/monthly_revenue.csv
+2026-04-16 14:52:14,799,INFO,Saved reports/salesperson_performance.csv
+2026-04-16 14:52:14,799,INFO,Pipeline completed successfully
+2026-04-16 15:14:47,382,INFO,Pipeline started
+2026-04-16 15:14:47,382,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-16 15:14:47,397,INFO,Loaded 52 rows successfully
+2026-04-16 15:14:47,398,INFO,Creating data inspection table...
+2026-04-16 15:14:47,444,INFO,Duplicate rows found: 2
+2026-04-16 15:14:47,446,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-16 15:14:47,448,INFO,Fixed -51 invalid region value(s)
+2026-04-16 15:26:29,269,INFO,Pipeline started
+2026-04-16 15:26:29,270,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-16 15:26:29,286,INFO,Loaded 52 rows successfully
+2026-04-16 15:26:29,287,INFO,Creating data inspection table...
+2026-04-16 15:26:29,323,INFO,Duplicate rows found: 2
+2026-04-16 15:26:29,325,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-16 15:26:29,326,INFO,Fixed 0 invalid region value(s)
+2026-04-16 15:26:29,326,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-16 15:26:29,326,INFO,Filled 2 missing quantity value(s) with 0
+2026-04-16 15:26:29,329,INFO,Added revenue and month columns
+2026-04-16 15:26:29,352,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-16 15:26:29,369,INFO,Saved reports/sales_by_region.csv
+2026-04-16 15:26:29,378,INFO,Saved reports/sales_by_product.csv
+2026-04-16 15:26:29,384,INFO,Saved reports/monthly_revenue.csv
+2026-04-16 15:26:29,393,INFO,Saved reports/salesperson_performance.csv
+2026-04-16 15:26:29,393,INFO,Pipeline completed successfully
