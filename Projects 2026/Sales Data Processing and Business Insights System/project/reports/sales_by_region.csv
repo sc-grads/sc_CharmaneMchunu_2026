@@ -1,5 +1,5 @@
 region,total_revenue,total_quantity,total_transactions
-East,270000.0,43.0,12
-North,260500.0,47.0,13
-South,225000.0,43.0,13
-West,148000.0,26.0,12
+East,270000,43,12
+North,260500,47,13
+South,225000,43,13
+West,148000,26,12

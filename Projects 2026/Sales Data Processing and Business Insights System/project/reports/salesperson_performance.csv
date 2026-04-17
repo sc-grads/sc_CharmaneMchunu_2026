@@ -1,6 +1,6 @@
 salesperson,total_revenue,total_quantity,total_transactions
-David,270000.0,43.0,12
-John,260500.0,47.0,13
-Mary,204000.0,39.0,11
-Sarah,148000.0,26.0,12
-Unknown,21000.0,4.0,2
+David,270000,43,12
+John,260500,47,13
+Mary,204000,39,11
+Sarah,148000,26,12
+Unknown,21000,4,2
