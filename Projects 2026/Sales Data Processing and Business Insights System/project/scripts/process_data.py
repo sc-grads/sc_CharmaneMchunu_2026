@@ -3,7 +3,7 @@ import logging
 import os
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s,%(levelname)s,%(message)s",
     handlers=[
         logging.FileHandler("output/salespipeline.csv", mode='a'),#append instead of overwriting the log file each time
@@ -18,8 +18,9 @@ def load_sales_data(filepath):
     date, not just text. Without this, we cannot extract the month name later.
     """
     logging.info(f"Loading data from {filepath}")
-    sales_data_frame = pd.read_csv(filepath)
+    sales_data_frame = pd.read_csv(filepath, sep=None, engine="python")
     sales_data_frame["date"] = pd.to_datetime(sales_data_frame["date"])
+    logging.debug(f"Columns found: {list(sales_data_frame.columns)}")
     logging.info(f"Loaded {len(sales_data_frame)} rows successfully")
     return sales_data_frame
 
@@ -29,6 +30,7 @@ def inspect_data(sales_data_frame):
     """
     logging.info("Creating data inspection table...")
     total_rows = len(sales_data_frame)
+    logging.debug(f"Total rows before cleaning: {total_rows}")
 
     inspection_table = pd.DataFrame({
         "Column": sales_data_frame.columns,
@@ -45,7 +47,7 @@ def inspect_data(sales_data_frame):
     print(duplicate_rows)
 
     duplicate_count = len(duplicate_rows)
-
+    logging.debug(f"Missing values per column:\n{sales_data_frame.isnull().sum()}")
     logging.info(f"Duplicate rows found: {duplicate_count}")
     print(" ")
 
@@ -60,47 +62,35 @@ def remove_duplicates(sales_data_frame):
     original_count = len(sales_data_frame)
     sales_data_frame = sales_data_frame.drop_duplicates()
     removed = original_count - len(sales_data_frame)
+    logging.debug(f"Rows before deduplication: {original_count}")
     logging.info(f"Removed {removed} duplicate row(s). {len(sales_data_frame)} rows remaining")
     print(" ")
 
     return sales_data_frame
 
 
-def fix_regions(sales_data_frame):
-    """
-    The region column should only ever contain North, South, East or West.
-    Anything else, like a name or a typo, is invalid. This replaces all invalid
-    entries with Unknown so they do not get mixed into regional reports by mistake.
-    """
-    valid_regions = ["North", "South", "East", "West"]
-    invalid_count = (~sales_data_frame["region"].isin(valid_regions)).sum()
-
-    sales_data_frame["region"] = sales_data_frame["region"].where(
-        sales_data_frame["region"].isin(valid_regions), "Unknown")
-
-    logging.info(f"Fixed {invalid_count} invalid region value(s)")
-    return sales_data_frame
-
-
 def fill_missing_values(sales_data_frame):
     """
-    Two columns have missing values that need to be filled before we can use the data.
+    Two columns have missing values that need to be handled before the data can be used.
 
-    Salesperson is filled with Unknown because we cannot guess who made the sale,
-    but we still want to keep the transaction in the dataset.
+    Salesperson is filled with “Unknown” because it is not possible to determine who made the sale. However, the transaction itself is still valid and should be retained in the dataset.
 
-    Quantity is filled with 0 because leaving it blank would break the revenue
-    calculation. A 0 also makes it obvious in reports that the quantity was never
-    recorded, rather than hiding the gap with an estimated number.
+    Quantity is not filled with 0 because a sale did occur, and assigning a value of 0 would incorrectly imply that no items were sold.
+    Instead, missing quantity values are estimated using the median quantity per product.
+    This approach preserves the integrity of the dataset while ensuring that the imputed values remain realistic and are not overly influenced by outliers.
     """
     missing_salesperson = sales_data_frame["salesperson"].isnull().sum()
     missing_quantity = sales_data_frame["quantity"].isnull().sum()
 
+    logging.debug(f"Missing salesperson values before fill: {missing_salesperson}")
+    logging.debug(f"Missing quantity values before fill: {missing_quantity}")
+
     sales_data_frame["salesperson"] = sales_data_frame["salesperson"].fillna("Unknown")
-    sales_data_frame["quantity"] = sales_data_frame["quantity"].fillna(0)
+    sales_data_frame["quantity"] = sales_data_frame.groupby("product")["quantity"]\
+    .transform(lambda x: x.fillna(x.median()))
 
     logging.info(f"Filled {missing_salesperson} missing salesperson value(s) with Unknown")
-    logging.info(f"Filled {missing_quantity} missing quantity value(s) with 0")
+    logging.info(f"Filled {missing_quantity} missing quantity value(s) with median quantity per product")
     return sales_data_frame
 
 
@@ -113,6 +103,8 @@ def add_calculated_columns(sales_data_frame):
     sales_data_frame["revenue"] = sales_data_frame["quantity"] * sales_data_frame["price"]
     sales_data_frame["month"] = sales_data_frame["date"].dt.strftime("%B")
     logging.info("Added revenue and month columns")
+    logging.debug(f"Revenue range: {sales_data_frame['revenue'].min()} - {sales_data_frame['revenue'].max()}")
+    logging.debug(f"Months present: {sorted(sales_data_frame['month'].unique())}")
 
     return sales_data_frame
 
@@ -225,7 +217,6 @@ def main():
     sales_data_frame = load_sales_data("data/Messy_Sales_Data.csv")
     inspect_data(sales_data_frame)
     sales_data_frame = remove_duplicates(sales_data_frame)
-    sales_data_frame = fix_regions(sales_data_frame)
     sales_data_frame = fill_missing_values(sales_data_frame)
     sales_data_frame = add_calculated_columns(sales_data_frame)
     display_sales_data(sales_data_frame)

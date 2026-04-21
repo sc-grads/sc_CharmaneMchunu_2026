@@ -245,3 +245,303 @@
 2026-04-16 15:52:06,346,INFO,Saved reports/monthly_revenue.csv
 2026-04-16 15:52:06,363,INFO,Saved reports/salesperson_performance.csv
 2026-04-16 15:52:06,364,INFO,Pipeline completed successfully
+2026-04-16 16:59:49,892,INFO,Pipeline started
+2026-04-16 16:59:49,894,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-16 16:59:49,943,INFO,Loaded 52 rows successfully
+2026-04-16 16:59:49,945,INFO,Creating data inspection table...
+2026-04-16 16:59:50,041,INFO,Duplicate rows found: 2
+2026-04-16 16:59:50,043,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-16 16:59:50,046,INFO,Fixed 0 invalid region value(s)
+2026-04-16 16:59:50,047,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-16 16:59:50,048,INFO,Filled 2 missing quantity value(s) with 0
+2026-04-16 16:59:50,053,INFO,Added revenue and month columns
+2026-04-16 16:59:50,097,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-16 16:59:50,136,INFO,Saved reports/sales_by_region.csv
+2026-04-16 16:59:50,155,INFO,Saved reports/sales_by_product.csv
+2026-04-16 16:59:50,176,INFO,Saved reports/monthly_revenue.csv
+2026-04-16 16:59:50,235,INFO,Saved reports/salesperson_performance.csv
+2026-04-16 16:59:50,235,INFO,Pipeline completed successfully
+2026-04-17 08:53:45,515,INFO,Pipeline started
+2026-04-17 08:53:45,517,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-17 08:53:45,569,INFO,Loaded 52 rows successfully
+2026-04-17 08:53:45,570,INFO,Creating data inspection table...
+2026-04-17 08:53:45,666,INFO,Duplicate rows found: 2
+2026-04-17 08:53:45,669,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-17 08:53:45,671,INFO,Fixed 0 invalid region value(s)
+2026-04-17 08:53:45,699,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-17 08:53:45,699,INFO,Filled 2 missing quantity value(s) with 0
+2026-04-17 08:53:45,704,INFO,Added revenue and month columns
+2026-04-17 08:53:45,749,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-17 08:53:45,782,INFO,Saved reports/sales_by_region.csv
+2026-04-17 08:53:45,798,INFO,Saved reports/sales_by_product.csv
+2026-04-17 08:53:45,815,INFO,Saved reports/monthly_revenue.csv
+2026-04-17 08:53:45,832,INFO,Saved reports/salesperson_performance.csv
+2026-04-17 08:53:45,833,INFO,Pipeline completed successfully
+2026-04-17 08:55:33,321,INFO,Pipeline started
+2026-04-17 08:55:33,322,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-17 08:55:33,367,INFO,Loaded 52 rows successfully
+2026-04-17 08:55:33,368,INFO,Creating data inspection table...
+2026-04-17 08:55:33,468,INFO,Duplicate rows found: 2
+2026-04-17 08:55:33,471,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-17 08:55:33,473,INFO,Fixed 0 invalid region value(s)
+2026-04-17 08:55:33,476,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-17 08:55:33,476,INFO,Filled 2 missing quantity value(s) with 0
+2026-04-17 08:55:33,483,INFO,Added revenue and month columns
+2026-04-17 08:55:33,527,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-17 08:55:33,564,INFO,Saved reports/sales_by_region.csv
+2026-04-17 08:55:33,582,INFO,Saved reports/sales_by_product.csv
+2026-04-17 08:55:33,599,INFO,Saved reports/monthly_revenue.csv
+2026-04-17 08:55:33,618,INFO,Saved reports/salesperson_performance.csv
+2026-04-17 08:55:33,618,INFO,Pipeline completed successfully
+2026-04-17 08:58:07,889,INFO,Pipeline started
+2026-04-17 08:58:07,890,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-17 08:58:07,933,INFO,Loaded 52 rows successfully
+2026-04-17 08:58:07,934,INFO,Creating data inspection table...
+2026-04-17 08:58:08,024,INFO,Duplicate rows found: 2
+2026-04-17 08:58:08,027,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-17 08:58:08,030,INFO,Fixed 0 invalid region value(s)
+2026-04-17 08:58:08,051,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-17 08:58:08,052,INFO,Filled 2 missing quantity value(s) with 0
+2026-04-17 08:58:08,057,INFO,Added revenue and month columns
+2026-04-17 08:58:08,103,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-17 08:58:08,134,INFO,Saved reports/sales_by_region.csv
+2026-04-17 08:58:08,150,INFO,Saved reports/sales_by_product.csv
+2026-04-17 08:58:08,168,INFO,Saved reports/monthly_revenue.csv
+2026-04-17 08:58:08,186,INFO,Saved reports/salesperson_performance.csv
+2026-04-17 08:58:08,187,INFO,Pipeline completed successfully
+2026-04-17 09:02:23,541,INFO,Pipeline started
+2026-04-17 09:02:23,542,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-17 09:02:23,586,INFO,Loaded 52 rows successfully
+2026-04-17 09:02:23,587,INFO,Creating data inspection table...
+2026-04-17 09:02:23,678,INFO,Duplicate rows found: 2
+2026-04-17 09:02:23,681,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-17 09:02:23,683,INFO,Fixed 0 invalid region value(s)
+2026-04-17 09:02:23,703,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-17 09:02:23,704,INFO,Filled 2 missing quantity value(s) with median quantity per product
+2026-04-17 09:02:23,707,INFO,Added revenue and month columns
+2026-04-17 09:02:23,749,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-17 09:02:23,778,INFO,Saved reports/sales_by_region.csv
+2026-04-17 09:02:23,795,INFO,Saved reports/sales_by_product.csv
+2026-04-17 09:02:23,811,INFO,Saved reports/monthly_revenue.csv
+2026-04-17 09:02:23,828,INFO,Saved reports/salesperson_performance.csv
+2026-04-17 09:02:23,829,INFO,Pipeline completed successfully
+2026-04-17 09:10:10,817,INFO,Pipeline started
+2026-04-17 09:10:10,818,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-17 09:10:10,869,INFO,Loaded 52 rows successfully
+2026-04-17 09:10:10,870,INFO,Creating data inspection table...
+2026-04-17 09:10:10,961,INFO,Duplicate rows found: 2
+2026-04-17 09:10:10,964,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-17 09:10:10,967,INFO,Fixed 0 invalid region value(s)
+2026-04-17 09:10:10,988,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-17 09:10:10,989,INFO,Filled 2 missing quantity value(s) with median quantity per product
+2026-04-17 09:10:10,993,INFO,Added revenue and month columns
+2026-04-17 09:10:11,040,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-17 09:10:11,127,INFO,Saved reports/sales_by_region.csv
+2026-04-17 09:10:11,166,INFO,Saved reports/sales_by_product.csv
+2026-04-17 09:10:11,183,INFO,Saved reports/monthly_revenue.csv
+2026-04-17 09:10:11,202,INFO,Saved reports/salesperson_performance.csv
+2026-04-17 09:10:11,203,INFO,Pipeline completed successfully
+2026-04-20 09:13:08,127,INFO,Pipeline started
+2026-04-20 09:13:08,128,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-20 09:13:08,152,INFO,Loaded 52 rows successfully
+2026-04-20 09:13:08,152,INFO,Creating data inspection table...
+2026-04-20 09:13:08,191,INFO,Duplicate rows found: 2
+2026-04-20 09:13:08,193,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-20 09:13:08,193,INFO,Fixed 0 invalid region value(s)
+2026-04-20 09:13:08,206,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-20 09:13:08,206,INFO,Filled 2 missing quantity value(s) with median quantity per product
+2026-04-20 09:13:08,208,INFO,Added revenue and month columns
+2026-04-20 09:13:08,225,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-20 09:13:08,241,INFO,Saved reports/sales_by_region.csv
+2026-04-20 09:13:08,249,INFO,Saved reports/sales_by_product.csv
+2026-04-20 09:13:08,255,INFO,Saved reports/monthly_revenue.csv
+2026-04-20 09:13:08,263,INFO,Saved reports/salesperson_performance.csv
+2026-04-20 09:13:08,263,INFO,Pipeline completed successfully
+2026-04-20 09:30:16,582,INFO,Pipeline started
+2026-04-20 09:30:16,583,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-20 09:30:16,600,INFO,Loaded 52 rows successfully
+2026-04-20 09:30:16,600,INFO,Creating data inspection table...
+2026-04-20 09:30:16,640,INFO,Duplicate rows found: 2
+2026-04-20 09:30:16,641,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-20 09:30:56,877,INFO,Pipeline started
+2026-04-20 09:30:56,877,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-20 09:30:56,893,INFO,Loaded 52 rows successfully
+2026-04-20 09:30:56,893,INFO,Creating data inspection table...
+2026-04-20 09:30:56,928,INFO,Duplicate rows found: 2
+2026-04-20 09:30:56,930,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-20 09:30:56,938,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-20 09:30:56,939,INFO,Filled 2 missing quantity value(s) with median quantity per product
+2026-04-20 09:30:56,940,INFO,Added revenue and month columns
+2026-04-20 09:30:56,958,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-20 09:30:56,971,INFO,Saved reports/sales_by_region.csv
+2026-04-20 09:30:56,977,INFO,Saved reports/sales_by_product.csv
+2026-04-20 09:30:56,984,INFO,Saved reports/monthly_revenue.csv
+2026-04-20 09:30:56,992,INFO,Saved reports/salesperson_performance.csv
+2026-04-20 09:30:56,992,INFO,Pipeline completed successfully
+2026-04-21 14:00:02,431,INFO,Pipeline started
+2026-04-21 14:00:02,432,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-21 14:00:02,469,DEBUG,Columns found: ['transaction_id;;;;;;;']
+2026-04-21 14:00:02,474,ERROR,Failed to load sales data from 'data/Messy_Sales_Data.csv': 'date'
+Traceback (most recent call last):
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 3641, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/index.pyx", line 168, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/index.pyx", line 197, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7668, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7676, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'date'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/scripts/process_data.py", line 26, in load_sales_data
+    sales_data_frame["date"] = pd.to_datetime(sales_data_frame["date"])
+                                              ~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/venv/lib/python3.12/site-packages/pandas/core/frame.py", line 4378, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 3648, in get_loc
+    raise KeyError(key) from err
+KeyError: 'date'
+2026-04-21 14:00:02,601,CRITICAL,Pipeline failed and could not complete: 'date'
+Traceback (most recent call last):
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 3641, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/index.pyx", line 168, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/index.pyx", line 197, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7668, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7676, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'date'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/scripts/process_data.py", line 291, in main
+    sales_data_frame = load_sales_data("data/Messy_Sales_Data.csv")
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/scripts/process_data.py", line 26, in load_sales_data
+    sales_data_frame["date"] = pd.to_datetime(sales_data_frame["date"])
+                                              ~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/venv/lib/python3.12/site-packages/pandas/core/frame.py", line 4378, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 3648, in get_loc
+    raise KeyError(key) from err
+KeyError: 'date'
+2026-04-21 14:04:17,833,INFO,Pipeline started
+2026-04-21 14:04:17,834,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-21 14:04:17,930,DEBUG,Columns found: ['transaction_id', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7']
+2026-04-21 14:04:17,935,ERROR,Expected column not found — check CSV headers match expected names: 'date'
+Traceback (most recent call last):
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 3641, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/index.pyx", line 168, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/index.pyx", line 197, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7668, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7676, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'date'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/scripts/process_data.py", line 29, in load_sales_data
+    sales_data_frame["date"] = pd.to_datetime(sales_data_frame["date"])
+                                              ~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/venv/lib/python3.12/site-packages/pandas/core/frame.py", line 4378, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 3648, in get_loc
+    raise KeyError(key) from err
+KeyError: 'date'
+2026-04-21 14:04:18,028,CRITICAL,Pipeline failed and could not complete: 'date'
+Traceback (most recent call last):
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 3641, in get_loc
+    return self._engine.get_loc(casted_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/index.pyx", line 168, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/index.pyx", line 197, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7668, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7676, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'date'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/scripts/process_data.py", line 298, in main
+    sales_data_frame = load_sales_data("data/Messy_Sales_Data.csv")
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/scripts/process_data.py", line 29, in load_sales_data
+    sales_data_frame["date"] = pd.to_datetime(sales_data_frame["date"])
+                                              ~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/venv/lib/python3.12/site-packages/pandas/core/frame.py", line 4378, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/c/sc_CharmaneMchunu_2026/Projects 2026/Sales Data Processing and Business Insights System/project/venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 3648, in get_loc
+    raise KeyError(key) from err
+KeyError: 'date'
+2026-04-21 14:05:00,540,INFO,Pipeline started
+2026-04-21 14:05:00,541,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-21 14:08:10,874,INFO,Pipeline started
+2026-04-21 14:08:10,875,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-21 14:11:01,522,INFO,Pipeline started
+2026-04-21 14:11:01,523,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-21 14:13:35,444,INFO,Pipeline started
+2026-04-21 14:13:35,445,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-21 14:17:24,692,INFO,Pipeline started
+2026-04-21 14:17:24,693,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-21 14:19:04,187,INFO,Pipeline started
+2026-04-21 14:19:04,188,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-21 14:20:11,415,INFO,Pipeline started
+2026-04-21 14:20:11,417,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-21 14:23:46,770,INFO,Pipeline started
+2026-04-21 14:23:46,771,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-21 14:28:42,740,INFO,Pipeline started
+2026-04-21 14:28:42,741,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-21 14:28:42,850,INFO,Loaded 52 rows successfully
+2026-04-21 14:28:42,850,INFO,Creating data inspection table...
+2026-04-21 14:28:42,922,INFO,Duplicate rows found: 2
+2026-04-21 14:28:42,925,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-21 14:28:42,953,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-21 14:28:42,954,INFO,Filled 2 missing quantity value(s) with median quantity per product
+2026-04-21 14:28:42,959,INFO,Added revenue and month columns
+2026-04-21 14:28:43,005,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-21 14:28:43,039,INFO,Saved reports/sales_by_region.csv
+2026-04-21 14:28:43,056,INFO,Saved reports/sales_by_product.csv
+2026-04-21 14:28:43,073,INFO,Saved reports/monthly_revenue.csv
+2026-04-21 14:28:43,091,INFO,Saved reports/salesperson_performance.csv
+2026-04-21 14:28:43,092,INFO,Pipeline completed successfully
+2026-04-21 14:35:17,636,INFO,Pipeline started
+2026-04-21 14:35:17,637,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-21 14:35:17,702,DEBUG,Columns found: ['transaction_id', 'date', 'product', 'category', 'quantity', 'price', 'region', 'salesperson']
+2026-04-21 14:35:17,703,INFO,Loaded 52 rows successfully
+2026-04-21 14:35:17,704,INFO,Creating data inspection table...
+2026-04-21 14:35:17,704,DEBUG,Total rows before cleaning: 52
+2026-04-21 14:35:17,767,DEBUG,Missing values per column:
+transaction_id    0
+date              0
+product           0
+category          0
+quantity          2
+price             0
+region            0
+salesperson       2
+dtype: int64
+2026-04-21 14:35:17,768,INFO,Duplicate rows found: 2
+2026-04-21 14:35:17,771,DEBUG,Rows before deduplication: 52
+2026-04-21 14:35:17,772,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-21 14:35:17,773,DEBUG,Missing salesperson values before fill: 2
+2026-04-21 14:35:17,774,DEBUG,Missing quantity values before fill: 2
+2026-04-21 14:35:17,793,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-21 14:35:17,794,INFO,Filled 2 missing quantity value(s) with median quantity per product
+2026-04-21 14:35:17,800,INFO,Added revenue and month columns
+2026-04-21 14:35:17,843,DEBUG,Revenue range: 6000.0 - 56000.0
+2026-04-21 14:35:17,844,DEBUG,Months present: ['April', 'February', 'January', 'March']
+2026-04-21 14:35:17,886,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-21 14:35:17,913,INFO,Saved reports/sales_by_region.csv
+2026-04-21 14:35:17,930,INFO,Saved reports/sales_by_product.csv
+2026-04-21 14:35:17,946,INFO,Saved reports/monthly_revenue.csv
+2026-04-21 14:35:17,962,INFO,Saved reports/salesperson_performance.csv
+2026-04-21 14:35:17,963,INFO,Pipeline completed successfully
