@@ -1,5 +1,5 @@
 name: Re Deploy Project
-on: push
+on: [push, workflow_dispatch]
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -22,6 +22,7 @@ jobs:
         run: npm test
 
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     defaults:
       run:
