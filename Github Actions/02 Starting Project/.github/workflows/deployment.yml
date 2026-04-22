@@ -10,6 +10,11 @@ jobs:
       - name: Get code
         uses: actions/checkout@v6
 
+      - name: Debug - Show structure
+        run: |
+          pwd
+          find . -name "package.json" -not -path "*/node_modules/*"
+
       - name: Install Node.js
         uses: actions/setup-node@v6
         with:
@@ -20,6 +25,7 @@ jobs:
 
       - name: Run tests
         run: npm test
+
   deploy: 
     runs-on: ubuntu-latest
     steps:
@@ -36,5 +42,6 @@ jobs:
 
       - name: Build project
         run: npm run build
+
       - name: Deploy
-        run: echo "Deploying ..."  
+        run: echo "Deploying ..."
