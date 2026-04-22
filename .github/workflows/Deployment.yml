@@ -1,0 +1,48 @@
+name: Deploy Project   # Name of the workflow (appears in GitHub Actions UI)
+
+on: push              # Trigger: runs this workflow every time you push code
+
+jobs:                 # A workflow is made up of one or more jobs
+
+  test:               # First job (runs tests)
+    runs-on: ubuntu-latest   # Use a Linux virtual machine provided by GitHub
+
+    steps:            # Steps = actions/commands executed in order
+
+      - name: Get code
+        uses: actions/checkout@v6   # Downloads your repository code into the runner
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6   # Installs Node.js in the environment
+        with:
+          node-version: '18'          # Specifies which Node.js version to use
+
+      - name: Install dependencies
+        run: npm install              # Installs all packages from package.json
+
+      - name: Run tests
+        run: npm test                 # Runs the test script (must exist in package.json)
+
+
+  deploy:            # Second job (handles deployment)
+    needs: test      # This job ONLY runs if the "test" job succeeds
+    runs-on: ubuntu-latest   # Again uses a Linux environment
+
+    steps:
+
+      - name: Get code
+        uses: actions/checkout@v6   # Must checkout code again (jobs are isolated)
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6   # Install Node.js again for this job
+        with:
+          node-version: '18'          # Same Node.js version for consistency
+
+      - name: Install dependencies
+        run: npm ci                  # Faster, clean install using package-lock.json
+
+      - name: Build project
+        run: npm run build           # Runs build script (must exist in package.json)
+
+      - name: Deploy
+        run: echo "Deploying ..."    # Placeholder (replace with real deployment command)
