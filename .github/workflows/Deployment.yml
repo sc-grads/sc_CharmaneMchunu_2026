@@ -1,0 +1,42 @@
+name: Deploy Project            # The name of the workflow (what you see in GitHub Actions)
+
+on: push                       # This workflow runs every time code is pushed to the repository
+
+jobs:                          # Defines all the jobs (tasks) in this workflow
+
+  test:                        # First job called "test"
+    runs-on: ubuntu-latest     # Runs this job on a Linux (Ubuntu) virtual machine
+
+    steps:                     # Steps are the individual actions inside the job
+
+      - name: Get code         # Step name (just for readability in GitHub UI)
+        uses: actions/checkout@v6   # Downloads (checks out) your repository code into the runner
+        with:
+          node-version: '18'   # (Incorrect placement, but here it means Node.js version intended)
+
+      - name: Install dependencies  # Step to install project dependencies
+        run: npm              # Runs npm (⚠️ incomplete, should be npm install or npm ci)
+
+      - name: Run tests       # Step to run tests
+        run: npm test         # Executes the test script defined in package.json
+
+
+  deploy:                     # Second job called "deploy"
+    needs: test               # This job only runs if the "test" job is successful
+    runs-on: ubuntu-latest   # Runs on a Linux (Ubuntu) virtual machine
+
+    steps:                   # Steps inside the deploy job
+
+      - name: Get code        # Step to download the repository again
+        uses: actions/checkout@v6   # Checks out the code for this job
+        with:
+          node-version: '18'  # (Again misplaced, but intended Node version)
+
+      - name: Install dependencies  # Install dependencies again for deployment
+        run: npm ci          # Installs dependencies cleanly using package-lock.json
+
+      - name: Build project  # Step to build the project
+        run: npm run build   # Runs the build script (e.g., compiles code)
+
+      - name: Deploy         # Final step to deploy
+        run: echo "Deploying ..."  # Placeholder command (prints message instead of real deployment)
