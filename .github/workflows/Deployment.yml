@@ -10,10 +10,7 @@ jobs:                 # A workflow is made up of one or more jobs
     steps:            # Steps = actions/commands executed in order
 
       - name: Get code
-        uses: actions/checkout@v4   # Downloads your repository code into the runner
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4   # Installs Node.js in the environment
+        uses: actions/checkout@v6   # Downloads your repository code into the runner
         with:
           node-version: '18'          # Specifies which Node.js version to use
 
@@ -31,10 +28,7 @@ jobs:                 # A workflow is made up of one or more jobs
     steps:
 
       - name: Get code
-        uses: actions/checkout@v4   # Must checkout code again (jobs are isolated)
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4   # Install Node.js again for this job
+        uses: actions/checkout@v6   # Must checkout code again (jobs are isolated)
         with:
           node-version: '18'          # Same Node.js version for consistency
 
