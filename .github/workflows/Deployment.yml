@@ -15,7 +15,7 @@ jobs:                          # Defines all the jobs (tasks) in this workflow
           node-version: '18'   # (Incorrect placement, but here it means Node.js version intended)
 
       - name: Install dependencies  # Step to install project dependencies
-        run: npm              # Runs npm (⚠️ incomplete, should be npm install or npm ci)
+        run: npm install             # Runs npm (⚠️ incomplete, should be npm install or npm ci)
 
       - name: Run tests       # Step to run tests
         run: npm test         # Executes the test script defined in package.json
