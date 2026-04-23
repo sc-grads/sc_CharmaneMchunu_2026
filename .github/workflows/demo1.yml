@@ -23,6 +23,9 @@ jobs:
     build:
         needs: test
         runs-on: ubuntu-latest
+        defaults:
+          run:
+            working-directory: "./Github Actions/02 Starting Project"
         steps:
           - name: Get code
             uses: actions/checkout@v6
