@@ -37,7 +37,7 @@ jobs:
             uses: actions/upload-artifact@v6  
             with:
               name: dist-files
-              path: ./Github Actions/02 Starting Project/dist
+              path: " ./Github Actions/02 Starting Project/dist"
             
     deploy:
         needs: build
@@ -45,4 +45,6 @@ jobs:
         steps:
           - name: Deploy
             run: echo "Deploying ..."
+
+            
          
