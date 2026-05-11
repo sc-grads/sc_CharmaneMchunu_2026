@@ -545,3 +545,195 @@ dtype: int64
 2026-04-21 14:35:17,946,INFO,Saved reports/monthly_revenue.csv
 2026-04-21 14:35:17,962,INFO,Saved reports/salesperson_performance.csv
 2026-04-21 14:35:17,963,INFO,Pipeline completed successfully
+2026-04-24 10:35:09,628,INFO,Pipeline started
+2026-04-24 10:35:09,628,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-24 10:35:09,651,DEBUG,Columns found: ['transaction_id', 'date', 'product', 'category', 'quantity', 'price', 'region', 'salesperson']
+2026-04-24 10:35:09,652,INFO,Loaded 52 rows successfully
+2026-04-24 10:35:09,652,INFO,Creating data inspection table...
+2026-04-24 10:35:09,652,DEBUG,Total rows before cleaning: 52
+2026-04-24 10:35:09,682,DEBUG,Missing values per column:
+transaction_id    0
+date              0
+product           0
+category          0
+quantity          2
+price             0
+region            0
+salesperson       2
+dtype: int64
+2026-04-24 10:35:09,682,INFO,Duplicate rows found: 2
+2026-04-24 10:35:09,683,DEBUG,Rows before deduplication: 52
+2026-04-24 10:35:09,683,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-24 10:35:09,684,DEBUG,Missing salesperson values before fill: 2
+2026-04-24 10:35:09,684,DEBUG,Missing quantity values before fill: 2
+2026-04-24 10:35:09,692,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-24 10:35:09,693,INFO,Filled 2 missing quantity value(s) with median quantity per product
+2026-04-24 10:35:09,695,INFO,Added revenue and month columns
+2026-04-24 10:35:09,695,DEBUG,Revenue range: 6000.0 - 56000.0
+2026-04-24 10:35:09,696,DEBUG,Months present: ['April', 'February', 'January', 'March']
+2026-04-24 10:35:09,713,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-24 10:35:09,725,INFO,Saved reports/sales_by_region.csv
+2026-04-24 10:35:09,733,INFO,Saved reports/sales_by_product.csv
+2026-04-24 10:35:09,741,INFO,Saved reports/monthly_revenue.csv
+2026-04-24 10:35:09,749,INFO,Saved reports/salesperson_performance.csv
+2026-04-24 10:35:09,749,INFO,Pipeline completed successfully
+2026-04-24 10:35:47,388,INFO,Pipeline started
+2026-04-24 10:35:47,389,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-24 10:35:47,411,DEBUG,Columns found: ['transaction_id', 'date', 'product', 'category', 'quantity', 'price', 'region', 'salesperson']
+2026-04-24 10:35:47,411,INFO,Loaded 52 rows successfully
+2026-04-24 10:35:47,411,INFO,Creating data inspection table...
+2026-04-24 10:35:47,412,DEBUG,Total rows before cleaning: 52
+2026-04-24 10:35:47,439,DEBUG,Missing values per column:
+transaction_id    0
+date              0
+product           0
+category          0
+quantity          2
+price             0
+region            0
+salesperson       2
+dtype: int64
+2026-04-24 10:35:47,440,INFO,Duplicate rows found: 2
+2026-04-24 10:35:47,441,DEBUG,Rows before deduplication: 52
+2026-04-24 10:35:47,441,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-24 10:35:47,442,DEBUG,Missing salesperson values before fill: 2
+2026-04-24 10:35:47,442,DEBUG,Missing quantity values before fill: 2
+2026-04-24 10:35:47,450,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-24 10:35:47,451,INFO,Filled 2 missing quantity value(s) with median quantity per product
+2026-04-24 10:35:47,454,INFO,Added revenue and month columns
+2026-04-24 10:35:47,455,DEBUG,Revenue range: 6000.0 - 56000.0
+2026-04-24 10:35:47,455,DEBUG,Months present: ['April', 'February', 'January', 'March']
+2026-04-24 10:35:47,473,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-24 10:35:47,485,INFO,Saved reports/sales_by_region.csv
+2026-04-24 10:35:47,493,INFO,Saved reports/sales_by_product.csv
+2026-04-24 10:35:47,500,INFO,Saved reports/monthly_revenue.csv
+2026-04-24 10:35:47,508,INFO,Saved reports/salesperson_performance.csv
+2026-04-24 10:35:47,509,INFO,Pipeline completed successfully
+2026-04-24 11:26:04,894,INFO,Pipeline started
+2026-04-24 11:26:04,895,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-24 11:26:04,924,DEBUG,Columns found: ['transaction_id', 'date', 'product', 'category', 'quantity', 'price', 'region', 'salesperson']
+2026-04-24 11:26:04,924,INFO,Loaded 52 rows successfully
+2026-04-24 11:26:04,925,INFO,Creating data inspection table...
+2026-04-24 11:26:04,925,DEBUG,Total rows before cleaning: 52
+2026-04-24 11:26:04,965,DEBUG,Missing values per column:
+transaction_id    0
+date              0
+product           0
+category          0
+quantity          2
+price             0
+region            0
+salesperson       2
+dtype: int64
+2026-04-24 11:26:04,965,INFO,Duplicate rows found: 2
+2026-04-24 11:26:04,967,DEBUG,Rows before deduplication: 52
+2026-04-24 11:26:04,967,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-24 11:26:04,968,DEBUG,Missing salesperson values before fill: 2
+2026-04-24 11:26:04,969,DEBUG,Missing quantity values before fill: 2
+2026-04-24 11:26:04,980,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-24 11:26:04,981,INFO,Filled 2 missing quantity value(s) with median quantity per product
+2026-04-24 11:26:04,984,INFO,Added revenue and month columns
+2026-04-24 11:26:04,985,DEBUG,Revenue range: 6000.0 - 56000.0
+2026-04-24 11:26:04,986,DEBUG,Months present: ['April', 'February', 'January', 'March']
+2026-04-24 11:26:05,008,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-24 11:26:05,024,INFO,Saved reports/sales_by_region.csv
+2026-04-24 11:26:05,033,INFO,Saved reports/sales_by_product.csv
+2026-04-24 11:26:05,041,INFO,Saved reports/monthly_revenue.csv
+2026-04-24 11:26:05,051,INFO,Saved reports/salesperson_performance.csv
+2026-04-24 11:26:05,051,INFO,Pipeline completed successfully
+2026-04-24 11:26:35,839,INFO,Pipeline started
+2026-04-24 11:26:35,839,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-24 11:26:35,865,DEBUG,Columns found: ['transaction_id', 'date', 'product', 'category', 'quantity', 'price', 'region', 'salesperson']
+2026-04-24 11:26:35,865,INFO,Loaded 52 rows successfully
+2026-04-24 11:26:35,865,INFO,Creating data inspection table...
+2026-04-24 11:26:35,865,DEBUG,Total rows before cleaning: 52
+2026-04-24 11:26:35,899,DEBUG,Missing values per column:
+transaction_id    0
+date              0
+product           0
+category          0
+quantity          2
+price             0
+region            0
+salesperson       2
+dtype: int64
+2026-04-24 11:26:35,899,INFO,Duplicate rows found: 2
+2026-04-24 11:26:35,901,DEBUG,Rows before deduplication: 52
+2026-04-24 11:26:35,901,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-24 11:26:35,902,DEBUG,Missing salesperson values before fill: 2
+2026-04-24 11:26:35,902,DEBUG,Missing quantity values before fill: 2
+2026-04-24 11:26:35,911,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-24 11:26:35,912,INFO,Filled 2 missing quantity value(s) with median quantity per product
+2026-04-24 11:26:35,914,INFO,Added revenue and month columns
+2026-04-24 11:26:35,915,DEBUG,Revenue range: 6000.0 - 56000.0
+2026-04-24 11:26:35,916,DEBUG,Months present: ['April', 'February', 'January', 'March']
+2026-04-24 11:26:35,934,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-24 11:26:35,951,INFO,Saved reports/sales_by_region.csv
+2026-04-24 11:26:35,963,INFO,Saved reports/sales_by_product.csv
+2026-04-24 11:26:35,972,INFO,Saved reports/monthly_revenue.csv
+2026-04-24 11:26:35,981,INFO,Saved reports/salesperson_performance.csv
+2026-04-24 11:26:35,982,INFO,Pipeline completed successfully
+2026-04-24 11:40:22,238,INFO,Pipeline started
+2026-04-24 11:40:22,239,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-24 11:40:22,268,DEBUG,Columns found: ['transaction_id', 'date', 'product', 'category', 'quantity', 'price', 'region', 'salesperson']
+2026-04-24 11:40:22,269,INFO,Loaded 52 rows successfully
+2026-04-24 11:40:22,269,INFO,Creating data inspection table...
+2026-04-24 11:40:22,269,DEBUG,Total rows before cleaning: 52
+2026-04-24 11:40:22,305,DEBUG,Missing values per column:
+transaction_id    0
+date              0
+product           0
+category          0
+quantity          2
+price             0
+region            0
+salesperson       2
+dtype: int64
+2026-04-24 11:40:22,306,INFO,Duplicate rows found: 2
+2026-04-24 11:40:22,308,DEBUG,Rows before deduplication: 52
+2026-04-24 11:40:22,308,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-24 11:40:22,309,DEBUG,Missing salesperson values before fill: 2
+2026-04-24 11:40:22,309,DEBUG,Missing quantity values before fill: 2
+2026-04-24 11:40:22,319,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-24 11:40:22,319,INFO,Filled 2 missing quantity value(s) with median quantity per product
+2026-04-24 11:40:22,321,INFO,Added revenue and month columns
+2026-04-24 11:40:22,322,DEBUG,Revenue range: 6000.0 - 56000.0
+2026-04-24 11:40:22,322,DEBUG,Months present: ['April', 'February', 'January', 'March']
+2026-04-24 11:40:22,345,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-24 11:40:22,360,INFO,Saved reports/sales_by_region.csv
+2026-04-24 11:40:22,372,INFO,Saved reports/sales_by_product.csv
+2026-04-24 11:40:22,381,INFO,Saved reports/monthly_revenue.csv
+2026-04-24 11:40:22,390,INFO,Saved reports/salesperson_performance.csv
+2026-04-24 11:40:22,390,INFO,Pipeline completed successfully
+2026-04-29 10:30:23,189,INFO,Pipeline started
+2026-04-29 10:30:23,190,INFO,Loading data from data/Messy_Sales_Data.csv
+2026-04-29 10:30:23,218,DEBUG,Columns found: ['transaction_id', 'date', 'product', 'category', 'quantity', 'price', 'region', 'salesperson']
+2026-04-29 10:30:23,218,INFO,Loaded 52 rows successfully
+2026-04-29 10:30:23,218,INFO,Creating data inspection table...
+2026-04-29 10:30:23,218,DEBUG,Total rows before cleaning: 52
+2026-04-29 10:30:23,248,DEBUG,Missing values per column:
+transaction_id    0
+date              0
+product           0
+category          0
+quantity          2
+price             0
+region            0
+salesperson       2
+dtype: int64
+2026-04-29 10:30:23,249,INFO,Duplicate rows found: 2
+2026-04-29 10:30:23,250,DEBUG,Rows before deduplication: 52
+2026-04-29 10:30:23,250,INFO,Removed 2 duplicate row(s). 50 rows remaining
+2026-04-29 10:30:23,251,DEBUG,Missing salesperson values before fill: 2
+2026-04-29 10:30:23,251,DEBUG,Missing quantity values before fill: 2
+2026-04-29 10:30:23,262,INFO,Filled 2 missing salesperson value(s) with Unknown
+2026-04-29 10:30:23,263,INFO,Filled 2 missing quantity value(s) with median quantity per product
+2026-04-29 10:30:23,266,INFO,Added revenue and month columns
+2026-04-29 10:30:23,267,DEBUG,Revenue range: 6000.0 - 56000.0
+2026-04-29 10:30:23,267,DEBUG,Months present: ['April', 'February', 'January', 'March']
+2026-04-29 10:30:23,284,INFO,Cleaned data saved to output/clean_sales.csv
+2026-04-29 10:30:23,298,INFO,Saved reports/sales_by_region.csv
+2026-04-29 10:30:23,305,INFO,Saved reports/sales_by_product.csv
+2026-04-29 10:30:23,313,INFO,Saved reports/monthly_revenue.csv
+2026-04-29 10:30:23,319,INFO,Saved reports/salesperson_performance.csv
+2026-04-29 10:30:23,320,INFO,Pipeline completed successfully
