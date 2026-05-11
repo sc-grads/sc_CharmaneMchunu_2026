@@ -26,6 +26,8 @@ jobs:
         defaults:
           run:
             working-directory: "./Github Actions/02 Starting Project"
+        outputs:
+          script-file: ${{ steps.publish.outputs.script-file }}   
         steps:
           - name: Get code
             uses: actions/checkout@v6
@@ -33,6 +35,9 @@ jobs:
             run: npm ci  
           - name: Build website
             run: npm run build
+          - name: Publish JS filename
+            id: publish
+            run: find dist/assets/*.js -type f --execdir echo 'script-file={}' >> $GITHUB_OUTPUT ';'
           - name: Upload artifact
             uses: actions/upload-artifact@v6  
             with:
