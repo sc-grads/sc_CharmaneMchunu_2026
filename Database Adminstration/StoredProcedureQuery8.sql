@@ -1,23 +1,9 @@
---CREATE PROCEDURE SelectAllPersonalAddress
---AS
---SELECT * FROM Person.Address
---go;
-
---SeLECT * FROM Person.Address;
-
---exec SelectAllPersonalAddress;
---drop procedure SelectAllPersonalAddress;
-
-CREATE PROCEDURE SelectAllPersonalAddressWithParams (@City NVARCHAR(30))
+CREATE PROCEDURE SelectAllPersonalAddress
 AS
+SELECT * FROM Person.Address
+go;
 
---begin
-SET NOCOUNT ON
+SELECT * FROM Person.Address
 
-SELECT * FROM Person.Address where City = @city;
+exec SelectAllPersonalAddress
 
---end
-
-exec SelectAllPersonalAddressWithParams @city = 'Miami'
-
-exec SelectAllPersonalAddressWithParams 'Miami'
