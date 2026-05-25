@@ -1,0 +1,24 @@
+name: Events Demo 1
+
+on:
+    workflow_dispatch:            
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Output Github context
+            run: echo "${{ toJson(github.event) }}"
+          - name: Get Code
+            uses: actions/checkout@v3
+          - name: Install dependencies
+            run: npm ci
+            working-directory: ./Github Actions/02 Starting Project
+          - name: Test code
+            run: npm run test
+            working-directory: ./Github Actions/02 Starting Project
+          - name: Build code
+            run: npm run build
+            working-directory: ./Github Actions/02 Starting Project
+          - name: Deploy code
+            run: echo "Deploying ..."
