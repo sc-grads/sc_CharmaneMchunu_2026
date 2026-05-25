@@ -2,7 +2,6 @@ transaction_id,date,product,category,quantity,price,region,salesperson,revenue,m
 1001,2024-01-05,Laptop,Electronics,2,12000,North,John,24000,January
 1002,2024-01-07,Phone,Electronics,5,8000,South,Mary,40000,January
 1003,2024-01-10,Tablet,Electronics,3,6000,East,David,18000,January
-1004,2024-01-15,Chair,Furniture,5,1500,West,Sarah,7500,January
 1005,2024-01-20,Desk,Furniture,2,3000,North,John,6000,January
 1006,2024-01-22,Laptop,Electronics,1,12000,South,Mary,12000,January
 1007,2024-01-25,Phone,Electronics,6,8000,East,David,48000,January
@@ -42,7 +41,6 @@ transaction_id,date,product,category,quantity,price,region,salesperson,revenue,m
 1041,2024-04-12,Laptop,Electronics,2,12000,North,John,24000,April
 1042,2024-04-14,Phone,Electronics,5,8000,South,Mary,40000,April
 1043,2024-04-16,Tablet,Electronics,3,6000,East,David,18000,April
-1044,2024-04-18,Chair,Furniture,5,1500,West,Sarah,7500,April
 1045,2024-04-20,Desk,Furniture,2,3000,North,John,6000,April
 1046,2024-04-22,Laptop,Electronics,1,12000,South,Unknown,12000,April
 1047,2024-04-24,Phone,Electronics,6,8000,East,David,48000,April
