@@ -73,12 +73,12 @@ def fill_missing_values(sales_data_frame):
     """
     Two columns have missing values that need to be handled before the data can be used.
 
-    Salesperson is filled with “Unknown” because it is not possible to determine who made the sale. However, the transaction itself is still valid and should be retained in the dataset.
+    Salesperson is filled with “Unknown” because it is not possible to determine who made the sale.
+    However, the transaction itself is still valid and should be retained in the dataset.
 
-    Quantity is not filled with 0 because a sale did occur, and assigning a value of 0 would incorrectly imply that no items were sold.
-    Instead, missing quantity values are estimated using the median quantity per product.
-    This approach preserves the integrity of the dataset while ensuring that the imputed values remain realistic and are not overly influenced by outliers.
+    Quantity values are left blank instead of being estimated.
     """
+
     missing_salesperson = sales_data_frame["salesperson"].isnull().sum()
     missing_quantity = sales_data_frame["quantity"].isnull().sum()
 
@@ -86,13 +86,12 @@ def fill_missing_values(sales_data_frame):
     logging.debug(f"Missing quantity values before fill: {missing_quantity}")
 
     sales_data_frame["salesperson"] = sales_data_frame["salesperson"].fillna("Unknown")
-    sales_data_frame["quantity"] = sales_data_frame.groupby("product")["quantity"]\
-    .transform(lambda x: x.fillna(x.median()))
+    sales_data_frame = sales_data_frame.dropna(subset=["quantity"])
 
     logging.info(f"Filled {missing_salesperson} missing salesperson value(s) with Unknown")
-    logging.info(f"Filled {missing_quantity} missing quantity value(s) with median quantity per product")
-    return sales_data_frame
+    logging.info(f"Removed {missing_quantity} missing quantity value(s) rows. {len(sales_data_frame)} rows remaining")
 
+    return sales_data_frame
 
 def add_calculated_columns(sales_data_frame):
     """
@@ -128,8 +127,8 @@ def save_cleaned_data(sales_data_frame):
     This is the file that will be used as the base for all summary reports.
     """
     output_path = "output/clean_sales.csv"
-    sales_data_frame["revenue"] = sales_data_frame["revenue"].astype(int)
-    sales_data_frame["quantity"] = sales_data_frame["quantity"].astype(int)
+    sales_data_frame["quantity"] = sales_data_frame["quantity"].astype("Int64")
+    sales_data_frame["revenue"] = sales_data_frame["revenue"].astype("Int64")
     sales_data_frame.to_csv(output_path, index=False)
     logging.info(f"Cleaned data saved to {output_path}")
 
