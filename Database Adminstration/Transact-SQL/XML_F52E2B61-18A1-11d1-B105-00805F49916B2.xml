@@ -1,0 +1,13 @@
+﻿<E EmployeeNumber="200" EmployeeFirstName="Michiko" EmployeeLastName="Robinett" DateOfBirth="1967-01-25">
+  <T Amount="958" DateOfTransaction="2015-02-25T00:00:00" />
+  <T Amount="-5" DateOfTransaction="2015-08-31T00:00:00" />
+</E>
+<E EmployeeNumber="201" EmployeeFirstName="Carol" EmployeeLastName="Roberts" DateOfBirth="1975-08-05">
+  <T Amount="-351" DateOfTransaction="2014-04-14T00:00:00" />
+  <T Amount="-893" DateOfTransaction="2014-09-18T00:00:00" />
+</E>
+<E EmployeeNumber="202" EmployeeFirstName="Merav" EmployeeLastName="Rizzi" DateOfBirth="1971-05-19">
+  <T Amount="913" DateOfTransaction="2015-04-12T00:00:00" />
+  <T Amount="-98" DateOfTransaction="2015-01-11T00:00:00" />
+  <T Amount="-332" DateOfTransaction="2015-10-17T00:00:00" />
+</E>
