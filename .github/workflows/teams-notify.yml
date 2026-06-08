@@ -151,4 +151,3 @@ jobs:
           curl -H "Content-Type: application/json" \
                -d @payload.json \
                "$TEAMS_WEBHOOK_URL"
-```
