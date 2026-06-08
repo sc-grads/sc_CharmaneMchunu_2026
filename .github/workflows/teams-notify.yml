@@ -21,123 +21,27 @@ jobs:
         run: |
           echo "time=$(TZ='Africa/Johannesburg' date '+%Y-%m-%d %H:%M')" >> $GITHUB_OUTPUT
 
-      - name: Build Notification Payload
+      - name: Build Payload
         id: payload
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.action }}" = "opened" ]; then
+          EVENT_NAME="${{ github.event_name }}"
+          ACTION="${{ github.event.action }}"
 
-            cat <<EOF > payload.json
-            {
-              "@type": "MessageCard",
-              "@context": "http://schema.org/extensions",
-              "themeColor": "0078D7",
-              "title": "🚀 Pull Request Created",
-              "summary": "New Pull Request",
-              "sections": [{
-                "facts": [
-                  {"name":"Repository","value":"${{ github.repository }}"},
-                  {"name":"Title","value":"${{ github.event.pull_request.title }}"},
-                  {"name":"Author","value":"${{ github.event.pull_request.user.login }}"},
-                  {"name":"Branch","value":"${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}"},
-                  {"name":"Time","value":"${{ steps.time.outputs.time }}"}
-                ]
-              }],
-              "potentialAction":[{
-                "@type":"OpenUri",
-                "name":"View Pull Request",
-                "targets":[{
-                  "os":"default",
-                  "uri":"${{ github.event.pull_request.html_url }}"
-                }]
-              }]
-            }
-            EOF
+          if [[ "$EVENT_NAME" == "pull_request" && "$ACTION" == "opened" ]]; then
 
-          elif [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.action }}" = "review_requested" ]; then
+            echo "{\"@type\":\"MessageCard\",\"@context\":\"http://schema.org/extensions\",\"themeColor\":\"0078D7\",\"title\":\"🚀 Pull Request Created\",\"summary\":\"New Pull Request\",\"sections\":[{\"facts\":[{\"name\":\"Repository\",\"value\":\"${{ github.repository }}\"},{\"name\":\"Title\",\"value\":\"${{ github.event.pull_request.title }}\"},{\"name\":\"Author\",\"value\":\"${{ github.event.pull_request.user.login }}\"},{\"name\":\"Branch\",\"value\":\"${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}\"},{\"name\":\"Time\",\"value\":\"${{ steps.time.outputs.time }}\"}]}],\"potentialAction\":[{\"@type\":\"OpenUri\",\"name\":\"View Pull Request\",\"targets\":[{\"os\":\"default\",\"uri\":\"${{ github.event.pull_request.html_url }}\"}]}]}" > payload.json
 
-            cat <<EOF > payload.json
-            {
-              "@type": "MessageCard",
-              "@context": "http://schema.org/extensions",
-              "themeColor": "FFA500",
-              "title": "👀 Review Requested",
-              "summary": "PR Review Requested",
-              "sections": [{
-                "facts": [
-                  {"name":"Repository","value":"${{ github.repository }}"},
-                  {"name":"PR Title","value":"${{ github.event.pull_request.title }}"},
-                  {"name":"Author","value":"${{ github.event.pull_request.user.login }}"},
-                  {"name":"Reviewer","value":"${{ github.event.requested_reviewer.login }}"},
-                  {"name":"Time","value":"${{ steps.time.outputs.time }}"}
-                ]
-              }],
-              "potentialAction":[{
-                "@type":"OpenUri",
-                "name":"Review Pull Request",
-                "targets":[{
-                  "os":"default",
-                  "uri":"${{ github.event.pull_request.html_url }}"
-                }]
-              }]
-            }
-            EOF
+          elif [[ "$EVENT_NAME" == "pull_request" && "$ACTION" == "review_requested" ]]; then
 
-          elif [ "${{ github.event_name }}" = "pull_request_review" ] && [ "${{ github.event.review.state }}" = "approved" ]; then
+            echo "{\"@type\":\"MessageCard\",\"@context\":\"http://schema.org/extensions\",\"themeColor\":\"FFA500\",\"title\":\"👀 Review Requested\",\"summary\":\"PR Review Requested\",\"sections\":[{\"facts\":[{\"name\":\"Repository\",\"value\":\"${{ github.repository }}\"},{\"name\":\"PR Title\",\"value\":\"${{ github.event.pull_request.title }}\"},{\"name\":\"Author\",\"value\":\"${{ github.event.pull_request.user.login }}\"},{\"name\":\"Reviewer\",\"value\":\"${{ github.event.requested_reviewer.login }}\"},{\"name\":\"Time\",\"value\":\"${{ steps.time.outputs.time }}\"}]}],\"potentialAction\":[{\"@type\":\"OpenUri\",\"name\":\"Review Pull Request\",\"targets\":[{\"os\":\"default\",\"uri\":\"${{ github.event.pull_request.html_url }}\"}]}]}" > payload.json
 
-            cat <<EOF > payload.json
-            {
-              "@type": "MessageCard",
-              "@context": "http://schema.org/extensions",
-              "themeColor": "28A745",
-              "title": "✅ Pull Request Approved",
-              "summary": "PR Approved",
-              "sections": [{
-                "facts": [
-                  {"name":"Repository","value":"${{ github.repository }}"},
-                  {"name":"PR Title","value":"${{ github.event.pull_request.title }}"},
-                  {"name":"Approved By","value":"${{ github.event.review.user.login }}"},
-                  {"name":"Time","value":"${{ steps.time.outputs.time }}"}
-                ]
-              }],
-              "potentialAction":[{
-                "@type":"OpenUri",
-                "name":"View Pull Request",
-                "targets":[{
-                  "os":"default",
-                  "uri":"${{ github.event.pull_request.html_url }}"
-                }]
-              }]
-            }
-            EOF
+          elif [[ "$EVENT_NAME" == "pull_request_review" && "${{ github.event.review.state }}" == "approved" ]]; then
 
-          elif [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.action }}" = "closed" ] && [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+            echo "{\"@type\":\"MessageCard\",\"@context\":\"http://schema.org/extensions\",\"themeColor\":\"28A745\",\"title\":\"✅ Pull Request Approved\",\"summary\":\"PR Approved\",\"sections\":[{\"facts\":[{\"name\":\"Repository\",\"value\":\"${{ github.repository }}\"},{\"name\":\"PR Title\",\"value\":\"${{ github.event.pull_request.title }}\"},{\"name\":\"Approved By\",\"value\":\"${{ github.event.review.user.login }}\"},{\"name\":\"Time\",\"value\":\"${{ steps.time.outputs.time }}\"}]}],\"potentialAction\":[{\"@type\":\"OpenUri\",\"name\":\"View Pull Request\",\"targets\":[{\"os\":\"default\",\"uri\":\"${{ github.event.pull_request.html_url }}\"}]}]}" > payload.json
 
-            cat <<EOF > payload.json
-            {
-              "@type": "MessageCard",
-              "@context": "http://schema.org/extensions",
-              "themeColor": "6F42C1",
-              "title": "🎉 Pull Request Merged",
-              "summary": "PR Successfully Merged",
-              "sections": [{
-                "facts": [
-                  {"name":"Repository","value":"${{ github.repository }}"},
-                  {"name":"PR Title","value":"${{ github.event.pull_request.title }}"},
-                  {"name":"Merged By","value":"${{ github.actor }}"},
-                  {"name":"Target Branch","value":"${{ github.event.pull_request.base.ref }}"},
-                  {"name":"Time","value":"${{ steps.time.outputs.time }}"}
-                ]
-              }],
-              "potentialAction":[{
-                "@type":"OpenUri",
-                "name":"View Pull Request",
-                "targets":[{
-                  "os":"default",
-                  "uri":"${{ github.event.pull_request.html_url }}"
-                }]
-              }]
-            }
-            EOF
+          elif [[ "$EVENT_NAME" == "pull_request" && "$ACTION" == "closed" && "${{ github.event.pull_request.merged }}" == "true" ]]; then
+
+            echo "{\"@type\":\"MessageCard\",\"@context\":\"http://schema.org/extensions\",\"themeColor\":\"6F42C1\",\"title\":\"🎉 Pull Request Merged\",\"summary\":\"PR Successfully Merged\",\"sections\":[{\"facts\":[{\"name\":\"Repository\",\"value\":\"${{ github.repository }}\"},{\"name\":\"PR Title\",\"value\":\"${{ github.event.pull_request.title }}\"},{\"name\":\"Merged By\",\"value\":\"${{ github.actor }}\"},{\"name\":\"Target Branch\",\"value\":\"${{ github.event.pull_request.base.ref }}\"},{\"name\":\"Time\",\"value\":\"${{ steps.time.outputs.time }}\"}]}],\"potentialAction\":[{\"@type\":\"OpenUri\",\"name\":\"View Pull Request\",\"targets\":[{\"os\":\"default\",\"uri\":\"${{ github.event.pull_request.html_url }}\"}]}]}" > payload.json
 
           else
             echo "No notification required."
@@ -148,6 +52,10 @@ jobs:
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
         run: |
-          curl -H "Content-Type: application/json" \
-               -d @payload.json \
-               "$TEAMS_WEBHOOK_URL"
+          cat payload.json
+
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d @payload.json \
+            "$TEAMS_WEBHOOK_URL"
+
