@@ -1,3 +1,6 @@
+USE master;
+GO
+
 IF DB_ID('CloudTunneling_CM') IS NULL
 BEGIN
     CREATE DATABASE CloudTunneling_CM;
@@ -7,13 +10,13 @@ GO
 USE CloudTunneling_CM;
 GO
 
-IF OBJECT_ID('dbo.Team', 'U') IS NULL
+IF OBJECT_ID('dbo.Employees', 'U') IS NULL
 BEGIN
     CREATE TABLE dbo.Employees
     (
         EmployeeID INT IDENTITY(1,1) PRIMARY KEY,
-        FirstName NVARCHAR(100),
-        LastName NVARCHAR(100),
+        FirstName NVARCHAR(100) NOT NULL,
+        LastName NVARCHAR(100) NOT NULL,
         CreatedDate DATETIME DEFAULT GETDATE()
     );
 END
@@ -25,7 +28,7 @@ BEGIN
     (
         DeploymentID INT IDENTITY(1,1) PRIMARY KEY,
         DeploymentDate DATETIME DEFAULT GETDATE(),
-        VersionNumber VARCHAR(20)
+        VersionNumber VARCHAR(20) NOT NULL
     );
 END
 GO
@@ -33,3 +36,8 @@ GO
 INSERT INTO dbo.DeploymentLog (VersionNumber)
 VALUES ('1.0.0');
 GO
+
+SELECT 'Deployment Successful' AS Status;
+GO
+
+
