@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-database:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Install SQLCMD
@@ -18,11 +18,24 @@ jobs:
           sudo apt-get update
           sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
 
+      - name: Add SQLCMD to PATH
+        run: |
+          echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
+
+      - name: Verify SQL Script Exists
+        run: |
+          ls -la
+          ls -la "Projects 2026/SQL Project"
+
       - name: Deploy Database
         run: |
-          /opt/mssql-tools18/bin/sqlcmd \
-            -S ${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }} \
-            -U ${{ secrets.SQL_USERNAME }} \
+          sqlcmd \
+            -S "${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }}" \
+            -U "${{ secrets.SQL_USERNAME }}" \
             -P "${{ secrets.SQL_PASSWORD }}" \
             -C \
             -i "Projects 2026/SQL Project/deploy.sql"
+
+      - name: Deployment Complete
+        run: |
+          echo "Database deployment completed successfully."
