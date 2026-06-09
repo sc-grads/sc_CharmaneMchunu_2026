@@ -1,0 +1,28 @@
+name: Database Deployment
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install SQLCMD
+        run: |
+          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+          curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+
+      - name: Deploy Database
+        run: |
+          /opt/mssql-tools18/bin/sqlcmd \
+            -S ${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }} \
+            -U ${{ secrets.SQL_USERNAME }} \
+            -P "${{ secrets.SQL_PASSWORD }}" \
+            -C \
+            -i database/deploy.sql
