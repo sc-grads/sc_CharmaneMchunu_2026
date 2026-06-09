@@ -1,19 +1,15 @@
-IF DB_ID('DatabaseDeployment') IS NULL
+IF DB_ID('CloudTunneling_CM') IS NULL
 BEGIN
-    CREATE DATABASE CICD_Demo;
+    CREATE DATABASE CloudTunneling_CM;
 END
 GO
 
-USE DatabaseDeployment;
+USE CloudTunneling_CM;
 GO
 
-IF NOT EXISTS (
-    SELECT *
-    FROM sys.tables
-    WHERE name = 'Employees'
-)
+IF OBJECT_ID('dbo.Team', 'U') IS NULL
 BEGIN
-    CREATE TABLE Employees
+    CREATE TABLE dbo.Employees
     (
         EmployeeID INT IDENTITY(1,1) PRIMARY KEY,
         FirstName NVARCHAR(100),
@@ -23,11 +19,17 @@ BEGIN
 END
 GO
 
-CREATE TABLE DeploymentLog
-(
-    DeploymentID INT IDENTITY(1,1) PRIMARY KEY,
-    DeploymentDate DATETIME DEFAULT GETDATE(),
-    VersionNumber VARCHAR(20)
-);
-INSERT INTO DeploymentLog (VersionNumber)
+IF OBJECT_ID('dbo.DeploymentLog', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.DeploymentLog
+    (
+        DeploymentID INT IDENTITY(1,1) PRIMARY KEY,
+        DeploymentDate DATETIME DEFAULT GETDATE(),
+        VersionNumber VARCHAR(20)
+    );
+END
+GO
+
+INSERT INTO dbo.DeploymentLog (VersionNumber)
 VALUES ('1.0.0');
+GO
