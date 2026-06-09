@@ -25,4 +25,4 @@ jobs:
             -U ${{ secrets.SQL_USERNAME }} \
             -P "${{ secrets.SQL_PASSWORD }}" \
             -C \
-            -i database/deploy.sql
+            -i "Projects 2026/SQL Project/deploy.sql"
