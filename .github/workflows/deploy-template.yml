@@ -1,0 +1,68 @@
+name: SQL Deployment Template
+
+on:
+  workflow_call:
+
+    inputs:
+      server:
+        required: true
+        type: string
+
+      port:
+        required: true
+        type: string
+
+      database:
+        required: true
+        type: string
+
+      target_name:
+        required: true
+        type: string
+
+    secrets:
+      username:
+        required: true
+
+      password:
+        required: true
+
+jobs:
+
+  deploy:
+    name: Deploy to ${{ inputs.target_name }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install SQLCMD
+        run: |
+          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+          curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+
+      - name: Add SQLCMD to PATH
+        run: |
+          echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
+
+      - name: Verify SQL Script Exists
+        run: |
+          ls -la
+          ls -la "Projects 2026/SQL Project"
+
+      - name: Deploy Database
+        run: |
+          sqlcmd \
+            -S "${{ inputs.server }},${{ inputs.port }}" \
+            -U "${{ secrets.username }}" \
+            -P "${{ secrets.password }}" \
+            -d "${{ inputs.database }}" \
+            -C \
+            -i "Projects 2026/SQL Project/deploy.sql"
+
+      - name: Deployment Complete
+        run: |
+          echo "Successfully deployed to ${{ inputs.target_name }}"
