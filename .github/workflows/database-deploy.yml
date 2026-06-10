@@ -45,6 +45,10 @@ jobs:
                     "value":"${{ github.repository }}"
                   },
                   {
+                    "name":"Environment",
+                    "value":"Production"
+                  },
+                  {
                     "name":"Status",
                     "value":"Awaiting Approval"
                   }
@@ -100,7 +104,7 @@ jobs:
             "@context":"http://schema.org/extensions",
             "themeColor":"00AA00",
             "title":"✅ Deployment Approved",
-            "summary":"Approval granted for partner deployment",
+            "summary":"Approval granted for remote deployment",
             "sections":[
               {
                 "facts":[
@@ -125,6 +129,7 @@ jobs:
 
   deploy-partner:
     name: Deploy to Accountability Partner
+
     needs: approval_granted
 
     uses: ./.github/workflows/deploy-template.yml
@@ -138,3 +143,121 @@ jobs:
     secrets:
       username: ${{ secrets.PARTNER_SQL_USERNAME }}
       password: ${{ secrets.PARTNER_SQL_PASSWORD }}
+
+  deployment-success:
+    name: Notify Deployment Success
+
+    needs: deploy-partner
+
+    if: success()
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Success Notification
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+        run: |
+          cat > payload.json <<EOF
+          {
+            "@type":"MessageCard",
+            "@context":"http://schema.org/extensions",
+            "themeColor":"00AA00",
+            "title":"✅ Database Deployment Successful",
+            "summary":"Remote deployment completed successfully",
+            "sections":[
+              {
+                "facts":[
+                  {
+                    "name":"Repository",
+                    "value":"${{ github.repository }}"
+                  },
+                  {
+                    "name":"Target",
+                    "value":"Accountability Partner SQL Server"
+                  },
+                  {
+                    "name":"Status",
+                    "value":"Success"
+                  }
+                ]
+              }
+            ],
+            "potentialAction":[
+              {
+                "@type":"OpenUri",
+                "name":"View Workflow",
+                "targets":[
+                  {
+                    "os":"default",
+                    "uri":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                ]
+              }
+            ]
+          }
+          EOF
+
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d @payload.json \
+            "$TEAMS_WEBHOOK_URL"
+
+  deployment-failure:
+    name: Notify Deployment Failure
+
+    needs: deploy-partner
+
+    if: failure()
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Failure Notification
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+        run: |
+          cat > payload.json <<EOF
+          {
+            "@type":"MessageCard",
+            "@context":"http://schema.org/extensions",
+            "themeColor":"FF0000",
+            "title":"❌ Database Deployment Failed",
+            "summary":"Remote deployment failed",
+            "sections":[
+              {
+                "facts":[
+                  {
+                    "name":"Repository",
+                    "value":"${{ github.repository }}"
+                  },
+                  {
+                    "name":"Target",
+                    "value":"Accountability Partner SQL Server"
+                  },
+                  {
+                    "name":"Status",
+                    "value":"Failed"
+                  }
+                ]
+              }
+            ],
+            "potentialAction":[
+              {
+                "@type":"OpenUri",
+                "name":"View Workflow Logs",
+                "targets":[
+                  {
+                    "os":"default",
+                    "uri":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                ]
+              }
+            ]
+          }
+          EOF
+
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d @payload.json \
+            "$TEAMS_WEBHOOK_URL"
