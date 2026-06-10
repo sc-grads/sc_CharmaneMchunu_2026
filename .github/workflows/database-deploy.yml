@@ -21,25 +21,22 @@ jobs:
       password: ${{ secrets.SQL_PASSWORD }}
 
   notify:
-    name: Notify Teams
+    name: Notify Approval Required
     needs: deploy-local
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get Current Time
-        id: time
-        run: |
-          echo "time=$(TZ='Africa/Johannesburg' date '+%Y-%m-%d %H:%M')" >> $GITHUB_OUTPUT
-
-      - name: Create Teams Payload
+      - name: Send Approval Request to Teams
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
         run: |
           cat > payload.json <<EOF
           {
             "@type":"MessageCard",
             "@context":"http://schema.org/extensions",
-            "themeColor":"0078D7",
-            "title":"🗄️ Local Database Deployment Completed",
-            "summary":"Local SQL deployment successful",
+            "themeColor":"FFA500",
+            "title":"⏳ Approval Required",
+            "summary":"Database deployment awaiting approval",
             "sections":[
               {
                 "facts":[
@@ -49,11 +46,7 @@ jobs:
                   },
                   {
                     "name":"Status",
-                    "value":"SUCCESS"
-                  },
-                  {
-                    "name":"Time",
-                    "value":"${{ steps.time.outputs.time }}"
+                    "value":"Awaiting Approval"
                   }
                 ]
               }
@@ -61,7 +54,7 @@ jobs:
             "potentialAction":[
               {
                 "@type":"OpenUri",
-                "name":"View Workflow Run",
+                "name":"Review Workflow",
                 "targets":[
                   {
                     "os":"default",
@@ -73,10 +66,6 @@ jobs:
           }
           EOF
 
-      - name: Send to Teams
-        env:
-          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
-        run: |
           curl -X POST \
             -H "Content-Type: application/json" \
             -d @payload.json \
@@ -95,9 +84,48 @@ jobs:
         run: |
           echo "Waiting for manual approval..."
 
+  approval_granted:
+    name: Notify Approval Granted
+    needs: approval
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Approval Granted Notification
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+        run: |
+          cat > payload.json <<EOF
+          {
+            "@type":"MessageCard",
+            "@context":"http://schema.org/extensions",
+            "themeColor":"00AA00",
+            "title":"✅ Deployment Approved",
+            "summary":"Approval granted for partner deployment",
+            "sections":[
+              {
+                "facts":[
+                  {
+                    "name":"Repository",
+                    "value":"${{ github.repository }}"
+                  },
+                  {
+                    "name":"Status",
+                    "value":"Approved"
+                  }
+                ]
+              }
+            ]
+          }
+          EOF
+
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d @payload.json \
+            "$TEAMS_WEBHOOK_URL"
+
   deploy-partner:
     name: Deploy to Accountability Partner
-    needs: approval
+    needs: approval_granted
 
     uses: ./.github/workflows/deploy-template.yml
 
