@@ -7,40 +7,18 @@ jobs:
 
   deploy-local:
     name: Deploy to Local SQL Server
-    runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+    uses: ./.github/workflows/deploy-template.yml
 
-      - name: Install SQLCMD
-        run: |
-          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-          curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
-          sudo apt-get update
-          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+    with:
+      server: ${{ vars.LOCAL_SQL_SERVER }}
+      port: ${{ vars.LOCAL_SQL_PORT }}
+      database: AdventureWorks
+      target_name: Local SQL Server
 
-      - name: Add SQLCMD to PATH
-        run: |
-          echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
-
-      - name: Verify SQL Script Exists
-        run: |
-          ls -la
-          ls -la "Projects 2026/SQL Project"
-
-      - name: Deploy to Local SQL Server
-        run: |
-          sqlcmd \
-            -S "${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }}" \
-            -U "${{ secrets.SQL_USERNAME }}" \
-            -P "${{ secrets.SQL_PASSWORD }}" \
-            -C \
-            -i "Projects 2026/SQL Project/deploy.sql"
-
-      - name: Local Deployment Complete
-        run: |
-          echo "Successfully deployed to local SQL Server."
+    secrets:
+      username: ${{ secrets.SQL_USERNAME }}
+      password: ${{ secrets.SQL_PASSWORD }}
 
   notify:
     name: Notify Teams
@@ -52,7 +30,7 @@ jobs:
         run: |
           curl -H "Content-Type: application/json" \
           -d '{
-            "text":"Local database deployment completed successfully. Approval is required before deploying to the accountability partner SQL Server."
+            "text":"Local deployment completed successfully. Approval is required before deploying to the accountability partner SQL Server."
           }' \
           "${{ secrets.TEAMS_WEBHOOK_URL }}"
 
@@ -72,32 +50,15 @@ jobs:
   deploy-partner:
     name: Deploy to Accountability Partner
     needs: approval
-    runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+    uses: ./.github/workflows/deploy-template.yml
 
-      - name: Install SQLCMD
-        run: |
-          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-          curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
-          sudo apt-get update
-          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+    with:
+      server: ${{ vars.PARTNER_SQL_SERVER }}
+      port: ${{ vars.PARTNER_SQL_PORT }}
+      database: AdventureWorks
+      target_name: Accountability Partner SQL Server
 
-      - name: Add SQLCMD to PATH
-        run: |
-          echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
-
-      - name: Deploy to Accountability Partner SQL Server
-        run: |
-          sqlcmd \
-            -S "${{ secrets.PARTNER_SQL_SERVER }},${{ secrets.PARTNER_SQL_PORT }}" \
-            -U "${{ secrets.PARTNER_SQL_USERNAME }}" \
-            -P "${{ secrets.PARTNER_SQL_PASSWORD }}" \
-            -C \
-            -i "Projects 2026/SQL Project/deploy.sql"
-
-      - name: Partner Deployment Complete
-        run: |
-          echo "Successfully deployed to accountability partner SQL Server."
+    secrets:
+      username: ${{ secrets.PARTNER_SQL_USERNAME }}
+      password: ${{ secrets.PARTNER_SQL_PASSWORD }}
