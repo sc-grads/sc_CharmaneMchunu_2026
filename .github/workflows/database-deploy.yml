@@ -13,7 +13,7 @@ jobs:
     with:
       server: ${{ vars.LOCAL_SQL_SERVER }}
       port: ${{ vars.LOCAL_SQL_PORT }}
-      database: AdventureWorks
+      database: CloudTunneling_CM
       target_name: Local SQL Server
 
     secrets:
