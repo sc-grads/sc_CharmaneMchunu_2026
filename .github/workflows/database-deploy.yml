@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy-database:
+
+  deploy-local:
+    name: Deploy to Local SQL Server
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +29,7 @@ jobs:
           ls -la
           ls -la "Projects 2026/SQL Project"
 
-      - name: Deploy Database
+      - name: Deploy to Local SQL Server
         run: |
           sqlcmd \
             -S "${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }}" \
@@ -36,6 +38,66 @@ jobs:
             -C \
             -i "Projects 2026/SQL Project/deploy.sql"
 
-      - name: Deployment Complete
+      - name: Local Deployment Complete
         run: |
-          echo "Database deployment completed successfully."
+          echo "Successfully deployed to local SQL Server."
+
+  notify:
+    name: Notify Teams
+    needs: deploy-local
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Teams Notification
+        run: |
+          curl -H "Content-Type: application/json" \
+          -d '{
+            "text":"Local database deployment completed successfully. Approval is required before deploying to the accountability partner SQL Server."
+          }' \
+          "${{ secrets.TEAMS_WEBHOOK_URL }}"
+
+  approval:
+    name: Manual Approval
+    needs: notify
+    runs-on: ubuntu-latest
+
+    environment:
+      name: production
+
+    steps:
+      - name: Await Approval
+        run: |
+          echo "Waiting for manual approval..."
+
+  deploy-partner:
+    name: Deploy to Accountability Partner
+    needs: approval
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install SQLCMD
+        run: |
+          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+          curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+
+      - name: Add SQLCMD to PATH
+        run: |
+          echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
+
+      - name: Deploy to Accountability Partner SQL Server
+        run: |
+          sqlcmd \
+            -S "${{ secrets.PARTNER_SQL_SERVER }},${{ secrets.PARTNER_SQL_PORT }}" \
+            -U "${{ secrets.PARTNER_SQL_USERNAME }}" \
+            -P "${{ secrets.PARTNER_SQL_PASSWORD }}" \
+            -C \
+            -i "Projects 2026/SQL Project/deploy.sql"
+
+      - name: Partner Deployment Complete
+        run: |
+          echo "Successfully deployed to accountability partner SQL Server."
