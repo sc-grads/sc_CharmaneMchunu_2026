@@ -26,13 +26,61 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Send Teams Notification
+      - name: Get Current Time
+        id: time
         run: |
-          curl -H "Content-Type: application/json" \
-          -d '{
-            "text":"Local deployment completed successfully. Approval is required before deploying to the accountability partner SQL Server."
-          }' \
-          "${{ secrets.TEAMS_WEBHOOK_URL }}"
+          echo "time=$(TZ='Africa/Johannesburg' date '+%Y-%m-%d %H:%M')" >> $GITHUB_OUTPUT
+
+      - name: Create Teams Payload
+        run: |
+          cat > payload.json <<EOF
+          {
+            "@type":"MessageCard",
+            "@context":"http://schema.org/extensions",
+            "themeColor":"0078D7",
+            "title":"🗄️ Local Database Deployment Completed",
+            "summary":"Local SQL deployment successful",
+            "sections":[
+              {
+                "facts":[
+                  {
+                    "name":"Repository",
+                    "value":"${{ github.repository }}"
+                  },
+                  {
+                    "name":"Status",
+                    "value":"SUCCESS"
+                  },
+                  {
+                    "name":"Time",
+                    "value":"${{ steps.time.outputs.time }}"
+                  }
+                ]
+              }
+            ],
+            "potentialAction":[
+              {
+                "@type":"OpenUri",
+                "name":"View Workflow Run",
+                "targets":[
+                  {
+                    "os":"default",
+                    "uri":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                ]
+              }
+            ]
+          }
+          EOF
+
+      - name: Send to Teams
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+        run: |
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d @payload.json \
+            "$TEAMS_WEBHOOK_URL"
 
   approval:
     name: Manual Approval
