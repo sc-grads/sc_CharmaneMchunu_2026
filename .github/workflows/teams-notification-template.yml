@@ -1,33 +1,25 @@
 name: Teams Notification Template
-
 on:
   workflow_call:
-
     inputs:
       title:
         required: true
         type: string
-
       summary:
         required: true
         type: string
-
       status:
         required: true
         type: string
-
       color:
         required: true
         type: string
-
     secrets:
       webhook_url:
         required: true
-
 jobs:
   notify:
     runs-on: ubuntu-latest
-
     steps:
       - name: Send Teams Notification
         run: |
@@ -48,6 +40,34 @@ jobs:
                   {
                     "name":"Status",
                     "value":"${{ inputs.status }}"
+                  },
+                  {
+                    "name":"Triggered By",
+                    "value":"${{ github.actor }}"
+                  },
+                  {
+                    "name":"Branch",
+                    "value":"${{ github.ref_name }}"
+                  },
+                  {
+                    "name":"Workflow Run",
+                    "value":"#${{ github.run_number }}"
+                  },
+                  {
+                    "name":"Timestamp",
+                    "value":"${{ github.event.head_commit.timestamp }}"
+                  }
+                ]
+              }
+            ],
+            "potentialAction":[
+              {
+                "@type":"OpenUri",
+                "name":"View Workflow Run",
+                "targets":[
+                  {
+                    "os":"default",
+                    "uri":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   }
                 ]
               }
@@ -55,7 +75,17 @@ jobs:
           }
           EOF
 
-          curl -X POST \
+          RESPONSE=$(curl -s -o response.txt -w "%{http_code}" -X POST \
             -H "Content-Type: application/json" \
             -d @payload.json \
-            "${{ secrets.webhook_url }}"
+            "${{ secrets.webhook_url }}")
+
+          echo "HTTP Status: $RESPONSE"
+          echo "Response body: $(cat response.txt)"
+
+          if [ "$RESPONSE" != "200" ]; then
+            echo "❌ Failed to send Teams notification (HTTP $RESPONSE)"
+            exit 1
+          fi
+
+          echo "✅ Notification sent successfully"
