@@ -11,14 +11,9 @@ jobs:
     uses: ./.github/workflows/deploy-template.yml
 
     with:
-      server: ${{ vars.LOCAL_SQL_SERVER }}
-      port: ${{ vars.LOCAL_SQL_PORT }}
-      database: master
+      environment_name: staging
       target_name: Dev/Test
-
-    secrets:
-      username: ${{ secrets.SQL_USERNAME }}
-      password: ${{ secrets.SQL_PASSWORD }}
+      database: master
 
   notify:
     name: Notify Approval Required
@@ -48,8 +43,7 @@ jobs:
 
     steps:
       - name: Await Approval
-        run: |
-          echo "Waiting for production approval..."
+        run: echo "Waiting for production approval..."
 
   approval_granted:
     name: Notify Approval Granted
@@ -75,14 +69,9 @@ jobs:
     uses: ./.github/workflows/deploy-template.yml
 
     with:
-      server: ${{ vars.PARTNER_SQL_SERVER }}
-      port: ${{ vars.PARTNER_SQL_PORT }}
-      database: master
+      environment_name: production
       target_name: Production
-
-    secrets:
-      username: ${{ secrets.PARTNER_SQL_USERNAME }}
-      password: ${{ secrets.PARTNER_SQL_PASSWORD }}
+      database: master
 
   deployment-success:
     name: Notify Deployment Success
