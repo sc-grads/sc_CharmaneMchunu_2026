@@ -1,114 +1,111 @@
 name: Database Deployment
-
 on:
   workflow_dispatch:
-
 jobs:
-
   devTest:
     name: Deploy to Dev/Test
-
     uses: ./.github/workflows/deploy-template.yml
-
     with:
       environment_name: staging
       target_name: Dev/Test
       database: master
-
     secrets: inherit
+
+  devTest-success:
+    name: Notify Dev/Test Success
+    needs: devTest
+    if: needs.devTest.result == 'success'
+    uses: ./.github/workflows/teams-notification-template.yml
+    with:
+      title: "✅ Dev/Test Deployment Successful"
+      summary: "Staging deployment completed successfully"
+      status: "Success"
+      color: "00AA00"
+    secrets:
+      webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
+
+  devTest-failure:
+    name: Notify Dev/Test Failure
+    needs: devTest
+    if: needs.devTest.result == 'failure'
+    uses: ./.github/workflows/teams-notification-template.yml
+    with:
+      title: "❌ Dev/Test Deployment Failed"
+      summary: "Staging deployment failed"
+      status: "Failed"
+      color: "FF0000"
+    secrets:
+      webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
 
   notify:
     name: Notify Approval Required
-
     needs: devTest
-
+    if: needs.devTest.result == 'success'
     uses: ./.github/workflows/teams-notification-template.yml
-
     with:
       title: "⏳ Approval Required"
       summary: "Production deployment awaiting approval"
       status: "Awaiting Approval"
       color: "FFA500"
-
     secrets:
       webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
 
   approval:
     name: Manual Approval
-
     needs: notify
-
     runs-on: ubuntu-latest
-
     environment:
       name: production
-
     steps:
       - name: Await Approval
         run: echo "Waiting for production approval..."
 
   approval_granted:
     name: Notify Approval Granted
-
     needs: approval
-
+    if: needs.approval.result == 'success'
     uses: ./.github/workflows/teams-notification-template.yml
-
     with:
       title: "✅ Deployment Approved"
       summary: "Production deployment approved"
       status: "Approved"
       color: "00AA00"
-
     secrets:
       webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
 
   production:
     name: Deploy to Production
-
     needs: approval_granted
-
+    if: needs.approval_granted.result == 'success'
     uses: ./.github/workflows/deploy-template.yml
-
     with:
       environment_name: production
       target_name: Production
       database: master
-
     secrets: inherit
 
   deployment-success:
     name: Notify Deployment Success
-
     needs: production
-
-    if: success()
-
+    if: needs.production.result == 'success'
     uses: ./.github/workflows/teams-notification-template.yml
-
     with:
-      title: "✅ Database Deployment Successful"
+      title: "✅ Production Deployment Successful"
       summary: "Production deployment completed successfully"
       status: "Success"
       color: "00AA00"
-
     secrets:
       webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
 
   deployment-failure:
     name: Notify Deployment Failure
-
     needs: production
-
-    if: failure()
-
+    if: needs.production.result == 'failure'
     uses: ./.github/workflows/teams-notification-template.yml
-
     with:
-      title: "❌ Database Deployment Failed"
+      title: "❌ Production Deployment Failed"
       summary: "Production deployment failed"
       status: "Failed"
       color: "FF0000"
-
     secrets:
       webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
