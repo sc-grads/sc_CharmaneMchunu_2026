@@ -50,8 +50,35 @@ jobs:
 
       - name: Verify SQL Script Exists
         run: |
+          echo "Repository contents:"
           ls -la
+
+          echo ""
+          echo "SQL Project contents:"
           ls -la "Projects 2026/SQL Project"
+
+          echo ""
+          echo "Deployment script found:"
+          test -f "Projects 2026/SQL Project/deploy.sql"
+
+      - name: Display Deployment Information
+        run: |
+          echo "================================="
+          echo "Deployment Starting"
+          echo "Target: ${{ inputs.target_name }}"
+          echo "Server: ${{ inputs.server }}"
+          echo "Port: ${{ inputs.port }}"
+          echo "Database: ${{ inputs.database }}"
+          echo "================================="
+
+      - name: Test SQL Connection
+        run: |
+          sqlcmd \
+            -S "${{ inputs.server }},${{ inputs.port }}" \
+            -U "${{ secrets.username }}" \
+            -P "${{ secrets.password }}" \
+            -C \
+            -Q "SELECT @@SERVERNAME AS ServerName"
 
       - name: Deploy Database
         run: |
@@ -61,8 +88,14 @@ jobs:
             -P "${{ secrets.password }}" \
             -d "${{ inputs.database }}" \
             -C \
+            -b \
             -i "Projects 2026/SQL Project/deploy.sql"
 
       - name: Deployment Complete
         run: |
-          echo "Successfully deployed to ${{ inputs.target_name }}"
+          echo "================================="
+          echo "Deployment Successful"
+          echo "Target: ${{ inputs.target_name }}"
+          echo "Server: ${{ inputs.server }}"
+          echo "Database: ${{ inputs.database }}"
+          echo "================================="
