@@ -1,31 +1,22 @@
 name: SQL Deployment Template
-
 on:
   workflow_call:
-
     inputs:
       environment_name:
         required: true
         type: string
-
       database:
         required: true
         type: string
-
       target_name:
         required: true
         type: string
-
 jobs:
-
   deploy:
     name: Deploy to ${{ inputs.target_name }}
-
     runs-on: ubuntu-latest
-
     environment:
       name: ${{ inputs.environment_name }}
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -38,18 +29,15 @@ jobs:
           sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
 
       - name: Add SQLCMD to PATH
-        run: |
-          echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
+        run: echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
 
       - name: Verify SQL Script Exists
         run: |
           echo "Repository contents:"
           ls -la
-
           echo ""
           echo "SQL Project contents:"
           ls -la "Projects 2026/SQL Project"
-
           echo ""
           echo "Deployment script found:"
           test -f "Projects 2026/SQL Project/deploy.sql"
@@ -58,10 +46,10 @@ jobs:
         run: |
           echo "================================="
           echo "Deployment Starting"
-          echo "Target: ${{ inputs.target_name }}"
-          echo "Server: ${{ vars.SQL_SERVER }}"
-          echo "Port: ${{ vars.SQL_PORT }}"
-          echo "Database: ${{ inputs.database }}"
+          echo "Target:    ${{ inputs.target_name }}"
+          echo "Server:    ${{ vars.SQL_SERVER }}"
+          echo "Port:      ${{ vars.SQL_PORT }}"
+          echo "Database:  ${{ inputs.database }}"
           echo "================================="
 
       - name: Debug Environment Values
@@ -69,8 +57,8 @@ jobs:
           USERNAME: ${{ secrets.SQL_USERNAME }}
           PASSWORD: ${{ secrets.SQL_PASSWORD }}
         run: |
-          echo "Server: ${{ vars.SQL_SERVER }}"
-          echo "Port: ${{ vars.SQL_PORT }}"
+          echo "Server:          ${{ vars.SQL_SERVER }}"
+          echo "Port:            ${{ vars.SQL_PORT }}"
           echo "Username length: ${#USERNAME}"
           echo "Password length: ${#PASSWORD}"
 
@@ -81,7 +69,7 @@ jobs:
             -U "${{ secrets.SQL_USERNAME }}" \
             -P "${{ secrets.SQL_PASSWORD }}" \
             -C \
-            -Q "SELECT @@SERVERNAME AS ServerName"
+            -Q "SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version"
 
       - name: Deploy Database
         run: |
@@ -95,10 +83,22 @@ jobs:
             -i "Projects 2026/SQL Project/deploy.sql"
 
       - name: Deployment Complete
+        if: success()
         run: |
           echo "================================="
-          echo "Deployment Successful"
-          echo "Target: ${{ inputs.target_name }}"
-          echo "Server: ${{ vars.SQL_SERVER }}"
-          echo "Database: ${{ inputs.database }}"
+          echo "✅ Deployment Successful"
+          echo "Target:    ${{ inputs.target_name }}"
+          echo "Server:    ${{ vars.SQL_SERVER }}"
+          echo "Database:  ${{ inputs.database }}"
+          echo "================================="
+
+      - name: Deployment Failed
+        if: failure()
+        run: |
+          echo "================================="
+          echo "❌ Deployment Failed"
+          echo "Target:    ${{ inputs.target_name }}"
+          echo "Server:    ${{ vars.SQL_SERVER }}"
+          echo "Database:  ${{ inputs.database }}"
+          echo "Check the Deploy Database step above for error details."
           echo "================================="
