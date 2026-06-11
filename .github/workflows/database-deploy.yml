@@ -5,8 +5,8 @@ on:
 
 jobs:
 
-  deploy-local:
-    name: Deploy to Local SQL Server
+  devTest:
+    name: Deploy to Dev/Test
 
     uses: ./.github/workflows/deploy-template.yml
 
@@ -14,7 +14,7 @@ jobs:
       server: ${{ vars.LOCAL_SQL_SERVER }}
       port: ${{ vars.LOCAL_SQL_PORT }}
       database: master
-      target_name: Local SQL Server
+      target_name: Dev/Test
 
     secrets:
       username: ${{ secrets.SQL_USERNAME }}
@@ -22,7 +22,7 @@ jobs:
 
   notify:
     name: Notify Approval Required
-    needs: deploy-local
+    needs: devTest
     runs-on: ubuntu-latest
 
     steps:
@@ -104,13 +104,17 @@ jobs:
             "@context":"http://schema.org/extensions",
             "themeColor":"00AA00",
             "title":"✅ Deployment Approved",
-            "summary":"Approval granted for remote deployment",
+            "summary":"Approval granted for production deployment",
             "sections":[
               {
                 "facts":[
                   {
                     "name":"Repository",
                     "value":"${{ github.repository }}"
+                  },
+                  {
+                    "name":"Environment",
+                    "value":"Production"
                   },
                   {
                     "name":"Status",
@@ -127,8 +131,8 @@ jobs:
             -d @payload.json \
             "$TEAMS_WEBHOOK_URL"
 
-  deploy-partner:
-    name: Deploy to Accountability Partner
+  production:
+    name: Deploy to Production
 
     needs: approval_granted
 
@@ -138,7 +142,7 @@ jobs:
       server: ${{ vars.PARTNER_SQL_SERVER }}
       port: ${{ vars.PARTNER_SQL_PORT }}
       database: master
-      target_name: Accountability Partner SQL Server
+      target_name: Production
 
     secrets:
       username: ${{ secrets.PARTNER_SQL_USERNAME }}
@@ -147,7 +151,7 @@ jobs:
   deployment-success:
     name: Notify Deployment Success
 
-    needs: deploy-partner
+    needs: production
 
     if: success()
 
@@ -164,7 +168,7 @@ jobs:
             "@context":"http://schema.org/extensions",
             "themeColor":"00AA00",
             "title":"✅ Database Deployment Successful",
-            "summary":"Remote deployment completed successfully",
+            "summary":"Production deployment completed successfully",
             "sections":[
               {
                 "facts":[
@@ -174,7 +178,7 @@ jobs:
                   },
                   {
                     "name":"Target",
-                    "value":"Accountability Partner SQL Server"
+                    "value":"Production"
                   },
                   {
                     "name":"Status",
@@ -206,7 +210,7 @@ jobs:
   deployment-failure:
     name: Notify Deployment Failure
 
-    needs: deploy-partner
+    needs: production
 
     if: failure()
 
@@ -223,7 +227,7 @@ jobs:
             "@context":"http://schema.org/extensions",
             "themeColor":"FF0000",
             "title":"❌ Database Deployment Failed",
-            "summary":"Remote deployment failed",
+            "summary":"Production deployment failed",
             "sections":[
               {
                 "facts":[
@@ -233,7 +237,7 @@ jobs:
                   },
                   {
                     "name":"Target",
-                    "value":"Accountability Partner SQL Server"
+                    "value":"Production"
                   },
                   {
                     "name":"Status",
