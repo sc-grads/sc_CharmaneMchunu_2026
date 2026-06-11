@@ -4,11 +4,7 @@ on:
   workflow_call:
 
     inputs:
-      server:
-        required: true
-        type: string
-
-      port:
+      environment_name:
         required: true
         type: string
 
@@ -20,18 +16,15 @@ on:
         required: true
         type: string
 
-    secrets:
-      username:
-        required: true
-
-      password:
-        required: true
-
 jobs:
 
   deploy:
     name: Deploy to ${{ inputs.target_name }}
+
     runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ inputs.environment_name }}
 
     steps:
       - name: Checkout Repository
@@ -66,26 +59,26 @@ jobs:
           echo "================================="
           echo "Deployment Starting"
           echo "Target: ${{ inputs.target_name }}"
-          echo "Server: ${{ inputs.server }}"
-          echo "Port: ${{ inputs.port }}"
+          echo "Server: ${{ vars.SQL_SERVER }}"
+          echo "Port: ${{ vars.SQL_PORT }}"
           echo "Database: ${{ inputs.database }}"
           echo "================================="
 
       - name: Test SQL Connection
         run: |
           sqlcmd \
-            -S "${{ inputs.server }},${{ inputs.port }}" \
-            -U "${{ secrets.username }}" \
-            -P "${{ secrets.password }}" \
+            -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" \
+            -U "${{ secrets.SQL_USERNAME }}" \
+            -P "${{ secrets.SQL_PASSWORD }}" \
             -C \
             -Q "SELECT @@SERVERNAME AS ServerName"
 
       - name: Deploy Database
         run: |
           sqlcmd \
-            -S "${{ inputs.server }},${{ inputs.port }}" \
-            -U "${{ secrets.username }}" \
-            -P "${{ secrets.password }}" \
+            -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" \
+            -U "${{ secrets.SQL_USERNAME }}" \
+            -P "${{ secrets.SQL_PASSWORD }}" \
             -d "${{ inputs.database }}" \
             -C \
             -b \
@@ -96,6 +89,6 @@ jobs:
           echo "================================="
           echo "Deployment Successful"
           echo "Target: ${{ inputs.target_name }}"
-          echo "Server: ${{ inputs.server }}"
+          echo "Server: ${{ vars.SQL_SERVER }}"
           echo "Database: ${{ inputs.database }}"
           echo "================================="
