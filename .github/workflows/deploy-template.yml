@@ -64,6 +64,16 @@ jobs:
           echo "Database: ${{ inputs.database }}"
           echo "================================="
 
+      - name: Debug Environment Values
+        env:
+          USERNAME: ${{ secrets.SQL_USERNAME }}
+          PASSWORD: ${{ secrets.SQL_PASSWORD }}
+        run: |
+          echo "Server: ${{ vars.SQL_SERVER }}"
+          echo "Port: ${{ vars.SQL_PORT }}"
+          echo "Username length: ${#USERNAME}"
+          echo "Password length: ${#PASSWORD}"
+
       - name: Test SQL Connection
         run: |
           sqlcmd \
