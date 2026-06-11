@@ -14,7 +14,8 @@ jobs:
       environment_name: staging
       target_name: Dev/Test
       database: master
-    secrets: inherit  
+
+    secrets: inherit
 
   notify:
     name: Notify Approval Required
@@ -73,8 +74,8 @@ jobs:
       environment_name: production
       target_name: Production
       database: master
-    secrets: inherit    
-      
+
+    secrets: inherit
 
   deployment-success:
     name: Notify Deployment Success
