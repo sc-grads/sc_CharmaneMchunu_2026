@@ -22,62 +22,25 @@ jobs:
 
   notify:
     name: Notify Approval Required
+
     needs: devTest
-    runs-on: ubuntu-latest
 
-    steps:
-      - name: Send Approval Request to Teams
-        env:
-          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
-        run: |
-          cat > payload.json <<EOF
-          {
-            "@type":"MessageCard",
-            "@context":"http://schema.org/extensions",
-            "themeColor":"FFA500",
-            "title":"⏳ Approval Required",
-            "summary":"Database deployment awaiting approval",
-            "sections":[
-              {
-                "facts":[
-                  {
-                    "name":"Repository",
-                    "value":"${{ github.repository }}"
-                  },
-                  {
-                    "name":"Environment",
-                    "value":"Production"
-                  },
-                  {
-                    "name":"Status",
-                    "value":"Awaiting Approval"
-                  }
-                ]
-              }
-            ],
-            "potentialAction":[
-              {
-                "@type":"OpenUri",
-                "name":"Review Workflow",
-                "targets":[
-                  {
-                    "os":"default",
-                    "uri":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                  }
-                ]
-              }
-            ]
-          }
-          EOF
+    uses: ./.github/workflows/teams-notification-template.yml
 
-          curl -X POST \
-            -H "Content-Type: application/json" \
-            -d @payload.json \
-            "$TEAMS_WEBHOOK_URL"
+    with:
+      title: "⏳ Approval Required"
+      summary: "Production deployment awaiting approval"
+      status: "Awaiting Approval"
+      color: "FFA500"
+
+    secrets:
+      webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
 
   approval:
     name: Manual Approval
+
     needs: notify
+
     runs-on: ubuntu-latest
 
     environment:
@@ -86,50 +49,23 @@ jobs:
     steps:
       - name: Await Approval
         run: |
-          echo "Waiting for manual approval..."
+          echo "Waiting for production approval..."
 
   approval_granted:
     name: Notify Approval Granted
+
     needs: approval
-    runs-on: ubuntu-latest
 
-    steps:
-      - name: Send Approval Granted Notification
-        env:
-          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
-        run: |
-          cat > payload.json <<EOF
-          {
-            "@type":"MessageCard",
-            "@context":"http://schema.org/extensions",
-            "themeColor":"00AA00",
-            "title":"✅ Deployment Approved",
-            "summary":"Approval granted for production deployment",
-            "sections":[
-              {
-                "facts":[
-                  {
-                    "name":"Repository",
-                    "value":"${{ github.repository }}"
-                  },
-                  {
-                    "name":"Environment",
-                    "value":"Production"
-                  },
-                  {
-                    "name":"Status",
-                    "value":"Approved"
-                  }
-                ]
-              }
-            ]
-          }
-          EOF
+    uses: ./.github/workflows/teams-notification-template.yml
 
-          curl -X POST \
-            -H "Content-Type: application/json" \
-            -d @payload.json \
-            "$TEAMS_WEBHOOK_URL"
+    with:
+      title: "✅ Deployment Approved"
+      summary: "Production deployment approved"
+      status: "Approved"
+      color: "00AA00"
+
+    secrets:
+      webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
 
   production:
     name: Deploy to Production
@@ -155,57 +91,16 @@ jobs:
 
     if: success()
 
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/teams-notification-template.yml
 
-    steps:
-      - name: Send Success Notification
-        env:
-          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
-        run: |
-          cat > payload.json <<EOF
-          {
-            "@type":"MessageCard",
-            "@context":"http://schema.org/extensions",
-            "themeColor":"00AA00",
-            "title":"✅ Database Deployment Successful",
-            "summary":"Production deployment completed successfully",
-            "sections":[
-              {
-                "facts":[
-                  {
-                    "name":"Repository",
-                    "value":"${{ github.repository }}"
-                  },
-                  {
-                    "name":"Target",
-                    "value":"Production"
-                  },
-                  {
-                    "name":"Status",
-                    "value":"Success"
-                  }
-                ]
-              }
-            ],
-            "potentialAction":[
-              {
-                "@type":"OpenUri",
-                "name":"View Workflow",
-                "targets":[
-                  {
-                    "os":"default",
-                    "uri":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                  }
-                ]
-              }
-            ]
-          }
-          EOF
+    with:
+      title: "✅ Database Deployment Successful"
+      summary: "Production deployment completed successfully"
+      status: "Success"
+      color: "00AA00"
 
-          curl -X POST \
-            -H "Content-Type: application/json" \
-            -d @payload.json \
-            "$TEAMS_WEBHOOK_URL"
+    secrets:
+      webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
 
   deployment-failure:
     name: Notify Deployment Failure
@@ -214,54 +109,13 @@ jobs:
 
     if: failure()
 
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/teams-notification-template.yml
 
-    steps:
-      - name: Send Failure Notification
-        env:
-          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
-        run: |
-          cat > payload.json <<EOF
-          {
-            "@type":"MessageCard",
-            "@context":"http://schema.org/extensions",
-            "themeColor":"FF0000",
-            "title":"❌ Database Deployment Failed",
-            "summary":"Production deployment failed",
-            "sections":[
-              {
-                "facts":[
-                  {
-                    "name":"Repository",
-                    "value":"${{ github.repository }}"
-                  },
-                  {
-                    "name":"Target",
-                    "value":"Production"
-                  },
-                  {
-                    "name":"Status",
-                    "value":"Failed"
-                  }
-                ]
-              }
-            ],
-            "potentialAction":[
-              {
-                "@type":"OpenUri",
-                "name":"View Workflow Logs",
-                "targets":[
-                  {
-                    "os":"default",
-                    "uri":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                  }
-                ]
-              }
-            ]
-          }
-          EOF
+    with:
+      title: "❌ Database Deployment Failed"
+      summary: "Production deployment failed"
+      status: "Failed"
+      color: "FF0000"
 
-          curl -X POST \
-            -H "Content-Type: application/json" \
-            -d @payload.json \
-            "$TEAMS_WEBHOOK_URL"
+    secrets:
+      webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}

@@ -1,0 +1,61 @@
+name: Teams Notification Template
+
+on:
+  workflow_call:
+
+    inputs:
+      title:
+        required: true
+        type: string
+
+      summary:
+        required: true
+        type: string
+
+      status:
+        required: true
+        type: string
+
+      color:
+        required: true
+        type: string
+
+    secrets:
+      webhook_url:
+        required: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Teams Notification
+        run: |
+          cat > payload.json <<EOF
+          {
+            "@type":"MessageCard",
+            "@context":"http://schema.org/extensions",
+            "themeColor":"${{ inputs.color }}",
+            "title":"${{ inputs.title }}",
+            "summary":"${{ inputs.summary }}",
+            "sections":[
+              {
+                "facts":[
+                  {
+                    "name":"Repository",
+                    "value":"${{ github.repository }}"
+                  },
+                  {
+                    "name":"Status",
+                    "value":"${{ inputs.status }}"
+                  }
+                ]
+              }
+            ]
+          }
+          EOF
+
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d @payload.json \
+            "${{ secrets.webhook_url }}"
