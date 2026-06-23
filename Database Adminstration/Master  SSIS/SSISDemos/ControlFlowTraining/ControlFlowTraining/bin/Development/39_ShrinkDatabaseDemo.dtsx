@@ -7,12 +7,12 @@
   DTS:CreatorName="MYLENOVOI7\KameswaraSarma"
   DTS:DTSID="{991940F0-1C92-4B7B-A2D2-78BDF5FA645A}"
   DTS:ExecutableType="Microsoft.Package"
-  DTS:LastModifiedProductVersion="13.0.4001.0"
+  DTS:LastModifiedProductVersion="17.0.1016.0"
   DTS:LocaleID="1033"
   DTS:ObjectName="39_ShrinkDatabaseDemo"
   DTS:PackageType="5"
-  DTS:VersionBuild="1"
-  DTS:VersionGUID="{BF604C59-FA05-42F8-823B-9328D373769E}">
+  DTS:VersionBuild="2"
+  DTS:VersionGUID="{AAD6E59F-7D66-4F3F-A4F2-7B3E49271867}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -29,6 +29,20 @@
   </DTS:ConnectionManagers>
   <DTS:Variables />
   <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\Data Flow Task"
+      DTS:CreationName="Microsoft.Pipeline"
+      DTS:Description="Data Flow Task"
+      DTS:DTSID="{702185BF-D911-4B54-9839-A124A327096B}"
+      DTS:ExecutableType="Microsoft.Pipeline"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Data Flow Task">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <pipeline
+          version="1" />
+      </DTS:ObjectData>
+    </DTS:Executable>
     <DTS:Executable
       DTS:refId="Package\Shrink Database Task"
       DTS:CreationName="Microsoft.DbMaintenanceShrinkTask"
@@ -74,6 +88,10 @@
           Size="180,41.6"
           Id="Package\Shrink Database Task"
           TopLeft="160.571431305944,107.058825030871" />
+        <NodeLayout
+          Size="150.4,41.6"
+          Id="Package\Data Flow Task"
+          TopLeft="5.5,5.5" />
       </GraphLayout>
     </LayoutInfo>
   </Package>
