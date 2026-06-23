@@ -1,0 +1,86 @@
+﻿<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="6/15/2026 2:36:33 PM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="DESKTOP-CHGLJR8"
+  DTS:CreatorName="DESKTOP-CHGLJR8\Charmaine Mchunu"
+  DTS:DTSID="{9DC4F964-2E6E-4180-A2FC-66AB52F4128C}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="17.0.1016.0"
+  DTS:LocaleID="7177"
+  DTS:ObjectName="Package1"
+  DTS:PackageType="5"
+  DTS:VersionBuild="2"
+  DTS:VersionGUID="{83476E39-A472-4FCE-B4A0-7C8DF9960A4D}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:ConnectionManagers>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[Inventory.xml]"
+      DTS:CreationName="FILE"
+      DTS:DTSID="{EA293D75-EAB0-45F1-BA64-DFC350A88A0E}"
+      DTS:ObjectName="Inventory.xml">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectionString="C:\Users\Charmaine Mchunu\Downloads\SSISDemoFiles\ssisdemofiles\Inventory.xml" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[SumOfBooksPrice]"
+      DTS:CreationName="FILE"
+      DTS:DTSID="{AB8442E2-4F0B-46D2-8AD0-AD58523C95DC}"
+      DTS:ObjectName="SumOfBooksPrice">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:FileUsageType="1"
+          DTS:ConnectionString="C:\sc_CharmaneMchunu_2026\Database Adminstration\Master  SSIS\SumOfBooksPrice" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+  </DTS:ConnectionManagers>
+  <DTS:Variables />
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\XML Path"
+      DTS:CreationName="Microsoft.XMLTask"
+      DTS:Description="XML Task"
+      DTS:DTSID="{8B5D575F-152C-4212-A4D9-C5A677A93551}"
+      DTS:ExecutableType="Microsoft.XMLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="XML Path"
+      DTS:TaskContact="XML Task; Microsoft Corporation; SQL Server 2025; � 2025 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <XMLTaskData
+          OperationType="XPATH"
+          Source="Inventory.xml"
+          SecondOperand="sum(/bookstore/book/price)"
+          SaveOperationResult="True"
+          Destination="SumOfBooksPrice"
+          OverwriteDestination="True"
+          PutResultInOneNode="True" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+  <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
+<!--This CDATA section contains the layout information of the package. The section includes information such as (x,y) coordinates, width, and height.-->
+<!--If you manually edit this section and make a mistake, you can delete it. -->
+<!--The package will still be able to load normally but the previous layout information will be lost and the designer will automatically re-arrange the elements on the design surface.-->
+<Objects
+  Version="8">
+  <!--Each node below will contain properties that do not affect runtime behavior.-->
+  <Package
+    design-time-name="Package">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph">
+        <NodeLayout
+          Size="124,41.6"
+          Id="Package\XML Path"
+          TopLeft="115.909084576098,190.666665340794" />
+      </GraphLayout>
+    </LayoutInfo>
+  </Package>
+</Objects>]]></DTS:DesignTimeProperties>
+</DTS:Executable>
