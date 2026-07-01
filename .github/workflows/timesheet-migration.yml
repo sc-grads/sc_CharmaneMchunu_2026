@@ -1,0 +1,62 @@
+name: Test - Run Migration (Staging)
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+jobs:
+  test-migration:
+    name: Test Run spRunTimesheetMigration
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    steps:
+      - name: Install SQLCMD
+        run: |
+          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+          curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+
+      - name: Add SQLCMD to PATH
+        run: echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
+
+      - name: Test SQL Connection
+        run: |
+          sqlcmd \
+            -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" \
+            -U "${{ secrets.SQL_USERNAME }}" \
+            -P "${{ secrets.SQL_PASSWORD }}" \
+            -C \
+            -Q "SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version"
+
+      - name: Run spRunTimesheetMigration
+        id: run_migration
+        run: |
+          RESULT=$(sqlcmd \
+            -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" \
+            -U "${{ secrets.SQL_USERNAME }}" \
+            -P "${{ secrets.SQL_PASSWORD }}" \
+            -d "TimesheetDB" \
+            -C -h -1 -W \
+            -Q "SET NOCOUNT ON; EXEC spRunTimesheetMigration;")
+
+          echo "Raw output:"
+          echo "$RESULT"
+
+          EXIT_CODE=$(echo "$RESULT" | awk 'NF{print $1; exit}')
+          STATUS=$(echo "$RESULT" | awk 'NF{$1=""; print substr($0,2); exit}')
+
+          echo "================================="
+          echo "ExitCode: $EXIT_CODE"
+          echo "Status:   $STATUS"
+          echo "================================="
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "Migration reported failure (ExitCode=$EXIT_CODE)"
+            exit 1
+          fi
+
+      - name: Result
+        if: success()
+        run: echo "Migration executed successfully"
