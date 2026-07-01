@@ -8,6 +8,8 @@
         <UseWinAuth>false</UseWinAuth>
         <WinAuthUserName />
         <WinAuthDomain />
+        <ServerName>DESKTOP-CHGLJR8</ServerName>
+        <PathOnServer>/SSISDB/TimesheetDataPipeline/TimesheetsMigrationSSIS</PathOnServer>
         <UserIDs />
         <UserPasswords />
         <OfflineMode>false</OfflineMode>

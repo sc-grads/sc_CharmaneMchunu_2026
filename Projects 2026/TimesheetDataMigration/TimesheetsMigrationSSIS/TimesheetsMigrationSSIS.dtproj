@@ -26,7 +26,7 @@
           <SSIS:Property SSIS:Name="CreatorComputerName">DESKTOP-CHGLJR8</SSIS:Property>
           <SSIS:Property SSIS:Name="Description">
           </SSIS:Property>
-          <SSIS:Property SSIS:Name="PasswordVerifier" SSIS:Sensitive="1">AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAYQfWdxJpS020D86eZbsB1QAAAAACAAAAAAAQZgAAAAEAACAAAAAJiBw8XqxPF1Iugy+0VHo3qcGN9+GVuyV+BE8W1uyE4QAAAAAOgAAAAAIAACAAAAAmQuO4tWRPNy8svk+7ouoB56mMaTyG5pWK2BfWKoln2pAAAACaBe67Cb23n/xI/obGTknlJiHR/ZzIfOTXRBoqIEIj6abN4NkWVM5FHoYdlFJOF/mHGRPwB0ddKovY8OxAEFkh4zAt5lTQ4+165w9OdF8mxwi3tTyCPoJZHFU9A8SbL7ujgwoq2aZGtjegkM+du/wsLIo6ecUHzAvyZnJ3QziuHD7fivrb2MwbcuWM1x9LipZAAAAAtG1sgCUrGunrzJIam0SoaGASSaCbhZXtAQxTZKurjv64AbnfiQ7zCpAkrQzUVhZ6o0wEebhoF2PrOFi7OXKSpw==</SSIS:Property>
+          <SSIS:Property SSIS:Name="PasswordVerifier" SSIS:Sensitive="1">AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAYQfWdxJpS020D86eZbsB1QAAAAACAAAAAAAQZgAAAAEAACAAAAD2rnYlFQ/OpH8gI4Q+NvM7778uLVNepJCwx06PThqRdAAAAAAOgAAAAAIAACAAAAAACbCbMwqWXekAF2OqkNK0Teh9QryCSrsi1arczmA8MJAAAADXNyQvZChGHu38pJxGGF/aNsO2KH0A+6bjiLQoj0p2IEerVG+seunyT2srDYnsKG2I3f7yAJoG/lmA9MQb+Pk3xAddcol3TNVB9krJR27eWccbET8xnBQFw6VoV05N81R+2UbNkIjD2h8npMrDwcDJjVkZbIcLIsb21luXrtr2YqEATKLux+zvYuQ4SViIsthAAAAAoqu572LomliveQ5JFFrvaAQ0UQ28BjbHKcGz00Wl1VJ70RcLWJlkyR1NB85JnoqUu2g/WvFM0wbO4Kd+3UBX+A==</SSIS:Property>
           <SSIS:Property SSIS:Name="FormatVersion">1</SSIS:Property>
         </SSIS:Properties>
         <SSIS:Packages>
@@ -42,114 +42,16 @@
                 <SSIS:Property SSIS:Name="Name">ImportTimesheets</SSIS:Property>
                 <SSIS:Property SSIS:Name="VersionMajor">1</SSIS:Property>
                 <SSIS:Property SSIS:Name="VersionMinor">0</SSIS:Property>
-                <SSIS:Property SSIS:Name="VersionBuild">174</SSIS:Property>
+                <SSIS:Property SSIS:Name="VersionBuild">303</SSIS:Property>
                 <SSIS:Property SSIS:Name="VersionComments">
                 </SSIS:Property>
-                <SSIS:Property SSIS:Name="VersionGUID">{42887CE9-3DA8-4CFE-A372-B3A4A72F4431}</SSIS:Property>
+                <SSIS:Property SSIS:Name="VersionGUID">{40CDACDA-2C5D-41CF-B554-B26C03C90CC3}</SSIS:Property>
                 <SSIS:Property SSIS:Name="PackageFormatVersion">8</SSIS:Property>
                 <SSIS:Property SSIS:Name="Description">
                 </SSIS:Property>
                 <SSIS:Property SSIS:Name="ProtectionLevel">1</SSIS:Property>
               </SSIS:Properties>
               <SSIS:Parameters>
-                <SSIS:Parameter SSIS:Name="BatchID">
-                  <SSIS:Properties>
-                    <SSIS:Property SSIS:Name="ID">{DA127608-BFDF-4AC4-8705-F850F6772931}</SSIS:Property>
-                    <SSIS:Property SSIS:Name="CreationName">
-                    </SSIS:Property>
-                    <SSIS:Property SSIS:Name="Description">
-                    </SSIS:Property>
-                    <SSIS:Property SSIS:Name="IncludeInDebugDump">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Required">1</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Sensitive">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Value">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="DataType">9</SSIS:Property>
-                  </SSIS:Properties>
-                </SSIS:Parameter>
-                <SSIS:Parameter SSIS:Name="BatchSize">
-                  <SSIS:Properties>
-                    <SSIS:Property SSIS:Name="ID">{6FE939F9-5295-4A16-8C81-AB28F9045868}</SSIS:Property>
-                    <SSIS:Property SSIS:Name="CreationName">
-                    </SSIS:Property>
-                    <SSIS:Property SSIS:Name="Description">
-                    </SSIS:Property>
-                    <SSIS:Property SSIS:Name="IncludeInDebugDump">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Required">1</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Sensitive">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Value">1000</SSIS:Property>
-                    <SSIS:Property SSIS:Name="DataType">9</SSIS:Property>
-                  </SSIS:Properties>
-                </SSIS:Parameter>
-                <SSIS:Parameter SSIS:Name="EnableAudit">
-                  <SSIS:Properties>
-                    <SSIS:Property SSIS:Name="ID">{DD9BBEE8-0F7C-43DE-81C1-698770C277EE}</SSIS:Property>
-                    <SSIS:Property SSIS:Name="CreationName">
-                    </SSIS:Property>
-                    <SSIS:Property SSIS:Name="Description">
-                    </SSIS:Property>
-                    <SSIS:Property SSIS:Name="IncludeInDebugDump">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Required">1</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Sensitive">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Value">true</SSIS:Property>
-                    <SSIS:Property SSIS:Name="DataType">3</SSIS:Property>
-                  </SSIS:Properties>
-                </SSIS:Parameter>
-                <SSIS:Parameter SSIS:Name="ErrorThreshold">
-                  <SSIS:Properties>
-                    <SSIS:Property SSIS:Name="ID">{27C447C3-6444-4EB7-80FD-B41076B8EFA3}</SSIS:Property>
-                    <SSIS:Property SSIS:Name="CreationName">
-                    </SSIS:Property>
-                    <SSIS:Property SSIS:Name="Description">
-                    </SSIS:Property>
-                    <SSIS:Property SSIS:Name="IncludeInDebugDump">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Required">1</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Sensitive">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Value">5</SSIS:Property>
-                    <SSIS:Property SSIS:Name="DataType">9</SSIS:Property>
-                  </SSIS:Properties>
-                </SSIS:Parameter>
-                <SSIS:Parameter SSIS:Name="MigrationName">
-                  <SSIS:Properties>
-                    <SSIS:Property SSIS:Name="ID">{8491E8B2-F704-417F-A89B-091C2DDBED81}</SSIS:Property>
-                    <SSIS:Property SSIS:Name="CreationName">
-                    </SSIS:Property>
-                    <SSIS:Property SSIS:Name="Description">
-                    </SSIS:Property>
-                    <SSIS:Property SSIS:Name="IncludeInDebugDump">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Required">1</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Sensitive">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Value">Timesheet_Import</SSIS:Property>
-                    <SSIS:Property SSIS:Name="DataType">18</SSIS:Property>
-                  </SSIS:Properties>
-                </SSIS:Parameter>
-                <SSIS:Parameter SSIS:Name="SourceTableName">
-                  <SSIS:Properties>
-                    <SSIS:Property SSIS:Name="ID">{6DBFA3EA-8F4D-42A6-BE33-4302625788F6}</SSIS:Property>
-                    <SSIS:Property SSIS:Name="CreationName">
-                    </SSIS:Property>
-                    <SSIS:Property SSIS:Name="Description">
-                    </SSIS:Property>
-                    <SSIS:Property SSIS:Name="IncludeInDebugDump">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Required">1</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Sensitive">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Value">TimesheetEntry</SSIS:Property>
-                    <SSIS:Property SSIS:Name="DataType">18</SSIS:Property>
-                  </SSIS:Properties>
-                </SSIS:Parameter>
-                <SSIS:Parameter SSIS:Name="TargetTableName">
-                  <SSIS:Properties>
-                    <SSIS:Property SSIS:Name="ID">{13EF40F9-C60B-4B05-905D-CED32AB1AA58}</SSIS:Property>
-                    <SSIS:Property SSIS:Name="CreationName">
-                    </SSIS:Property>
-                    <SSIS:Property SSIS:Name="Description">
-                    </SSIS:Property>
-                    <SSIS:Property SSIS:Name="IncludeInDebugDump">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Required">1</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Sensitive">0</SSIS:Property>
-                    <SSIS:Property SSIS:Name="Value">StageTimesheet</SSIS:Property>
-                    <SSIS:Property SSIS:Name="DataType">18</SSIS:Property>
-                  </SSIS:Properties>
-                </SSIS:Parameter>
                 <SSIS:Parameter SSIS:Name="CM.Excel Connection Manager.ConnectByProxy">
                   <SSIS:Properties>
                     <SSIS:Property SSIS:Name="ID">
