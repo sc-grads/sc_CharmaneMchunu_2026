@@ -9,147 +9,147 @@ CREATE PROCEDURE spRunTimesheetMigration
 AS
 BEGIN
     SET NOCOUNT ON;
-    
+
     DECLARE @StartTime DATETIME = GETDATE();
-    DECLARE @JobName NVARCHAR(128) = 'RunTimesheetMigration';
-    DECLARE @StatusMessage NVARCHAR(500);
-    DECLARE @ErrorMsg NVARCHAR(500);
-    DECLARE @Result INT = 0;
     DECLARE @execution_id BIGINT;
-    
+    DECLARE @status INT;
+    DECLARE @Result INT = 0;
+    DECLARE @StatusMessage NVARCHAR(500);
+    DECLARE @ErrorMsg NVARCHAR(MAX);
+
     BEGIN TRY
-        -- Log start
+
+        -- =========================================
+        -- LOG START
+        -- =========================================
         INSERT INTO dbo.AuditLog (
-            BatchID, TableName, OperationType, RecordID,
-            StatusCode, ExecutingUser, HostName, 
-            ApplicationName, EventDateTime
+            BatchID,
+            TableName,
+            OperationType,
+            StatusCode,
+            HostName,
+            ApplicationName,
+            EventDateTime
         )
         VALUES (
-            -1, 
-            'ETL_Process', 
-            'EXECUTION_START', 
-            'DIRECT_EXECUTION',
-            'RUNNING', 
-            SYSTEM_USER, 
-            HOST_NAME(), 
-            'GitHub Actions', 
+            -1,
+            'ETL_Process',
+            'EXECUTION_START',
+            'RUNNING',
+            HOST_NAME(),
+            'GitHub Actions',
             GETDATE()
         );
-        
-        -- Execute SSIS package directly using SSISDB catalog
-        EXEC SSISDB.catalog.create_execution 
+
+        -- =========================================
+        -- START SSIS EXECUTION
+        -- =========================================
+        EXEC SSISDB.catalog.create_execution
             @folder_name = 'TimesheetDataPipeline',
-            @project_name = 'TimesheetsMigrationSSIS',   
-            @package_name = 'ImportTimesheets.dtsx',      
-            @use32bitruntime = False,
-            @reference_id = NULL,
+            @project_name = 'TimesheetsMigrationSSIS',
+            @package_name = 'ImportTimesheets.dtsx',
+            @use32bitruntime = 0,
             @execution_id = @execution_id OUTPUT;
-        
-        -- Set logging level
-        EXEC SSISDB.catalog.set_execution_parameter_value 
+
+        EXEC SSISDB.catalog.set_execution_parameter_value
             @execution_id,
             @object_type = 50,
             @parameter_name = N'LOGGING_LEVEL',
             @parameter_value = 1;
-        
-        -- Start execution
-        EXEC SSISDB.catalog.start_execution @execution_id;
-        
-        SET @StatusMessage = 'SSIS Package started. Execution ID: ' + CAST(@execution_id AS VARCHAR(20));
-        PRINT @StatusMessage;
-        
-        -- Wait for execution to complete
-        DECLARE @status INT;
-        DECLARE @retry_count INT = 0;
-        DECLARE @max_retries INT = 120;
-        
-        WHILE @retry_count < @max_retries
+
+        EXEC SSISDB.catalog.start_execution
+            @execution_id;
+
+        -- =========================================
+        -- WAIT FOR COMPLETION
+        -- =========================================
+        WHILE 1 = 1
         BEGIN
             SELECT @status = [status]
             FROM SSISDB.catalog.executions
             WHERE execution_id = @execution_id;
-            
-            IF @status IN (7, 2) -- 7=Success, 2=Failed
+
+            -- 7 = Success, 4 = Failed
+            IF @status IN (7, 4)
                 BREAK;
-            
-            SET @retry_count = @retry_count + 1;
+
             WAITFOR DELAY '00:00:02';
-        END
-        
-        -- Get final status
-        SELECT 
-            @status = [status],
-            @StatusMessage = CASE 
-                WHEN [status] = 7 THEN 'SUCCESS'
-                WHEN [status] = 2 THEN 'FAILED'
-                ELSE 'RUNNING'
-            END
-        FROM SSISDB.catalog.executions
-        WHERE execution_id = @execution_id;
-        
-        -- Log completion
+        END;
+
+        -- =========================================
+        -- FINAL STATUS
+        -- =========================================
+        SET @StatusMessage =
+            CASE
+                WHEN @status = 7 THEN 'SUCCESS'
+                ELSE 'FAILED'
+            END;
+
+        SET @Result =
+            CASE
+                WHEN @status = 7 THEN 0
+                ELSE 1
+            END;
+
+        -- =========================================
+        -- LOG END
+        -- =========================================
         INSERT INTO dbo.AuditLog (
-            BatchID, TableName, OperationType, RecordID,
-            StatusCode, ErrorMessage, ExecutingUser, HostName, 
-            ApplicationName, EventDateTime, ProcessingTimeMs
+            BatchID,
+            TableName,
+            OperationType,
+            StatusCode,
+            RowsInserted,
+            HostName,
+            ApplicationName,
+            EventDateTime,
+            ErrorMessage
         )
         VALUES (
             -1,
             'ETL_Process',
             'EXECUTION_COMPLETE',
-            CAST(@execution_id AS VARCHAR(20)),
-            CASE WHEN @status = 7 THEN 'SUCCESS' ELSE 'FAILED' END,
-            CASE WHEN @status = 2 THEN 'Package execution failed' ELSE NULL END,
-            SYSTEM_USER,
+            @StatusMessage,
+            0,
             HOST_NAME(),
             'GitHub Actions',
             GETDATE(),
-            DATEDIFF(MILLISECOND, @StartTime, GETDATE())
+            CASE WHEN @status = 7 THEN NULL ELSE 'SSIS Package Failed' END
         );
-        
-        IF @status = 7
-        BEGIN
-            PRINT 'ETL completed successfully.';
-            SET @Result = 0;
-            SET @StatusMessage = 'SUCCESS';
-        END
-        ELSE
-        BEGIN
-            PRINT 'ETL failed.';
-            SET @Result = 1;
-            SET @StatusMessage = 'FAILED';
-        END
-        
+
+        SELECT @Result AS ExitCode, @StatusMessage AS Status;
+
     END TRY
     BEGIN CATCH
+
         SET @ErrorMsg = ERROR_MESSAGE();
-        
+
         INSERT INTO dbo.AuditLog (
-            BatchID, TableName, OperationType, RecordID,
-            StatusCode, ErrorMessage, ExecutingUser, HostName, 
-            ApplicationName, EventDateTime
+            BatchID,
+            TableName,
+            OperationType,
+            StatusCode,
+            HostName,
+            ApplicationName,
+            EventDateTime,
+            ErrorMessage
         )
         VALUES (
             -1,
             'ETL_Process',
             'EXECUTION_ERROR',
-            'DIRECT_EXECUTION',
             'FAILED',
-            @ErrorMsg,
-            SYSTEM_USER,
             HOST_NAME(),
             'GitHub Actions',
-            GETDATE()
+            GETDATE(),
+            @ErrorMsg
         );
-        
-        PRINT 'Error: ' + @ErrorMsg;
-        SET @Result = 1;
-        SET @StatusMessage = 'FAILED: ' + @ErrorMsg;
+
+        SELECT 1 AS ExitCode, @ErrorMsg AS Status;
+
     END CATCH
-    
-    SELECT @Result AS ExitCode, @StatusMessage AS Status;
 END;
 GO
 
-PRINT 'Stored procedure spRunTimesheetMigration created.';
+PRINT 'Stored procedure spRunTimesheetMigration updated successfully.';
 GO
