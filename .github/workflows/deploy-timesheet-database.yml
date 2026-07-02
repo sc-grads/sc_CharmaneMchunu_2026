@@ -46,10 +46,7 @@ jobs:
             exit 1
           fi
 
-      - name: check audit Log
-        run: |
-          sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" -U "${{ secrets.SQL_USERNAME }}" -P "${{ secrets.SQL_PASSWORD }}" -d "${{ vars.SQL_DATABASE }}" -C -h -1 -W -Q "SET NOCOUNT ON; SELECT TOP 5 BatchID, TableName, OperationType, StatusCode, RowsInserted, RowsUpdated, RowsDeleted, EventDateTime FROM dbo.AuditLog ORDER BY EventDateTime DESC;"
-
-      - name: Result
+    
+      - name: if it is successfull(just checking for the last time)
         if: success()
-        run: echo "Production migration is successful."
+        run: echo "migration is successful"
