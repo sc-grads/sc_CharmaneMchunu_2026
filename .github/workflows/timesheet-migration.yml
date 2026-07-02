@@ -1,16 +1,21 @@
 name: Test - Run Migration (Staging)
+
 on:
   push:
-    branches: [staging]
+    branches: [ staging ]
   workflow_dispatch:
 
 jobs:
-  test-migration:
-    name: Test Run spRunTimesheetMigration
+  deploy-and-migrate:
+    name: Deploy DB & Run Migration
     runs-on: ubuntu-latest
     environment:
       name: staging
+
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Install SQLCMD
         run: |
           curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
@@ -30,6 +35,15 @@ jobs:
             -C \
             -Q "SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version"
 
+      - name: Deploy Database Schema
+        run: |
+          sqlcmd \
+            -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" \
+            -U "${{ secrets.SQL_USERNAME }}" \
+            -P "${{ secrets.SQL_PASSWORD }}" \
+            -C -d master \
+            -i ./deploy-timesheetdb.sql
+
       - name: Run spRunTimesheetMigration
         id: run_migration
         run: |
@@ -39,24 +53,38 @@ jobs:
             -P "${{ secrets.SQL_PASSWORD }}" \
             -d "TimesheetDB" \
             -C -h -1 -W \
-            -Q "SET NOCOUNT ON; EXEC spRunTimesheetMigration;")
-
+            -Q "SET NOCOUNT ON; EXEC dbo.spRunTimesheetMigration;")
+          
           echo "Raw output:"
           echo "$RESULT"
-
-          EXIT_CODE=$(echo "$RESULT" | awk 'NF{print $1; exit}')
-          STATUS=$(echo "$RESULT" | awk 'NF{$1=""; print substr($0,2); exit}')
-
+          
+          LAST_LINE=$(echo "$RESULT" | sed '/^$/d' | tail -n 1)
+          EXIT_CODE=$(echo "$LAST_LINE" | awk '{print $1}')
+          STATUS=$(echo "$LAST_LINE" | awk '{$1=""; print substr($0,2)}' | sed 's/^ //')
+          
           echo "================================="
           echo "ExitCode: $EXIT_CODE"
           echo "Status:   $STATUS"
           echo "================================="
-
+          
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          
           if [ "$EXIT_CODE" != "0" ]; then
             echo "Migration reported failure (ExitCode=$EXIT_CODE)"
             exit 1
           fi
 
+      - name: Verify Audit Log
+        run: |
+          sqlcmd \
+            -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" \
+            -U "${{ secrets.SQL_USERNAME }}" \
+            -P "${{ secrets.SQL_PASSWORD }}" \
+            -d "TimesheetDB" \
+            -C -h -1 -W \
+            -Q "SET NOCOUNT ON; SELECT TOP 5 BatchID, TableName, OperationType, StatusCode, RowsInserted, RowsUpdated, RowsDeleted, EventDateTime FROM dbo.AuditLog ORDER BY EventDateTime DESC;"
+
       - name: Result
         if: success()
-        run: echo "Migration executed successfully"
+        run: echo "Migration executed successfully."
