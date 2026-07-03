@@ -16,89 +16,68 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ------------------------------------------------------------------
-      # Deploy SSIS project using T-SQL (catalog.deploy_project)
-      # ------------------------------------------------------------------
+      # ---- Install sqlcmd (moved earlier so it's available for the SSIS deploy step) ----
+      - name: Install sqlcmd
+        run: choco install sqlcmd -y --no-progress
+
+      # ---- Deploy SSIS project via catalog.deploy_project (no SMO/IntegrationServices assembly needed) ----
+      # windows-latest runners don't ship Microsoft.SqlServer.Management.IntegrationServices.dll,
+      # and it isn't published as a standalone NuGet package (see actions/runner-images#8174).
+      # Calling catalog.deploy_project directly sidesteps that dependency entirely.
       - name: Deploy SSIS project (TimesheetsMigrationSSIS.ispac)
         shell: pwsh
         run: |
-          $ErrorActionPreference = "Stop"
+          $ispacPath = Join-Path $env:GITHUB_WORKSPACE `
+            "Projects 2026/TimesheetDataMigration/TimesheetsMigrationSSIS/bin/Development/TimesheetsMigrationSSIS.ispac"
 
-          # Path to the .ispac in the repo
-          $ispacPath = Join-Path $env:GITHUB_WORKSPACE "Projects 2026/TimesheetDataMigration/TimesheetsMigrationSSIS/bin/Development/TimesheetsMigrationSSIS.ispac"
           if (-not (Test-Path $ispacPath)) {
             Write-Error ".ispac not found at $ispacPath"
             exit 1
           }
 
-          # Project name = filename without extension
-          $projectName = [System.IO.Path]::GetFileNameWithoutExtension($ispacPath)
-          # Folder name in SSISDB (adjust if needed)
+          Install-Module -Name SqlServer -Force -Scope CurrentUser -AllowClobber
+          Import-Module SqlServer -Force
+
+          $server      = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
+          $user        = "${{ secrets.SQL_USERNAME }}"
+          $pass        = "${{ secrets.SQL_PASSWORD }}"
           $folderName  = "TimesheetsMigration"
+          $projectName = [System.IO.Path]::GetFileNameWithoutExtension($ispacPath)
 
-          # Read the whole .ispac as bytes
-          [byte[]]$ispacBytes = [System.IO.File]::ReadAllBytes($ispacPath)
+          Write-Host "Reading ispac bytes from $ispacPath..."
+          $ispacBytes = [System.IO.File]::ReadAllBytes($ispacPath)
+          $hex = "0x" + ([System.BitConverter]::ToString($ispacBytes) -replace '-', '')
+          Write-Host "ispac size: $($ispacBytes.Length) bytes"
 
-          # Build the connection string (master or SSISDB – we need SSISDB for the catalog procs)
-          $server   = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
-          $user     = "${{ secrets.SQL_USERNAME }}"
-          $pass     = "${{ secrets.SQL_PASSWORD }}"
-          $connStr  = "Data Source=$server;Initial Catalog=SSISDB;User ID=$user;Password=$pass;"
+          $sqlFile = Join-Path $env:RUNNER_TEMP "deploy-ispac.sql"
+          @"
+          SET NOCOUNT ON;
 
-          # Open SQL connection
-          $conn = New-Object System.Data.SqlClient.SqlConnection($connStr)
-          try {
-            $conn.Open()
+          IF NOT EXISTS (SELECT 1 FROM catalog.folders WHERE name = N'$folderName')
+          BEGIN
+              EXEC catalog.create_folder @folder_name = N'$folderName';
+              PRINT 'Created folder $folderName';
+          END
 
-            # -- 1. Ensure folder exists --
-            $cmdCheckFolder = $conn.CreateCommand()
-            $cmdCheckFolder.CommandText = "SELECT COUNT(1) FROM catalog.folders WHERE name = @folder"
-            [void]$cmdCheckFolder.Parameters.AddWithValue("@folder", $folderName)
-            $folderExists = [int]$cmdCheckFolder.ExecuteScalar()
+          DECLARE @operation_id bigint;
+          DECLARE @project_stream varbinary(max) = $hex;
 
-            if ($folderExists -eq 0) {
-              Write-Host "Creating SSISDB folder '$folderName'..."
-              $cmdCreateFolder = $conn.CreateCommand()
-              $cmdCreateFolder.CommandText = "catalog.create_folder"
-              $cmdCreateFolder.CommandType = [System.Data.CommandType]::StoredProcedure
-              [void]$cmdCreateFolder.Parameters.AddWithValue("@folder_name", $folderName)
-              $cmdCreateFolder.ExecuteNonQuery()
-              Write-Host "Folder created."
-            }
-            else {
-              Write-Host "Folder '$folderName' already exists."
-            }
+          EXEC catalog.deploy_project
+              @folder_name    = N'$folderName',
+              @project_name   = N'$projectName',
+              @project_stream = @project_stream,
+              @operation_id   = @operation_id OUTPUT;
 
-            # -- 2. Deploy the project --
-            Write-Host "Deploying $projectName to folder '$folderName'..."
-            $cmdDeploy = $conn.CreateCommand()
-            $cmdDeploy.CommandText = "catalog.deploy_project"
-            $cmdDeploy.CommandType = [System.Data.CommandType]::StoredProcedure
+          SELECT @operation_id AS OperationId;
+                                "@ | Out-File -FilePath $sqlFile -Encoding utf8
 
-            [void]$cmdDeploy.Parameters.AddWithValue("@folder_name", $folderName)
-            [void]$cmdDeploy.Parameters.AddWithValue("@project_name", $projectName)
-            # Important: pass the binary stream (SqlDbType.VarBinary, size -1)
-            $paramStream = $cmdDeploy.Parameters.Add("@project_stream", [System.Data.SqlDbType]::VarBinary, -1)
-            $paramStream.Value = $ispacBytes
-            $outOpId = $cmdDeploy.Parameters.Add("@operation_id", [System.Data.SqlDbType]::BigInt)
-            $outOpId.Direction = [System.Data.ParameterDirection]::Output
-
-            $cmdDeploy.ExecuteNonQuery()
-
-            # Optional: check operation result
-            $operationId = $cmdDeploy.Parameters["@operation_id"].Value
-            Write-Host "Deployment submitted. Operation ID = $operationId"
-
-            # (You could add a loop to check operation_messages if desired)
-            Write-Host "SSIS project deployed successfully."
+          Write-Host "Deploying $projectName to folder '$folderName' via catalog.deploy_project..."
+          & sqlcmd -S $server -U $user -P $pass -C -d master -i $sqlFile
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "SSIS project deployment failed (sqlcmd exit code $LASTEXITCODE)"
+            exit 1
           }
-          finally {
-            $conn.Dispose()
-          }
-
-      # ---- Install sqlcmd ----
-      - name: Install sqlcmd
-        run: choco install sqlcmd -y --no-progress
+          Write-Host "SSIS project deployed successfully."
 
       # ---- Test connection ----
       - name: Test Connection
