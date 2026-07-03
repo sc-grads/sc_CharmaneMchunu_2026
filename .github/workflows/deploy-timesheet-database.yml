@@ -115,7 +115,7 @@ jobs:
                              -C `
                              -h -1 -W `
                              -Q "SET NOCOUNT ON; EXEC dbo.spRunTimesheetMigration;" 2>&1
-          $lines = $result -split "`n" | Where-Object { $_.Trim() -ne "" }
+          $lines = @($result -split "`n" | Where-Object { $_.Trim() -ne "" })
           if ($lines.Count -eq 0) {
             Write-Error "No output from stored procedure"
             exit 1
