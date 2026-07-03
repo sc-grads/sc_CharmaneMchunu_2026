@@ -1,5 +1,4 @@
 name: Deploy TimesheetDB
-
 on:
   push:
     branches: [ main ]
@@ -8,132 +7,46 @@ on:
 jobs:
   deploy-and-migrate:
     name: Deploy TimesheetDB
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     environment:
       name: production
-
     steps:
-      - name: Checkout code
+      - name: Checkout code,,,.
         uses: actions/checkout@v4
 
-      # ---- Install sqlcmd (moved earlier so it's available for the SSIS deploy step) ----
-      - name: Install sqlcmd
-        run: choco install sqlcmd -y --no-progress
-
-      # ---- Deploy SSIS project via catalog.deploy_project (no SMO/IntegrationServices assembly needed) ----
-      # windows-latest runners don't ship Microsoft.SqlServer.Management.IntegrationServices.dll,
-      # and it isn't published as a standalone NuGet package (see actions/runner-images#8174).
-      # Calling catalog.deploy_project directly sidesteps that dependency entirely.
-      - name: Deploy SSIS project (TimesheetsMigrationSSIS.ispac)
-        shell: pwsh
+      - name: installing SQLCMD
         run: |
-          $ispacPath = Join-Path $env:GITHUB_WORKSPACE `
-            "Projects 2026/TimesheetDataMigration/TimesheetsMigrationSSIS/bin/Development/TimesheetsMigrationSSIS.ispac"
+          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+          curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
 
-          if (-not (Test-Path $ispacPath)) {
-            Write-Error ".ispac not found at $ispacPath"
-            exit 1
-          }
+      - name: Add SQLCMD to pATH
+        run: echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
 
-          Install-Module -Name SqlServer -Force -Scope CurrentUser -AllowClobber
-          Import-Module SqlServer -Force
-
-          $server      = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
-          $user        = "${{ secrets.SQL_USERNAME }}"
-          $pass        = "${{ secrets.SQL_PASSWORD }}"
-          $folderName  = "TimesheetsMigration"
-          $projectName = [System.IO.Path]::GetFileNameWithoutExtension($ispacPath)
-
-          Write-Host "Reading ispac bytes from $ispacPath..."
-          $ispacBytes = [System.IO.File]::ReadAllBytes($ispacPath)
-          $hex = "0x" + ([System.BitConverter]::ToString($ispacBytes) -replace '-', '')
-          Write-Host "ispac size: $($ispacBytes.Length) bytes"
-
-          $sqlFile = Join-Path $env:RUNNER_TEMP "deploy-ispac.sql"
-
-          $sqlLines = @(
-            "SET NOCOUNT ON;"
-            ""
-            "IF NOT EXISTS (SELECT 1 FROM catalog.folders WHERE name = N'$folderName')"
-            "BEGIN"
-            "    EXEC catalog.create_folder @folder_name = N'$folderName';"
-            "    PRINT 'Created folder $folderName';"
-            "END"
-            ""
-            "DECLARE @operation_id bigint;"
-            "DECLARE @project_stream varbinary(max) = $hex;"
-            ""
-            "EXEC catalog.deploy_project"
-            "    @folder_name    = N'$folderName',"
-            "    @project_name   = N'$projectName',"
-            "    @project_stream = @project_stream,"
-            "    @operation_id   = @operation_id OUTPUT;"
-            ""
-            "SELECT @operation_id AS OperationId;"
-          )
-
-          $sqlLines -join "`r`n" | Out-File -FilePath $sqlFile -Encoding utf8
-
-          Write-Host "Deploying $projectName to folder '$folderName' via catalog.deploy_project..."
-          & sqlcmd -S $server -U $user -P $pass -C -d master -i $sqlFile
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "SSIS project deployment failed (sqlcmd exit code $LASTEXITCODE)"
-            exit 1
-          }
-          Write-Host "SSIS project deployed successfully."
-
-      # ---- Test connection ----
-      - name: Test Connection
-        shell: pwsh
+      - name: test Connection
         run: |
-          & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
-                   -U "${{ secrets.SQL_USERNAME }}" `
-                   -P "${{ secrets.SQL_PASSWORD }}" `
-                   -C `
-                   -Q "SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version"
+          sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" -U "${{ secrets.SQL_USERNAME }}" -P "${{ secrets.SQL_PASSWORD }}" -C -Q "SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version"
 
-      # ---- Deploy database objects ----
-      - name: Deploy database tables
-        shell: pwsh
+      - name: deploy database table
         run: |
-          & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
-                   -U "${{ secrets.SQL_USERNAME }}" `
-                   -P "${{ secrets.SQL_PASSWORD }}" `
-                   -C `
-                   -d master `
-                   -i "./deploy-timesheetdb.sql"
+          sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" -U "${{ secrets.SQL_USERNAME }}" -P "${{ secrets.SQL_PASSWORD }}" -C -d master -i ./deploy-timesheetdb.sql
 
-      # ---- Run migration ----
-      - name: Run spRunTimesheetMigration
+      - name: run spRunTimesheetMigration
         id: run_migration
-        shell: pwsh
         run: |
-          $result = & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
-                             -U "${{ secrets.SQL_USERNAME }}" `
-                             -P "${{ secrets.SQL_PASSWORD }}" `
-                             -d "${{ vars.SQL_DATABASE }}" `
-                             -C `
-                             -h -1 -W `
-                             -Q "SET NOCOUNT ON; EXEC dbo.spRunTimesheetMigration;" 2>&1
-          $lines = @($result -split "`n" | Where-Object { $_.Trim() -ne "" })
-          if ($lines.Count -eq 0) {
-            Write-Error "No output from stored procedure"
+          RESULT=$(sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" -U "${{ secrets.SQL_USERNAME }}" -P "${{ secrets.SQL_PASSWORD }}" -d "${{ vars.SQL_DATABASE }}" -C -h -1 -W -Q "SET NOCOUNT ON; EXEC dbo.spRunTimesheetMigration;")
+          LAST_LINE=$(echo "$RESULT" | sed '/^$/d' | tail -n 1)
+          EXIT_CODE=$(echo "$LAST_LINE" | awk '{print $1}')
+          STATUS=$(echo "$LAST_LINE" | awk '{$1=""; print substr($0,2)}' | sed 's/^ //')
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "migration  failed (ExitCode=$EXIT_CODE)"
             exit 1
-          }
-          $lastLine = $lines[-1].Trim()
-          $parts = $lastLine -split "\s+", 2
-          $exitCode = [int]$parts[0]
-          $status   = if ($parts.Count -gt 1) { $parts[1] } else { "" }
+          fi
 
-          "exit_code=$exitCode" >> $env:GITHUB_OUTPUT
-          "status=$status"      >> $env:GITHUB_OUTPUT
-
-          if ($exitCode -ne 0) {
-            Write-Error "Migration failed (ExitCode=$exitCode, Status=$status)"
-            exit 1
-          }
-          Write-Host "Migration successful (ExitCode=$exitCode, Status=$status)"
-
-      - name: Success confirmation
+    
+      - name: if it is successfull(just checking for the last time)
         if: success()
-        run: echo "Deployment and migration completed successfully."
+        run: echo "migration is successful"
