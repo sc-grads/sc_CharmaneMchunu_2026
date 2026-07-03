@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ---- Deploy SSIS project (with folder creation) ----
+      # ---- Deploy SSIS project (with explicit assembly loading) ----
       - name: Deploy SSIS project (TimesheetsMigrationSSIS.ispac)
         shell: pwsh
         run: |
@@ -28,9 +28,43 @@ jobs:
             exit 1
           }
 
+          # Install the SqlServer module
           Install-Module -Name SqlServer -Force -Scope CurrentUser -AllowClobber
-          Import-Module SqlServer -Force
 
+          # Locate the module folder (use latest version)
+          $module = Get-Module -ListAvailable SqlServer | Sort-Object Version -Descending | Select-Object -First 1
+          if (-not $module) {
+            Write-Error "SqlServer module not found after installation"
+            exit 1
+          }
+          $modulePath = $module.ModuleBase
+          Write-Host "SqlServer module resolved at: $modulePath"
+
+          # Explicitly locate SMO and IntegrationServices assemblies (search recursively,
+          # since the exact subfolder varies by module version/PS host)
+          $smoDll = Get-ChildItem -Path $modulePath -Recurse -Filter "Microsoft.SqlServer.Smo.dll" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+          $issDll = Get-ChildItem -Path $modulePath -Recurse -Filter "Microsoft.SqlServer.Management.IntegrationServices.dll" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+
+          if (-not $smoDll -or -not $issDll) {
+            Write-Error "Could not find required SqlServer assemblies under $modulePath. SmoDll=$smoDll IssDll=$issDll"
+            exit 1
+          }
+
+          Write-Host "Loading assembly: $smoDll"
+          Add-Type -Path $smoDll
+          Write-Host "Loading assembly: $issDll"
+          Add-Type -Path $issDll
+
+          # Sanity check: confirm the type actually loaded before using it
+          $typeCheck = [System.AppDomain]::CurrentDomain.GetAssemblies() |
+            Where-Object { $_.GetType('Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices', $false) } |
+            Select-Object -First 1
+          if (-not $typeCheck) {
+            Write-Error "IntegrationServices type still not loaded after Add-Type. Aborting."
+            exit 1
+          }
+
+          # Build connection
           $server   = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
           $user     = "${{ secrets.SQL_USERNAME }}"
           $pass     = "${{ secrets.SQL_PASSWORD }}"
@@ -47,7 +81,7 @@ jobs:
           }
 
           # Get or create the target folder
-          $folderName = "TimesheetsMigration"   # <-- adjust if your folder is named differently
+          $folderName = "TimesheetsMigration"
           $folder = $catalog.Folders[$folderName]
           if (-not $folder) {
             Write-Host "Creating folder '$folderName' in SSISDB..."
