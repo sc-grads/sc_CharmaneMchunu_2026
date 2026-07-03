@@ -50,26 +50,29 @@ jobs:
           Write-Host "ispac size: $($ispacBytes.Length) bytes"
 
           $sqlFile = Join-Path $env:RUNNER_TEMP "deploy-ispac.sql"
-          @"
-          SET NOCOUNT ON;
 
-          IF NOT EXISTS (SELECT 1 FROM catalog.folders WHERE name = N'$folderName')
-          BEGIN
-              EXEC catalog.create_folder @folder_name = N'$folderName';
-              PRINT 'Created folder $folderName';
-          END
+          $sqlLines = @(
+            "SET NOCOUNT ON;"
+            ""
+            "IF NOT EXISTS (SELECT 1 FROM catalog.folders WHERE name = N'$folderName')"
+            "BEGIN"
+            "    EXEC catalog.create_folder @folder_name = N'$folderName';"
+            "    PRINT 'Created folder $folderName';"
+            "END"
+            ""
+            "DECLARE @operation_id bigint;"
+            "DECLARE @project_stream varbinary(max) = $hex;"
+            ""
+            "EXEC catalog.deploy_project"
+            "    @folder_name    = N'$folderName',"
+            "    @project_name   = N'$projectName',"
+            "    @project_stream = @project_stream,"
+            "    @operation_id   = @operation_id OUTPUT;"
+            ""
+            "SELECT @operation_id AS OperationId;"
+          )
 
-          DECLARE @operation_id bigint;
-          DECLARE @project_stream varbinary(max) = $hex;
-
-          EXEC catalog.deploy_project
-              @folder_name    = N'$folderName',
-              @project_name   = N'$projectName',
-              @project_stream = @project_stream,
-              @operation_id   = @operation_id OUTPUT;
-
-          SELECT @operation_id AS OperationId;
-                                "@ | Out-File -FilePath $sqlFile -Encoding utf8
+          $sqlLines -join "`r`n" | Out-File -FilePath $sqlFile -Encoding utf8
 
           Write-Host "Deploying $projectName to folder '$folderName' via catalog.deploy_project..."
           & sqlcmd -S $server -U $user -P $pass -C -d master -i $sqlFile
