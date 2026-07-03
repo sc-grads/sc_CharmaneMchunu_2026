@@ -1,4 +1,4 @@
-name: Timesheet Database Deployment
+name: Testing Timesheet Database Deployment
 
 on:
   workflow_dispatch:
