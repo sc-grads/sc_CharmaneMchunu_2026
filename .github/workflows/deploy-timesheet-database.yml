@@ -174,6 +174,64 @@ jobs:
                    -d master `
                    -i "./deploy-timesheetdb.sql"
 
+      # ---- Run SSIS job and wait for completion ----
+      # spRunTimesheetMigration does NOT trigger the SSIS package — it only moves rows that
+      # are already sitting in dbo.StagingTimesheet. Without this step, StagingTimesheet stays
+      # empty, spRunTimesheetMigration exits immediately with "no new data", and nothing lands
+      # in the real tables. sp_start_job is fire-and-forget, so we poll catalog.executions
+      # until the run reaches a terminal status before proceeding.
+      - name: Run SSIS package and wait for completion
+        shell: pwsh
+        run: |
+          $server  = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
+          $user    = "${{ secrets.SQL_USERNAME }}"
+          $pass    = "${{ secrets.SQL_PASSWORD }}"
+          $jobName = "RunTimesheetDataPipeline"
+
+          Write-Host "Starting SQL Agent job '$jobName'..."
+          & sqlcmd -S $server -U $user -P $pass -C -d master -Q "EXEC msdb.dbo.sp_start_job @job_name = N'$jobName';"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to start SQL Agent job '$jobName' (sqlcmd exit code $LASTEXITCODE)"
+            exit 1
+          }
+
+          # Give the job a moment to register an execution row in SSISDB before polling
+          Start-Sleep -Seconds 5
+
+          $maxWaitSeconds     = 600
+          $pollIntervalSeconds = 10
+          $elapsed            = 0
+          $finalStatus        = $null
+          $statusQuery        = "SET NOCOUNT ON; SELECT TOP 1 status FROM SSISDB.catalog.executions ORDER BY start_time DESC;"
+
+          while ($elapsed -lt $maxWaitSeconds) {
+            $result = & sqlcmd -S $server -U $user -P $pass -C -d master -h -1 -W -Q $statusQuery
+            $statusLine = @($result | Where-Object { $_.Trim() -ne "" }) | Select-Object -Last 1
+            if ($statusLine) {
+              $statusCode = [int]($statusLine.Trim())
+              Write-Host "Execution status code: $statusCode (elapsed: ${elapsed}s)"
+              # Terminal states: 3 canceled, 4 failed, 6 ended unexpectedly, 7 succeeded
+              if ($statusCode -in 3, 4, 6, 7) {
+                $finalStatus = $statusCode
+                break
+              }
+            }
+            Start-Sleep -Seconds $pollIntervalSeconds
+            $elapsed += $pollIntervalSeconds
+          }
+
+          if ($null -eq $finalStatus) {
+            Write-Error "Timed out waiting for SSIS execution to complete after $maxWaitSeconds seconds"
+            exit 1
+          }
+
+          if ($finalStatus -ne 7) {
+            Write-Error "SSIS execution did not succeed (status code $finalStatus). Check catalog.operation_messages for details."
+            exit 1
+          }
+
+          Write-Host "SSIS package execution completed successfully."
+
       # ---- Run migration ----
       - name: Run spRunTimesheetMigration
         id: run_migration
