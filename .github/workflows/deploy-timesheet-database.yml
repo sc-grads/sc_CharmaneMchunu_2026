@@ -28,7 +28,7 @@ jobs:
             exit 1
           }
 
-          # Install the SqlServer module
+          # Install the SqlServer module (provides SMO)
           Install-Module -Name SqlServer -Force -Scope CurrentUser -AllowClobber
 
           # Locate the module folder (use latest version)
@@ -40,13 +40,30 @@ jobs:
           $modulePath = $module.ModuleBase
           Write-Host "SqlServer module resolved at: $modulePath"
 
-          # Explicitly locate SMO and IntegrationServices assemblies (search recursively,
-          # since the exact subfolder varies by module version/PS host)
-          $smoDll = Get-ChildItem -Path $modulePath -Recurse -Filter "Microsoft.SqlServer.Smo.dll" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-          $issDll = Get-ChildItem -Path $modulePath -Recurse -Filter "Microsoft.SqlServer.Management.IntegrationServices.dll" -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+          # Locate the SMO assembly (search recursively; exact subfolder varies by module version/PS host)
+          $smoDll = Get-ChildItem -Path $modulePath -Recurse -Filter "Microsoft.SqlServer.Smo.dll" -ErrorAction SilentlyContinue |
+            Select-Object -First 1 -ExpandProperty FullName
 
-          if (-not $smoDll -or -not $issDll) {
-            Write-Error "Could not find required SqlServer assemblies under $modulePath. SmoDll=$smoDll IssDll=$issDll"
+          if (-not $smoDll) {
+            Write-Error "Could not find Microsoft.SqlServer.Smo.dll under $modulePath"
+            exit 1
+          }
+
+          # NOTE: newer versions of the SqlServer PS module (21.x/22.x) no longer bundle
+          # Microsoft.SqlServer.Management.IntegrationServices.dll. Pull it from NuGet instead.
+          $nugetDir = Join-Path $env:RUNNER_TEMP "iss-nuget"
+          New-Item -ItemType Directory -Path $nugetDir -Force | Out-Null
+          $nupkgPath = Join-Path $nugetDir "iss.zip"
+
+          Write-Host "Downloading Microsoft.SqlServer.Management.IntegrationServices from NuGet..."
+          Invoke-WebRequest -Uri "https://www.nuget.org/api/v2/package/Microsoft.SqlServer.Management.IntegrationServices" -OutFile $nupkgPath -UseBasicParsing
+          Expand-Archive -Path $nupkgPath -DestinationPath $nugetDir -Force
+
+          $issDll = Get-ChildItem -Path $nugetDir -Recurse -Filter "Microsoft.SqlServer.Management.IntegrationServices.dll" -ErrorAction SilentlyContinue |
+            Select-Object -First 1 -ExpandProperty FullName
+
+          if (-not $issDll) {
+            Write-Error "Could not find Microsoft.SqlServer.Management.IntegrationServices.dll after NuGet download"
             exit 1
           }
 
@@ -56,10 +73,10 @@ jobs:
           Add-Type -Path $issDll
 
           # Sanity check: confirm the type actually loaded before using it
-          $typeCheck = [System.AppDomain]::CurrentDomain.GetAssemblies() |
+          $typeLoaded = [System.AppDomain]::CurrentDomain.GetAssemblies() |
             Where-Object { $_.GetType('Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices', $false) } |
             Select-Object -First 1
-          if (-not $typeCheck) {
+          if (-not $typeLoaded) {
             Write-Error "IntegrationServices type still not loaded after Add-Type. Aborting."
             exit 1
           }
