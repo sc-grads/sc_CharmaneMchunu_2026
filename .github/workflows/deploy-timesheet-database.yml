@@ -16,100 +16,85 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ---- Deploy SSIS project (with explicit assembly loading) ----
+      # ------------------------------------------------------------------
+      # Deploy SSIS project using T-SQL (catalog.deploy_project)
+      # ------------------------------------------------------------------
       - name: Deploy SSIS project (TimesheetsMigrationSSIS.ispac)
         shell: pwsh
         run: |
-          $ispacPath = Join-Path $env:GITHUB_WORKSPACE `
-            "Projects 2026/TimesheetDataMigration/TimesheetsMigrationSSIS/bin/Development/TimesheetsMigrationSSIS.ispac"
+          $ErrorActionPreference = "Stop"
 
+          # Path to the .ispac in the repo
+          $ispacPath = Join-Path $env:GITHUB_WORKSPACE "Projects 2026/TimesheetDataMigration/TimesheetsMigrationSSIS/bin/Development/TimesheetsMigrationSSIS.ispac"
           if (-not (Test-Path $ispacPath)) {
             Write-Error ".ispac not found at $ispacPath"
             exit 1
           }
 
-          # Install the SqlServer module (provides SMO)
-          Install-Module -Name SqlServer -Force -Scope CurrentUser -AllowClobber
+          # Project name = filename without extension
+          $projectName = [System.IO.Path]::GetFileNameWithoutExtension($ispacPath)
+          # Folder name in SSISDB (adjust if needed)
+          $folderName  = "TimesheetsMigration"
 
-          # Locate the module folder (use latest version)
-          $module = Get-Module -ListAvailable SqlServer | Sort-Object Version -Descending | Select-Object -First 1
-          if (-not $module) {
-            Write-Error "SqlServer module not found after installation"
-            exit 1
-          }
-          $modulePath = $module.ModuleBase
-          Write-Host "SqlServer module resolved at: $modulePath"
+          # Read the whole .ispac as bytes
+          [byte[]]$ispacBytes = [System.IO.File]::ReadAllBytes($ispacPath)
 
-          # Locate the SMO assembly (search recursively; exact subfolder varies by module version/PS host)
-          $smoDll = Get-ChildItem -Path $modulePath -Recurse -Filter "Microsoft.SqlServer.Smo.dll" -ErrorAction SilentlyContinue |
-            Select-Object -First 1 -ExpandProperty FullName
-
-          if (-not $smoDll) {
-            Write-Error "Could not find Microsoft.SqlServer.Smo.dll under $modulePath"
-            exit 1
-          }
-
-          # NOTE: newer versions of the SqlServer PS module (21.x/22.x) no longer bundle
-          # Microsoft.SqlServer.Management.IntegrationServices.dll. Pull it from NuGet instead.
-          $nugetDir = Join-Path $env:RUNNER_TEMP "iss-nuget"
-          New-Item -ItemType Directory -Path $nugetDir -Force | Out-Null
-          $nupkgPath = Join-Path $nugetDir "iss.zip"
-
-          Write-Host "Downloading Microsoft.SqlServer.Management.IntegrationServices from NuGet..."
-          Invoke-WebRequest -Uri "https://www.nuget.org/api/v2/package/Microsoft.SqlServer.Management.IntegrationServices" -OutFile $nupkgPath -UseBasicParsing
-          Expand-Archive -Path $nupkgPath -DestinationPath $nugetDir -Force
-
-          $issDll = Get-ChildItem -Path $nugetDir -Recurse -Filter "Microsoft.SqlServer.Management.IntegrationServices.dll" -ErrorAction SilentlyContinue |
-            Select-Object -First 1 -ExpandProperty FullName
-
-          if (-not $issDll) {
-            Write-Error "Could not find Microsoft.SqlServer.Management.IntegrationServices.dll after NuGet download"
-            exit 1
-          }
-
-          Write-Host "Loading assembly: $smoDll"
-          Add-Type -Path $smoDll
-          Write-Host "Loading assembly: $issDll"
-          Add-Type -Path $issDll
-
-          # Sanity check: confirm the type actually loaded before using it
-          $typeLoaded = [System.AppDomain]::CurrentDomain.GetAssemblies() |
-            Where-Object { $_.GetType('Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices', $false) } |
-            Select-Object -First 1
-          if (-not $typeLoaded) {
-            Write-Error "IntegrationServices type still not loaded after Add-Type. Aborting."
-            exit 1
-          }
-
-          # Build connection
+          # Build the connection string (master or SSISDB – we need SSISDB for the catalog procs)
           $server   = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
           $user     = "${{ secrets.SQL_USERNAME }}"
           $pass     = "${{ secrets.SQL_PASSWORD }}"
           $connStr  = "Data Source=$server;Initial Catalog=SSISDB;User ID=$user;Password=$pass;"
 
-          $smoServer = New-Object Microsoft.SqlServer.Management.Smo.Server($connStr)
-          $ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices($smoServer)
+          # Open SQL connection
+          $conn = New-Object System.Data.SqlClient.SqlConnection($connStr)
+          try {
+            $conn.Open()
 
-          # Access the SSIS catalog
-          $catalog = $ssis.Catalogs["SSISDB"]
-          if (-not $catalog) {
-            Write-Error "SSISDB catalog does not exist on the target server"
-            exit 1
+            # -- 1. Ensure folder exists --
+            $cmdCheckFolder = $conn.CreateCommand()
+            $cmdCheckFolder.CommandText = "SELECT COUNT(1) FROM catalog.folders WHERE name = @folder"
+            [void]$cmdCheckFolder.Parameters.AddWithValue("@folder", $folderName)
+            $folderExists = [int]$cmdCheckFolder.ExecuteScalar()
+
+            if ($folderExists -eq 0) {
+              Write-Host "Creating SSISDB folder '$folderName'..."
+              $cmdCreateFolder = $conn.CreateCommand()
+              $cmdCreateFolder.CommandText = "catalog.create_folder"
+              $cmdCreateFolder.CommandType = [System.Data.CommandType]::StoredProcedure
+              [void]$cmdCreateFolder.Parameters.AddWithValue("@folder_name", $folderName)
+              $cmdCreateFolder.ExecuteNonQuery()
+              Write-Host "Folder created."
+            }
+            else {
+              Write-Host "Folder '$folderName' already exists."
+            }
+
+            # -- 2. Deploy the project --
+            Write-Host "Deploying $projectName to folder '$folderName'..."
+            $cmdDeploy = $conn.CreateCommand()
+            $cmdDeploy.CommandText = "catalog.deploy_project"
+            $cmdDeploy.CommandType = [System.Data.CommandType]::StoredProcedure
+
+            [void]$cmdDeploy.Parameters.AddWithValue("@folder_name", $folderName)
+            [void]$cmdDeploy.Parameters.AddWithValue("@project_name", $projectName)
+            # Important: pass the binary stream (SqlDbType.VarBinary, size -1)
+            $paramStream = $cmdDeploy.Parameters.Add("@project_stream", [System.Data.SqlDbType]::VarBinary, -1)
+            $paramStream.Value = $ispacBytes
+            $outOpId = $cmdDeploy.Parameters.Add("@operation_id", [System.Data.SqlDbType]::BigInt)
+            $outOpId.Direction = [System.Data.ParameterDirection]::Output
+
+            $cmdDeploy.ExecuteNonQuery()
+
+            # Optional: check operation result
+            $operationId = $cmdDeploy.Parameters["@operation_id"].Value
+            Write-Host "Deployment submitted. Operation ID = $operationId"
+
+            # (You could add a loop to check operation_messages if desired)
+            Write-Host "SSIS project deployed successfully."
           }
-
-          # Get or create the target folder
-          $folderName = "TimesheetsMigration"
-          $folder = $catalog.Folders[$folderName]
-          if (-not $folder) {
-            Write-Host "Creating folder '$folderName' in SSISDB..."
-            $folder = New-Object Microsoft.SqlServer.Management.IntegrationServices.CatalogFolder($catalog, $folderName)
-            $folder.Create()
-            Write-Host "Folder created."
+          finally {
+            $conn.Dispose()
           }
-
-          Write-Host "Deploying $ispacPath to folder '$($folder.Name)'..."
-          $folder.DeployProject($ispacPath)
-          Write-Host "SSIS project deployed successfully."
 
       # ---- Install sqlcmd ----
       - name: Install sqlcmd
