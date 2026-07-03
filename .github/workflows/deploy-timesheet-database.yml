@@ -1,5 +1,4 @@
 name: Deploy TimesheetDB
-
 on:
   push:
     branches: [ main ]
@@ -8,315 +7,46 @@ on:
 jobs:
   deploy-and-migrate:
     name: Deploy TimesheetDB
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     environment:
       name: production
-
     steps:
-      - name: Checkout code
+      - name: Checkout code,,,.
         uses: actions/checkout@v4
 
-      # ---- Install sqlcmd (moved earlier so it's available for the SSIS deploy step) ----
-      - name: Install sqlcmd
-        run: choco install sqlcmd -y --no-progress
-
-      # ---- Deploy SSIS project via catalog.deploy_project (no SMO/IntegrationServices assembly needed) ----
-      # windows-latest runners don't ship Microsoft.SqlServer.Management.IntegrationServices.dll,
-      # and it isn't published as a standalone NuGet package (see actions/runner-images#8174).
-      # Calling catalog.deploy_project directly sidesteps that dependency entirely.
-      - name: Deploy SSIS project (TimesheetsMigrationSSIS.ispac)
-        shell: pwsh
+      - name: installing SQLCMD
         run: |
-          $ispacPath = Join-Path $env:GITHUB_WORKSPACE `
-            "Projects 2026/TimesheetDataMigration/TimesheetsMigrationSSIS/bin/Development/TimesheetsMigrationSSIS.ispac"
+          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+          curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
 
-          if (-not (Test-Path $ispacPath)) {
-            Write-Error ".ispac not found at $ispacPath"
-            exit 1
-          }
+      - name: Add SQLCMD to pATH
+        run: echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
 
-          Install-Module -Name SqlServer -Force -Scope CurrentUser -AllowClobber
-          Import-Module SqlServer -Force
-
-          $server      = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
-          $user        = "${{ secrets.SQL_USERNAME }}"
-          $pass        = "${{ secrets.SQL_PASSWORD }}"
-          $folderName  = "TimesheetsMigration"
-          $projectName = [System.IO.Path]::GetFileNameWithoutExtension($ispacPath)
-
-          Write-Host "Reading ispac bytes from $ispacPath..."
-          $ispacBytes = [System.IO.File]::ReadAllBytes($ispacPath)
-          $hex = "0x" + ([System.BitConverter]::ToString($ispacBytes) -replace '-', '')
-          Write-Host "ispac size: $($ispacBytes.Length) bytes"
-
-          $sqlFile = Join-Path $env:RUNNER_TEMP "deploy-ispac.sql"
-
-          $sqlLines = @(
-            "SET NOCOUNT ON;"
-            ""
-            "IF NOT EXISTS (SELECT 1 FROM catalog.folders WHERE name = N'$folderName')"
-            "BEGIN"
-            "    EXEC catalog.create_folder @folder_name = N'$folderName';"
-            "    PRINT 'Created folder $folderName';"
-            "END"
-            ""
-            "DECLARE @operation_id bigint;"
-            "DECLARE @project_stream varbinary(max) = $hex;"
-            ""
-            "EXEC catalog.deploy_project"
-            "    @folder_name    = N'$folderName',"
-            "    @project_name   = N'$projectName',"
-            "    @project_stream = @project_stream,"
-            "    @operation_id   = @operation_id OUTPUT;"
-            ""
-            "SELECT @operation_id AS OperationId;"
-          )
-
-          $sqlLines -join "`r`n" | Out-File -FilePath $sqlFile -Encoding utf8
-
-          Write-Host "Deploying $projectName to folder '$folderName' via catalog.deploy_project..."
-          & sqlcmd -S $server -U $user -P $pass -C -d master -i $sqlFile
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "SSIS project deployment failed (sqlcmd exit code $LASTEXITCODE)"
-            exit 1
-          }
-          Write-Host "SSIS project deployed successfully."
-
-      # ---- Create/Update SQL Agent Job that spRunTimesheetMigration calls via sp_start_job ----
-      # sp_start_job requires the job to already exist. Deploying the .ispac only registers
-      # the package in SSISDB — it does not create the Agent Job. This step creates it
-      # idempotently, WITHOUT a recurring schedule (a scheduled version of this same job
-      # previously caused duplicate rows in dbo.[Leave] and was disabled for that reason).
-      # It only runs when triggered manually via sp_start_job from spRunTimesheetMigration.
-      #
-      # The job step is a plain T-SQL step calling catalog.create_execution / catalog.start_execution
-      # directly — this avoids the fragile, multiply-escaped ISSERVER/DTEXEC command-line syntax
-      # that a "SQL Server Integration Services Package" subsystem step would otherwise require.
-      - name: Create SQL Agent Job for SSIS execution
-        shell: pwsh
+      - name: test Connection
         run: |
-          $server      = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
-          $user        = "${{ secrets.SQL_USERNAME }}"
-          $pass        = "${{ secrets.SQL_PASSWORD }}"
-          $jobName     = "RunTimesheetDataPipeline"
-          $folderName  = "TimesheetsMigration"
-          $projectName = "TimesheetsMigrationSSIS"
-          $packageName = "ImportTimesheets.dtsx"   # <-- update if the deployed package has a different name
+          sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" -U "${{ secrets.SQL_USERNAME }}" -P "${{ secrets.SQL_PASSWORD }}" -C -Q "SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version"
 
-          $sqlFile = Join-Path $env:RUNNER_TEMP "create-agent-job.sql"
-
-          $sqlLines = @(
-            "SET NOCOUNT ON;"
-            ""
-            "IF NOT EXISTS (SELECT 1 FROM msdb.dbo.sysjobs WHERE name = N'$jobName')"
-            "BEGIN"
-            "    EXEC msdb.dbo.sp_add_job"
-            "        @job_name = N'$jobName',"
-            "        @enabled = 1,"
-            "        @description = N'Runs the $projectName SSIS package via SSISDB catalog. Triggered manually via sp_start_job from spRunTimesheetMigration; no recurring schedule.';"
-            ""
-            "    EXEC msdb.dbo.sp_add_jobstep"
-            "        @job_name = N'$jobName',"
-            "        @step_name = N'Run SSIS Package',"
-            "        @subsystem = N'TSQL',"
-            "        @database_name = N'SSISDB',"
-            "        @command = N'DECLARE @execution_id bigint;"
-            "            EXEC catalog.create_execution"
-            "                @folder_name = N''$folderName'',"
-            "                @project_name = N''$projectName'',"
-            "                @package_name = N''$packageName'',"
-            "                @use32bitruntime = 0,"
-            "                @execution_id = @execution_id OUTPUT;"
-            "            EXEC catalog.start_execution @execution_id;',"
-            "        @on_success_action = 1,"
-            "        @on_fail_action = 2;"
-            ""
-            "    EXEC msdb.dbo.sp_add_jobserver"
-            "        @job_name = N'$jobName',"
-            "        @server_name = N'(LOCAL)';"
-            ""
-            "    PRINT 'Created SQL Agent job $jobName';"
-            "END"
-            "ELSE"
-            "BEGIN"
-            "    PRINT 'SQL Agent job $jobName already exists - skipping creation.';"
-            "END"
-          )
-
-          $sqlLines -join "`r`n" | Out-File -FilePath $sqlFile -Encoding utf8
-
-          Write-Host "Ensuring SQL Agent job '$jobName' exists..."
-          & sqlcmd -S $server -U $user -P $pass -C -d master -i $sqlFile
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "SQL Agent job creation failed (sqlcmd exit code $LASTEXITCODE)"
-            exit 1
-          }
-          Write-Host "SQL Agent job ready."
-
-      # ---- Test connection ----
-      - name: Test Connection
-        shell: pwsh
+      - name: deploy database table
         run: |
-          & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
-                   -U "${{ secrets.SQL_USERNAME }}" `
-                   -P "${{ secrets.SQL_PASSWORD }}" `
-                   -C `
-                   -Q "SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version"
+          sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" -U "${{ secrets.SQL_USERNAME }}" -P "${{ secrets.SQL_PASSWORD }}" -C -d master -i ./deploy-timesheetdb.sql
 
-      # ---- Deploy database objects ----
-      - name: Deploy database tables
-        shell: pwsh
-        run: |
-          & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
-                   -U "${{ secrets.SQL_USERNAME }}" `
-                   -P "${{ secrets.SQL_PASSWORD }}" `
-                   -C `
-                   -d master `
-                   -i "./deploy-timesheetdb.sql"
-
-      # ---- Run SSIS job and wait for completion ----
-      # spRunTimesheetMigration does NOT trigger the SSIS package — it only moves rows that
-      # are already sitting in dbo.StagingTimesheet. Without this step, StagingTimesheet stays
-      # empty, spRunTimesheetMigration exits immediately with "no new data", and nothing lands
-      # in the real tables. sp_start_job is fire-and-forget, so we poll catalog.executions
-      # until the run reaches a terminal status before proceeding.
-      - name: Run SSIS package and wait for completion
-        shell: pwsh
-        run: |
-          $server  = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
-          $user    = "${{ secrets.SQL_USERNAME }}"
-          $pass    = "${{ secrets.SQL_PASSWORD }}"
-          $jobName = "RunTimesheetDataPipeline"
-
-          Write-Host "Starting SQL Agent job '$jobName'..."
-          & sqlcmd -S $server -U $user -P $pass -C -d master -Q "EXEC msdb.dbo.sp_start_job @job_name = N'$jobName';"
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Failed to start SQL Agent job '$jobName' (sqlcmd exit code $LASTEXITCODE)"
-            exit 1
-          }
-
-          # Give the job a moment to register an execution row in SSISDB before polling
-          Start-Sleep -Seconds 5
-
-          $maxWaitSeconds     = 600
-          $pollIntervalSeconds = 10
-          $elapsed            = 0
-          $finalStatus        = $null
-          $statusQuery        = "SET NOCOUNT ON; SELECT TOP 1 status FROM SSISDB.catalog.executions ORDER BY start_time DESC;"
-
-          while ($elapsed -lt $maxWaitSeconds) {
-            $result = & sqlcmd -S $server -U $user -P $pass -C -d master -h -1 -W -Q $statusQuery
-            $statusLine = @($result | Where-Object { $_.Trim() -ne "" }) | Select-Object -Last 1
-            if ($statusLine) {
-              $statusCode = [int]($statusLine.Trim())
-              Write-Host "Execution status code: $statusCode (elapsed: ${elapsed}s)"
-              # Terminal states: 3 canceled, 4 failed, 6 ended unexpectedly, 7 succeeded
-              if ($statusCode -in 3, 4, 6, 7) {
-                $finalStatus = $statusCode
-                break
-              }
-            }
-            Start-Sleep -Seconds $pollIntervalSeconds
-            $elapsed += $pollIntervalSeconds
-          }
-
-          if ($null -eq $finalStatus) {
-            Write-Error "Timed out waiting for SSIS execution to complete after $maxWaitSeconds seconds"
-            exit 1
-          }
-
-          if ($finalStatus -ne 7) {
-            Write-Error "SSIS execution did not succeed (status code $finalStatus). Check catalog.operation_messages for details."
-            exit 1
-          }
-
-          Write-Host "SSIS package execution completed successfully."
-
-      # ---- Run migration ----
-      - name: Run spRunTimesheetMigration
+      - name: run spRunTimesheetMigration
         id: run_migration
-        shell: pwsh
         run: |
-          $result = & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
-                             -U "${{ secrets.SQL_USERNAME }}" `
-                             -P "${{ secrets.SQL_PASSWORD }}" `
-                             -d "${{ vars.SQL_DATABASE }}" `
-                             -C `
-                             -h -1 -W `
-                             -Q "SET NOCOUNT ON; EXEC dbo.spRunTimesheetMigration;" 2>&1
-          $lines = @($result -split "`n" | Where-Object { $_.Trim() -ne "" })
-          if ($lines.Count -eq 0) {
-            Write-Error "No output from stored procedure"
+          RESULT=$(sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" -U "${{ secrets.SQL_USERNAME }}" -P "${{ secrets.SQL_PASSWORD }}" -d "${{ vars.SQL_DATABASE }}" -C -h -1 -W -Q "SET NOCOUNT ON; EXEC dbo.spRunTimesheetMigration;")
+          LAST_LINE=$(echo "$RESULT" | sed '/^$/d' | tail -n 1)
+          EXIT_CODE=$(echo "$LAST_LINE" | awk '{print $1}')
+          STATUS=$(echo "$LAST_LINE" | awk '{$1=""; print substr($0,2)}' | sed 's/^ //')
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "migration  failed (ExitCode=$EXIT_CODE)"
             exit 1
-          }
-          $lastLine = $lines[-1].Trim()
-          $parts = $lastLine -split "\s+", 2
-          $exitCode = [int]$parts[0]
-          $status   = if ($parts.Count -gt 1) { $parts[1] } else { "" }
+          fi
 
-          "exit_code=$exitCode" >> $env:GITHUB_OUTPUT
-          "status=$status"      >> $env:GITHUB_OUTPUT
-
-          if ($exitCode -ne 0) {
-            Write-Error "Migration failed (ExitCode=$exitCode, Status=$status)"
-            exit 1
-          }
-          Write-Host "Migration successful (ExitCode=$exitCode, Status=$status)"
-
-      # ---- Diagnose actual SSIS execution result ----
-      # sp_start_job (Agent) and catalog.start_execution are both fire-and-forget from the
-      # caller's perspective. A "successful" exit code above only confirms the stored procedure
-      # returned — it does NOT confirm rows were actually moved. This step pulls the real
-      # execution status and any error messages for the most recent run of the package.
-      - name: Check SSIS execution status
-        if: always()
-        shell: pwsh
-        run: |
-          $server = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
-          $user   = "${{ secrets.SQL_USERNAME }}"
-          $pass   = "${{ secrets.SQL_PASSWORD }}"
-
-          $sqlLines = @(
-            "SET NOCOUNT ON;"
-            "DECLARE @latest_execution_id bigint;"
-            ""
-            "SELECT TOP 1 @latest_execution_id = execution_id"
-            "FROM SSISDB.catalog.executions"
-            "ORDER BY start_time DESC;"
-            ""
-            "SELECT"
-            "    execution_id,"
-            "    folder_name,"
-            "    project_name,"
-            "    package_name,"
-            "    status,"
-            "        CASE status"
-            "            WHEN 1 THEN 'created' WHEN 2 THEN 'running' WHEN 3 THEN 'canceled'"
-            "            WHEN 4 THEN 'failed' WHEN 5 THEN 'pending' WHEN 6 THEN 'ended unexpectedly'"
-            "            WHEN 7 THEN 'succeeded' WHEN 8 THEN 'stopping' WHEN 9 THEN 'completed'"
-            "            ELSE 'unknown'"
-            "        END AS status_desc,"
-            "    start_time,"
-            "    end_time"
-            "FROM SSISDB.catalog.executions"
-            "WHERE execution_id = @latest_execution_id;"
-            ""
-            "PRINT '--- Execution messages ---';"
-            "SELECT"
-            "    message_time,"
-            "    message_type,"
-            "    message"
-            "FROM SSISDB.catalog.operation_messages"
-            "WHERE operation_id = @latest_execution_id"
-            "    AND message_type IN (120, 130, 110)"
-            "ORDER BY message_time;"
-          )
-
-          $sqlFile = Join-Path $env:RUNNER_TEMP "check-execution.sql"
-          $sqlLines -join "`r`n" | Out-File -FilePath $sqlFile -Encoding utf8
-
-          & sqlcmd -S $server -U $user -P $pass -C -d master -i $sqlFile
-
-      - name: Success confirmation
+    
+      - name: if it is successfull(just checking for the last time)
         if: success()
-        run: echo "Deployment and migration completed successfully."
+        run: echo "migration is successful"
