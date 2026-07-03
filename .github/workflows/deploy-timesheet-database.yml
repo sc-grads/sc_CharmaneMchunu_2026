@@ -205,6 +205,60 @@ jobs:
           }
           Write-Host "Migration successful (ExitCode=$exitCode, Status=$status)"
 
+      # ---- Diagnose actual SSIS execution result ----
+      # sp_start_job (Agent) and catalog.start_execution are both fire-and-forget from the
+      # caller's perspective. A "successful" exit code above only confirms the stored procedure
+      # returned — it does NOT confirm rows were actually moved. This step pulls the real
+      # execution status and any error messages for the most recent run of the package.
+      - name: Check SSIS execution status
+        if: always()
+        shell: pwsh
+        run: |
+          $server = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
+          $user   = "${{ secrets.SQL_USERNAME }}"
+          $pass   = "${{ secrets.SQL_PASSWORD }}"
+
+          $sqlLines = @(
+            "SET NOCOUNT ON;"
+            "DECLARE @latest_execution_id bigint;"
+            ""
+            "SELECT TOP 1 @latest_execution_id = execution_id"
+            "FROM SSISDB.catalog.executions"
+            "ORDER BY start_time DESC;"
+            ""
+            "SELECT"
+            "    execution_id,"
+            "    folder_name,"
+            "    project_name,"
+            "    package_name,"
+            "    status,"
+            "        CASE status"
+            "            WHEN 1 THEN 'created' WHEN 2 THEN 'running' WHEN 3 THEN 'canceled'"
+            "            WHEN 4 THEN 'failed' WHEN 5 THEN 'pending' WHEN 6 THEN 'ended unexpectedly'"
+            "            WHEN 7 THEN 'succeeded' WHEN 8 THEN 'stopping' WHEN 9 THEN 'completed'"
+            "            ELSE 'unknown'"
+            "        END AS status_desc,"
+            "    start_time,"
+            "    end_time"
+            "FROM SSISDB.catalog.executions"
+            "WHERE execution_id = @latest_execution_id;"
+            ""
+            "PRINT '--- Execution messages ---';"
+            "SELECT"
+            "    message_time,"
+            "    message_type,"
+            "    message"
+            "FROM SSISDB.catalog.operation_messages"
+            "WHERE operation_id = @latest_execution_id"
+            "    AND message_type IN (120, 130, 110)"
+            "ORDER BY message_time;"
+          )
+
+          $sqlFile = Join-Path $env:RUNNER_TEMP "check-execution.sql"
+          $sqlLines -join "`r`n" | Out-File -FilePath $sqlFile -Encoding utf8
+
+          & sqlcmd -S $server -U $user -P $pass -C -d master -i $sqlFile
+
       - name: Success confirmation
         if: success()
         run: echo "Deployment and migration completed successfully."
