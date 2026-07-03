@@ -8,16 +8,15 @@ on:
 jobs:
   deploy-and-migrate:
     name: Deploy TimesheetDB
-    runs-on: windows-latest                # ← Must be Windows – required for SSIS deployment
+    runs-on: windows-latest
     environment:
       name: production
 
     steps:
-      # ---------- 1. Checkout the repository ----------
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ---------- 2. Deploy SSIS project to SSISDB ----------
+      # ---- Deploy SSIS project (with folder creation) ----
       - name: Deploy SSIS project (TimesheetsMigrationSSIS.ispac)
         shell: pwsh
         run: |
@@ -29,33 +28,43 @@ jobs:
             exit 1
           }
 
-          # Install the SqlServer module (provides SMO & SSIS objects)
           Install-Module -Name SqlServer -Force -Scope CurrentUser -AllowClobber
+          Import-Module SqlServer -Force
 
           $server   = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
           $user     = "${{ secrets.SQL_USERNAME }}"
           $pass     = "${{ secrets.SQL_PASSWORD }}"
           $connStr  = "Data Source=$server;Initial Catalog=SSISDB;User ID=$user;Password=$pass;"
 
-          # Load required assemblies
-          Add-Type -AssemblyName "Microsoft.SqlServer.Smo, Version=16.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction SilentlyContinue
-          Add-Type -AssemblyName "Microsoft.SqlServer.Management.IntegrationServices, Version=16.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction SilentlyContinue
-
           $smoServer = New-Object Microsoft.SqlServer.Management.Smo.Server($connStr)
-          $ssis      = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices($smoServer)
+          $ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices($smoServer)
 
-          # Replace with the actual folder name inside SSISDB where the project should be deployed
-          $folder = $ssis.Catalogs["SSISDB"].Folders["TimesheetsMigration"]
+          # Access the SSIS catalog
+          $catalog = $ssis.Catalogs["SSISDB"]
+          if (-not $catalog) {
+            Write-Error "SSISDB catalog does not exist on the target server"
+            exit 1
+          }
+
+          # Get or create the target folder
+          $folderName = "TimesheetsMigration"   # <-- adjust if your folder is named differently
+          $folder = $catalog.Folders[$folderName]
+          if (-not $folder) {
+            Write-Host "Creating folder '$folderName' in SSISDB..."
+            $folder = New-Object Microsoft.SqlServer.Management.IntegrationServices.CatalogFolder($catalog, $folderName)
+            $folder.Create()
+            Write-Host "Folder created."
+          }
 
           Write-Host "Deploying $ispacPath to folder '$($folder.Name)'..."
           $folder.DeployProject($ispacPath)
           Write-Host "SSIS project deployed successfully."
 
-      # ---------- 3. Install sqlcmd (Windows) ----------
+      # ---- Install sqlcmd ----
       - name: Install sqlcmd
         run: choco install sqlcmd -y --no-progress
 
-      # ---------- 4. Test connection ----------
+      # ---- Test connection ----
       - name: Test Connection
         shell: pwsh
         run: |
@@ -65,7 +74,7 @@ jobs:
                    -C `
                    -Q "SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version"
 
-      # ---------- 5. Deploy database tables / objects ----------
+      # ---- Deploy database objects ----
       - name: Deploy database tables
         shell: pwsh
         run: |
@@ -76,7 +85,7 @@ jobs:
                    -d master `
                    -i "./deploy-timesheetdb.sql"
 
-      # ---------- 6. Run the migration stored procedure ----------
+      # ---- Run migration ----
       - name: Run spRunTimesheetMigration
         id: run_migration
         shell: pwsh
@@ -88,8 +97,6 @@ jobs:
                              -C `
                              -h -1 -W `
                              -Q "SET NOCOUNT ON; EXEC dbo.spRunTimesheetMigration;" 2>&1
-
-          # Parse output – last non-empty line should be "ExitCode Status"
           $lines = $result -split "`n" | Where-Object { $_.Trim() -ne "" }
           if ($lines.Count -eq 0) {
             Write-Error "No output from stored procedure"
@@ -100,7 +107,6 @@ jobs:
           $exitCode = [int]$parts[0]
           $status   = if ($parts.Count -gt 1) { $parts[1] } else { "" }
 
-          # Set outputs for later steps
           "exit_code=$exitCode" >> $env:GITHUB_OUTPUT
           "status=$status"      >> $env:GITHUB_OUTPUT
 
@@ -110,7 +116,6 @@ jobs:
           }
           Write-Host "Migration successful (ExitCode=$exitCode, Status=$status)"
 
-      # ---------- 7. Final confirmation ----------
       - name: Success confirmation
         if: success()
         run: echo "Deployment and migration completed successfully."
