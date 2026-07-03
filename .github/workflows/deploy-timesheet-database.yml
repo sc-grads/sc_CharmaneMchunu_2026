@@ -1,4 +1,5 @@
 name: Deploy TimesheetDB
+
 on:
   push:
     branches: [ main ]
@@ -7,46 +8,109 @@ on:
 jobs:
   deploy-and-migrate:
     name: Deploy TimesheetDB
-    runs-on: ubuntu-latest
+    runs-on: windows-latest                # ← Must be Windows – required for SSIS deployment
     environment:
       name: production
+
     steps:
-      - name: Checkout code,,,.
+      # ---------- 1. Checkout the repository ----------
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: installing SQLCMD
+      # ---------- 2. Deploy SSIS project to SSISDB ----------
+      - name: Deploy SSIS project (TimesheetsMigrationSSIS.ispac)
+        shell: pwsh
         run: |
-          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-          curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
-          sudo apt-get update
-          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+          $ispacPath = Join-Path $env:GITHUB_WORKSPACE `
+            "Projects 2026/TimesheetDataMigration/TimesheetsMigrationSSIS/bin/Development/TimesheetsMigrationSSIS.ispac"
 
-      - name: Add SQLCMD to pATH
-        run: echo "/opt/mssql-tools18/bin" >> $GITHUB_PATH
-
-      - name: test Connection
-        run: |
-          sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" -U "${{ secrets.SQL_USERNAME }}" -P "${{ secrets.SQL_PASSWORD }}" -C -Q "SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version"
-
-      - name: deploy database table
-        run: |
-          sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" -U "${{ secrets.SQL_USERNAME }}" -P "${{ secrets.SQL_PASSWORD }}" -C -d master -i ./deploy-timesheetdb.sql
-
-      - name: run spRunTimesheetMigration
-        id: run_migration
-        run: |
-          RESULT=$(sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" -U "${{ secrets.SQL_USERNAME }}" -P "${{ secrets.SQL_PASSWORD }}" -d "${{ vars.SQL_DATABASE }}" -C -h -1 -W -Q "SET NOCOUNT ON; EXEC dbo.spRunTimesheetMigration;")
-          LAST_LINE=$(echo "$RESULT" | sed '/^$/d' | tail -n 1)
-          EXIT_CODE=$(echo "$LAST_LINE" | awk '{print $1}')
-          STATUS=$(echo "$LAST_LINE" | awk '{$1=""; print substr($0,2)}' | sed 's/^ //')
-          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
-          echo "status=$STATUS" >> $GITHUB_OUTPUT
-          if [ "$EXIT_CODE" != "0" ]; then
-            echo "migration  failed (ExitCode=$EXIT_CODE)"
+          if (-not (Test-Path $ispacPath)) {
+            Write-Error ".ispac not found at $ispacPath"
             exit 1
-          fi
+          }
 
-    
-      - name: if it is successfull(just checking for the last time)
+          # Install the SqlServer module (provides SMO & SSIS objects)
+          Install-Module -Name SqlServer -Force -Scope CurrentUser -AllowClobber
+
+          $server   = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
+          $user     = "${{ secrets.SQL_USERNAME }}"
+          $pass     = "${{ secrets.SQL_PASSWORD }}"
+          $connStr  = "Data Source=$server;Initial Catalog=SSISDB;User ID=$user;Password=$pass;"
+
+          # Load required assemblies
+          Add-Type -AssemblyName "Microsoft.SqlServer.Smo, Version=16.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction SilentlyContinue
+          Add-Type -AssemblyName "Microsoft.SqlServer.Management.IntegrationServices, Version=16.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction SilentlyContinue
+
+          $smoServer = New-Object Microsoft.SqlServer.Management.Smo.Server($connStr)
+          $ssis      = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices($smoServer)
+
+          # Replace with the actual folder name inside SSISDB where the project should be deployed
+          $folder = $ssis.Catalogs["SSISDB"].Folders["TimesheetsMigration"]
+
+          Write-Host "Deploying $ispacPath to folder '$($folder.Name)'..."
+          $folder.DeployProject($ispacPath)
+          Write-Host "SSIS project deployed successfully."
+
+      # ---------- 3. Install sqlcmd (Windows) ----------
+      - name: Install sqlcmd
+        run: choco install sqlcmd -y --no-progress
+
+      # ---------- 4. Test connection ----------
+      - name: Test Connection
+        shell: pwsh
+        run: |
+          & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
+                   -U "${{ secrets.SQL_USERNAME }}" `
+                   -P "${{ secrets.SQL_PASSWORD }}" `
+                   -C `
+                   -Q "SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version"
+
+      # ---------- 5. Deploy database tables / objects ----------
+      - name: Deploy database tables
+        shell: pwsh
+        run: |
+          & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
+                   -U "${{ secrets.SQL_USERNAME }}" `
+                   -P "${{ secrets.SQL_PASSWORD }}" `
+                   -C `
+                   -d master `
+                   -i "./deploy-timesheetdb.sql"
+
+      # ---------- 6. Run the migration stored procedure ----------
+      - name: Run spRunTimesheetMigration
+        id: run_migration
+        shell: pwsh
+        run: |
+          $result = & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
+                             -U "${{ secrets.SQL_USERNAME }}" `
+                             -P "${{ secrets.SQL_PASSWORD }}" `
+                             -d "${{ vars.SQL_DATABASE }}" `
+                             -C `
+                             -h -1 -W `
+                             -Q "SET NOCOUNT ON; EXEC dbo.spRunTimesheetMigration;" 2>&1
+
+          # Parse output – last non-empty line should be "ExitCode Status"
+          $lines = $result -split "`n" | Where-Object { $_.Trim() -ne "" }
+          if ($lines.Count -eq 0) {
+            Write-Error "No output from stored procedure"
+            exit 1
+          }
+          $lastLine = $lines[-1].Trim()
+          $parts = $lastLine -split "\s+", 2
+          $exitCode = [int]$parts[0]
+          $status   = if ($parts.Count -gt 1) { $parts[1] } else { "" }
+
+          # Set outputs for later steps
+          "exit_code=$exitCode" >> $env:GITHUB_OUTPUT
+          "status=$status"      >> $env:GITHUB_OUTPUT
+
+          if ($exitCode -ne 0) {
+            Write-Error "Migration failed (ExitCode=$exitCode, Status=$status)"
+            exit 1
+          }
+          Write-Host "Migration successful (ExitCode=$exitCode, Status=$status)"
+
+      # ---------- 7. Final confirmation ----------
+      - name: Success confirmation
         if: success()
-        run: echo "migration is successful"
+        run: echo "Deployment and migration completed successfully."
