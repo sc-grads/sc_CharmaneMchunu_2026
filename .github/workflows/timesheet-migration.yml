@@ -49,10 +49,6 @@ jobs:
         shell: cmd
         run: sqlcmd -S %SQL_SERVER% -E -i Database\Triggers.sql
 
-      - name: Seed Data
-        shell: cmd
-        run: sqlcmd -S %SQL_SERVER% -E -i Database\SeedData.sql
-
       - name: Create SSIS Catalog Folder
         shell: powershell
         run: |
