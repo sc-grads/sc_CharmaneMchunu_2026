@@ -32,6 +32,18 @@ jobs:
         run: |
           msbuild "SSIS-Project\TimesheetMigration\TimesheetMigration.slnx" /p:Configuration=Development
 
+      - name: Verify ISPAC Exists
+        shell: powershell
+        run: |
+          $ispac = "SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
+
+          if (!(Test-Path $ispac)) {
+              Write-Error "ISPAC file not found."
+              exit 1
+          }
+
+          Write-Host "ISPAC found."
+
       - name: Create Database
         shell: cmd
         run: |
@@ -57,21 +69,72 @@ jobs:
         run: |
           sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d %DATABASE_NAME% -i Database\SeedData.sql
 
-      - name: Deploy ISPAC
-        shell: cmd
+      - name: Create SSIS Catalog Folder
+        shell: powershell
         run: |
-          "C:\Program Files\Microsoft SQL Server\160\DTS\Binn\ISDeploymentWizard.exe" ^
-          /Silent ^
-          /ModelType:Project ^
-          /SourcePath:"SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac" ^
-          /DestinationServer:%SQL_SERVER% ^
-          /DestinationPath:"/SSISDB/TimesheetMigration"
+          $sql = @"
+          IF NOT EXISTS
+          (
+              SELECT 1
+              FROM SSISDB.catalog.folders
+              WHERE name = N'TimesheetMigration'
+          )
+          BEGIN
+              EXEC SSISDB.catalog.create_folder
+                  @folder_name = N'TimesheetMigration';
+          END
+          "@
+
+          $sql | Out-File create-folder.sql -Encoding ASCII
+
+          sqlcmd `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
+            -U "$env:SQL_USERNAME" `
+            -P "$env:SQL_PASSWORD" `
+            -d SSISDB `
+            -i create-folder.sql
+
+      - name: Deploy ISPAC
+        shell: powershell
+        run: |
+          $ispac = "SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
+
+          $bytes = [System.IO.File]::ReadAllBytes($ispac)
+          $hex = ($bytes | ForEach-Object { $_.ToString("X2") }) -join ""
+
+          $sql = @"
+          DECLARE @ProjectBinary VARBINARY(MAX) = 0x$hex;
+          DECLARE @operation_id BIGINT;
+
+          EXEC catalog.deploy_project
+              @folder_name = N'TimesheetMigration',
+              @project_name = N'TimesheetMigration',
+              @project_stream = @ProjectBinary,
+              @operation_id = @operation_id OUTPUT;
+          "@
+
+          $sql | Out-File deploy-ispac.sql -Encoding ASCII
+
+          sqlcmd `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
+            -U "$env:SQL_USERNAME" `
+            -P "$env:SQL_PASSWORD" `
+            -d SSISDB `
+            -i deploy-ispac.sql
 
       - name: Create SQL Server Agent Job
         shell: cmd
         run: |
           sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d msdb -i SQLAgent\CreateJob.sql
 
-      - name: Finished
+      - name: Start SQL Server Agent Job
         shell: cmd
-        run: echo Deployment completed successfully.
+        run: |
+          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d msdb -Q "EXEC msdb.dbo.sp_start_job @job_name='RunTimesheetDataPipeline';"
+
+      - name: Deployment Complete
+        shell: cmd
+        run: |
+          echo ========================================
+          echo Deployment completed successfully.
+          echo ========================================
