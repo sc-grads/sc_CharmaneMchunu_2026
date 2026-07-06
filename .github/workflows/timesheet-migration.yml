@@ -27,6 +27,7 @@ jobs:
         shell: cmd
         run: |
           msbuild "SSIS-Project\TimesheetMigration\TimesheetMigration.slnx" /p:Configuration=Development
+
       - name: Verify ISPAC Exists
         shell: powershell
         run: |
@@ -36,26 +37,32 @@ jobs:
               exit 1
           }
           Write-Host "ISPAC found."
+
       - name: Create Database
         shell: cmd
         run: |
           sqlcmd -S %SQL_SERVER% -E -i Database\CreateDatabase.sql
+
       - name: Create Tables
         shell: cmd
         run: |
           sqlcmd -S %SQL_SERVER% -E -i Database\CreateTable.sql
+
       - name: Create Stored Procedures
         shell: cmd
         run: |
           sqlcmd -S %SQL_SERVER% -E -i Database\StoredProcedure.sql
+
       - name: Create Triggers
         shell: cmd
         run: |
           sqlcmd -S %SQL_SERVER% -E -i Database\Triggers.sql
+
       - name: Seed Data
         shell: cmd
         run: |
           sqlcmd -S %SQL_SERVER% -E -i Database\SeedData.sql
+
       - name: Create SSIS Catalog Folder
         shell: powershell
         run: |
@@ -73,6 +80,7 @@ jobs:
           "@
           $sql | Out-File create-folder.sql -Encoding ASCII
           sqlcmd -S "$env:SQL_SERVER" -E -d SSISDB -i create-folder.sql -b
+
       - name: Deploy ISPAC
         shell: powershell
         run: |
@@ -90,14 +98,37 @@ jobs:
           "@
           $sql | Out-File deploy-ispac.sql -Encoding ASCII
           sqlcmd -S "$env:SQL_SERVER" -E -d SSISDB -i deploy-ispac.sql -b
+
+      # ======== FIXED STEP ========
       - name: Create SQL Server Agent Job
-        shell: cmd
+        shell: powershell
         run: |
-          sqlcmd -S %SQL_SERVER% -E -d msdb -i SQLAgent\CreateJob.sql
+          # Read the template file
+          $template = Get-Content -Path "SQLAgent\CreateJob.sql" -Raw
+
+          # Replace placeholder tokens with actual values.
+          # Adjust the token names to match exactly what is in your .sql file.
+          # Example: replace <<SQL_SERVER>> with the actual server name.
+          $template = $template -replace "<<SQL_SERVER>>", "$env:SQL_SERVER"
+          # If the job name is also parameterised, replace it as well.
+          $template = $template -replace "<<JOB_NAME>>", "RunTimesheetDataPipeline"
+          # Add any other replacements your script needs (e.g. database name, etc.)
+
+          # Write the processed script to a temporary file
+          $tempFile = [System.IO.Path]::GetTempFileName() + ".sql"
+          $template | Out-File -FilePath $tempFile -Encoding ASCII
+
+          # Execute the script
+          sqlcmd -S "$env:SQL_SERVER" -E -d msdb -i $tempFile -b
+
+          # Clean up
+          Remove-Item -Path $tempFile -Force
+
       - name: Start SQL Server Agent Job
         shell: cmd
         run: |
           sqlcmd -S %SQL_SERVER% -E -d msdb -Q "EXEC msdb.dbo.sp_start_job @job_name='RunTimesheetDataPipeline';"
+
       - name: Deployment Complete
         shell: cmd
         run: |
