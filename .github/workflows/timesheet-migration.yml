@@ -99,22 +99,37 @@ jobs:
           $sql | Out-File deploy-ispac.sql -Encoding ASCII
           sqlcmd -S "$env:SQL_SERVER" -E -d SSISDB -i deploy-ispac.sql -b
 
-      # ======== FIXED STEP ========
+      # ==========================================================
+      # FIXED: Create SQL Server Agent Job (handles both <<>> and <>)
+      # ==========================================================
       - name: Create SQL Server Agent Job
         shell: powershell
         run: |
           # Read the template file
           $template = Get-Content -Path "SQLAgent\CreateJob.sql" -Raw
 
-          # Replace placeholder tokens with actual values.
-          # Adjust the token names to match exactly what is in your .sql file.
-          # Example: replace <<SQL_SERVER>> with the actual server name.
+          # ---- REPLACE ALL TOKENS ----
+          # Double chevrons (<< >>)
           $template = $template -replace "<<SQL_SERVER>>", "$env:SQL_SERVER"
-          # If the job name is also parameterised, replace it as well.
           $template = $template -replace "<<JOB_NAME>>", "RunTimesheetDataPipeline"
-          # Add any other replacements your script needs (e.g. database name, etc.)
+          $template = $template -replace "<<DATABASE_NAME>>", "TimesheetDB"
+          # $template = $template -replace "<<DOMAIN>>", "YOUR_DOMAIN"
+          # $template = $template -replace "<<ACCOUNT>>", "YOUR_SERVICE_ACCOUNT"
+          # $template = $template -replace "<<SERVER_INSTANCE>>", "MSSQLSERVERDEV"
 
-          # Write the processed script to a temporary file
+          # Single chevrons (< >) – ADD these if your script uses them
+          $template = $template -replace "<SQL_SERVER>", "$env:SQL_SERVER"
+          $template = $template -replace "<JOB_NAME>", "RunTimesheetDataPipeline"
+          $template = $template -replace "<DATABASE_NAME>", "TimesheetDB"
+          # $template = $template -replace "<DOMAIN>", "YOUR_DOMAIN"
+          # $template = $template -replace "<ACCOUNT>", "YOUR_SERVICE_ACCOUNT"
+          # $template = $template -replace "<SERVER_INSTANCE>", "MSSQLSERVERDEV"
+
+          # ---------- DEBUG (Optional) ----------
+          # Write-Host "Processed SQL for debugging:"
+          # Write-Host $template
+
+          # Write to temporary file
           $tempFile = [System.IO.Path]::GetTempFileName() + ".sql"
           $template | Out-File -FilePath $tempFile -Encoding ASCII
 
