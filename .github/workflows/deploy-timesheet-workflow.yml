@@ -3,7 +3,7 @@ name: Deploy Timesheet Migration Project - Production Environment
 on:
   push:
     branches:
-      - main
+      - production
 
 jobs:
   deploy:
@@ -14,11 +14,7 @@ jobs:
     environment: production
 
     env:
-      SQL_SERVER: ${{ vars.SQL_SERVER }}
-      SQL_PORT: ${{ vars.SQL_PORT }}
-      DATABASE_NAME: ${{ vars.SQL_DATABASE }}
-      SQL_USERNAME: ${{ secrets.SQL_USERNAME }}
-      SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
+      SQL_SERVER: ${{ secrets.SQL_SERVER }}
 
     steps:
       - name: Checkout Repository
@@ -31,6 +27,7 @@ jobs:
         shell: cmd
         run: |
           msbuild "SSIS-Project\TimesheetMigration\TimesheetMigration.slnx" /p:Configuration=Development
+
       - name: Verify ISPAC Exists
         shell: powershell
         run: |
@@ -40,26 +37,32 @@ jobs:
               exit 1
           }
           Write-Host "ISPAC found."
+
       - name: Create Database
         shell: cmd
         run: |
-          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -i Database\CreateDatabase.sql
+          sqlcmd -S %SQL_SERVER% -E -i Database\CreateDatabase.sql
+
       - name: Create Tables
         shell: cmd
         run: |
-          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d %DATABASE_NAME% -i Database\CreateTable.sql
+          sqlcmd -S %SQL_SERVER% -E -i Database\CreateTable.sql
+
       - name: Create Stored Procedures
         shell: cmd
         run: |
-          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d %DATABASE_NAME% -i Database\StoredProcedure.sql
+          sqlcmd -S %SQL_SERVER% -E -i Database\StoredProcedure.sql
+
       - name: Create Triggers
         shell: cmd
         run: |
-          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d %DATABASE_NAME% -i Database\Triggers.sql
+          sqlcmd -S %SQL_SERVER% -E -i Database\Triggers.sql
+
       - name: Seed Data
         shell: cmd
         run: |
-          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d %DATABASE_NAME% -i Database\SeedData.sql
+          sqlcmd -S %SQL_SERVER% -E -i Database\SeedData.sql
+
       - name: Create SSIS Catalog Folder
         shell: powershell
         run: |
@@ -76,7 +79,8 @@ jobs:
           END
           "@
           $sql | Out-File create-folder.sql -Encoding ASCII
-          sqlcmd -S "localhost,$env:SQL_PORT" -E -d SSISDB -i create-folder.sql -b
+          sqlcmd -S "$env:SQL_SERVER" -E -d SSISDB -i create-folder.sql -b
+
       - name: Deploy ISPAC
         shell: powershell
         run: |
@@ -93,18 +97,56 @@ jobs:
               @operation_id = @operation_id OUTPUT;
           "@
           $sql | Out-File deploy-ispac.sql -Encoding ASCII
-          sqlcmd -S "localhost,$env:SQL_PORT" -E -d SSISDB -i deploy-ispac.sql -b
+          sqlcmd -S "$env:SQL_SERVER" -E -d SSISDB -i deploy-ispac.sql -b
+
+      # ==========================================================
+      # FIXED: Create SQL Server Agent Job (handles both <<>> and <>)
+      # ==========================================================
       - name: Create SQL Server Agent Job
-        shell: cmd
+        shell: powershell
         run: |
-          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d msdb -i SQLAgent\CreateJob.sql
+          # Read the template file
+          $template = Get-Content -Path "SQLAgent\CreateJob.sql" -Raw
+
+          # ---- REPLACE ALL TOKENS ----
+          # Double chevrons (<< >>)
+          $template = $template -replace "<<SQL_SERVER>>", "$env:SQL_SERVER"
+          $template = $template -replace "<<JOB_NAME>>", "RunTimesheetDataPipeline"
+          $template = $template -replace "<<DATABASE_NAME>>", "TimesheetDB"
+          # $template = $template -replace "<<DOMAIN>>", "YOUR_DOMAIN"
+          # $template = $template -replace "<<ACCOUNT>>", "YOUR_SERVICE_ACCOUNT"
+          # $template = $template -replace "<<SERVER_INSTANCE>>", "MSSQLSERVERDEV"
+
+          # Single chevrons (< >) – ADD these if your script uses them
+          $template = $template -replace "<SQL_SERVER>", "$env:SQL_SERVER"
+          $template = $template -replace "<JOB_NAME>", "RunTimesheetDataPipeline"
+          $template = $template -replace "<DATABASE_NAME>", "TimesheetDB"
+          # $template = $template -replace "<DOMAIN>", "YOUR_DOMAIN"
+          # $template = $template -replace "<ACCOUNT>", "YOUR_SERVICE_ACCOUNT"
+          # $template = $template -replace "<SERVER_INSTANCE>", "MSSQLSERVERDEV"
+
+          # ---------- DEBUG (Optional) ----------
+          # Write-Host "Processed SQL for debugging:"
+          # Write-Host $template
+
+          # Write to temporary file
+          $tempFile = [System.IO.Path]::GetTempFileName() + ".sql"
+          $template | Out-File -FilePath $tempFile -Encoding ASCII
+
+          # Execute the script
+          sqlcmd -S "$env:SQL_SERVER" -E -d msdb -i $tempFile -b
+
+          # Clean up
+          Remove-Item -Path $tempFile -Force
+
       - name: Start SQL Server Agent Job
         shell: cmd
         run: |
-          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d msdb -Q "EXEC msdb.dbo.sp_start_job @job_name='RunTimesheetDataPipeline';"
+          sqlcmd -S %SQL_SERVER% -E -d msdb -Q "EXEC msdb.dbo.sp_start_job @job_name='RunTimesheetDataPipeline';"
+
       - name: Deployment Complete
         shell: cmd
         run: |
           echo ========================================
-          echo Deployment completed successfully.
+          echo Staging deployment completed successfully.
           echo ========================================
