@@ -76,7 +76,7 @@ jobs:
           END
           "@
           $sql | Out-File create-folder.sql -Encoding ASCII
-          sqlcmd -S "$env:SQL_SERVER,$env:SQL_PORT" -U "$env:SQL_USERNAME" -P "$env:SQL_PASSWORD" -d SSISDB -i create-folder.sql -b
+          sqlcmd -S "$env:SQL_SERVER,$env:SQL_PORT" -E -d SSISDB -i create-folder.sql -b
       - name: Deploy ISPAC
         shell: powershell
         run: |
@@ -93,7 +93,7 @@ jobs:
               @operation_id = @operation_id OUTPUT;
           "@
           $sql | Out-File deploy-ispac.sql -Encoding ASCII
-          sqlcmd -S "$env:SQL_SERVER,$env:SQL_PORT" -U "$env:SQL_USERNAME" -P "$env:SQL_PASSWORD" -d SSISDB -i deploy-ispac.sql -b
+          sqlcmd -S "$env:SQL_SERVER,$env:SQL_PORT" -E -d SSISDB -i deploy-ispac.sql -b
       - name: Create SQL Server Agent Job
         shell: cmd
         run: |
