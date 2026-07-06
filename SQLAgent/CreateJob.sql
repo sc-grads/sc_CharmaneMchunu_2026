@@ -32,7 +32,11 @@ EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'RunTimesheetDataPipeline',
 		@delete_level=0, 
 		@description=N'No description available.', 
 		@category_name=N'[Uncategorized (Local)]', 
+<<<<<<< HEAD
 		@owner_login_name=N'sa', @job_id = @jobId OUTPUT
+=======
+		@job_id = @jobId OUTPUT
+>>>>>>> 4debb3aff489e5643c4bc4bb7892d0a423ef0610
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
 
 EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'RunTimesheetDataPipeline', 
@@ -45,7 +49,11 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'RunTimes
 		@retry_attempts=0, 
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'SSIS', 
+<<<<<<< HEAD
 		@command=@Command, 
+=======
+		@command=N'/ISSERVER "\"\SSISDB\TimesheetMigration\TimesheetMigration\TimesheetMigrationPipeline.dtsx\"" /SERVER "\"LAPTOP-4KISL5TR\MSSQLSERVERDEV\"" /Par "\"$ServerOption::LOGGING_LEVEL(Int16)\"";1 /Par "\"$ServerOption::SYNCHRONIZED(Boolean)\"";True /CALLERINFO SQLAGENT /REPORTING E', 
+>>>>>>> 4debb3aff489e5643c4bc4bb7892d0a423ef0610
 		@database_name=N'master', 
 		@flags=0
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
@@ -72,4 +80,8 @@ GOTO EndSave
 QuitWithRollback:
     IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
 EndSave:
+<<<<<<< HEAD
 GO
+=======
+GO
+>>>>>>> 4debb3aff489e5643c4bc4bb7892d0a423ef0610
