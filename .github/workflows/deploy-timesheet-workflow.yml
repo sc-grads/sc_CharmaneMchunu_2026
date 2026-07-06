@@ -30,7 +30,7 @@ jobs:
       - name: Build SSIS Project
         shell: cmd
         run: |
-          msbuild "SSIS-Project\TimesheetMigration\TimesheetMigration.sln" /p:Configuration=Development
+          msbuild "SSIS-Project\TimesheetMigration\TimesheetMigration.slnx" /p:Configuration=Development
 
       - name: Create Database
         shell: cmd
