@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <BuildLog xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ProjectInfo>
-    <Name>TimesheetsMigrationSSIS</Name>
-    <LastWriteTime>2026-07-01T07:20:06.2236512Z</LastWriteTime>
+    <Name>TimesheetMigration</Name>
+    <LastWriteTime>2026-07-05T03:36:42.8472203Z</LastWriteTime>
     <LastKnownProtectionLevel>EncryptSensitiveWithUserKey</LastKnownProtectionLevel>
   </ProjectInfo>
   <LastBuildInfos>
     <ProjectBuildItemInfo>
-      <Name>ImportTimesheets.dtsx</Name>
-      <LastWriteTime>2026-07-02T02:51:00.8918982Z</LastWriteTime>
+      <Name>TimesheetMigrationPipeline.dtsx</Name>
+      <LastWriteTime>2026-07-05T21:12:34.9690358Z</LastWriteTime>
       <LastKnownProtectionLevel>EncryptSensitiveWithUserKey</LastKnownProtectionLevel>
     </ProjectBuildItemInfo>
   </LastBuildInfos>

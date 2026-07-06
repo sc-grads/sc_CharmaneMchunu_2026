@@ -1,10 +1,22 @@
-ALTER PROCEDURE dbo.spRunTimesheetMigration
+USE [TimesheetDB]
+GO
+
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER OFF
+GO
+
+DROP PROCEDURE IF EXISTS [dbo].[spRunTimesheetMigration]
+GO
+
+CREATE PROCEDURE [dbo].[spRunTimesheetMigration]
 AS
 BEGIN
     SET NOCOUNT ON;
 
     DECLARE @StartTime DATETIME = GETDATE();
-<<<<<<< HEAD
     DECLARE @BatchID INT;
     DECLARE @TotalStagingRecords INT;
     DECLARE @InsertedTimesheet INT = 0;
@@ -12,20 +24,38 @@ BEGIN
     DECLARE @UpdatedStaging INT = 0;
     DECLARE @DeletedTimesheet INT = 0;
     DECLARE @DeletedLeave INT = 0;
-    DECLARE @StatusMessage NVARCHAR(500);
     DECLARE @ErrorMsg NVARCHAR(MAX);
+    DECLARE @LockResult INT;
+
+    -- Guard: only if new data
+    IF NOT EXISTS (SELECT 1 FROM dbo.StagingTimesheet WHERE IsProcessed = 0)
+    BEGIN
+        SELECT 0 AS ExitCode, 'SUCCESS - No new data to process' AS Status;
+        RETURN;
+    END
+
+    -- Prevent overlapping runs
+    EXEC @LockResult = sp_getapplock
+        @Resource = 'TimesheetMigrationLock',
+        @LockMode = 'Exclusive',
+        @LockOwner = 'Session',
+        @LockTimeout = 0;
+
+    IF @LockResult < 0
+    BEGIN
+        SELECT 1 AS ExitCode, 'ERROR - Migration already in progress' AS Status;
+        RETURN;
+    END
 
     BEGIN TRY
 
-        -- 1. Get total unprocessed records
         SELECT @TotalStagingRecords = COUNT(*)
         FROM dbo.StagingTimesheet
         WHERE IsProcessed = 0;
 
-        -- 2. Generate a new BatchID (requires a sequence named BatchIDSequence)
         SET @BatchID = NEXT VALUE FOR dbo.BatchIDSequence;
 
-        -- 3. Log START
+        -- LOG START
         INSERT INTO dbo.AuditLog (
             BatchID, TableName, OperationType, StatusCode,
             RowsInserted, RowsUpdated, RowsDeleted,
@@ -34,20 +64,17 @@ BEGIN
         VALUES (
             @BatchID, 'Migration', 'START', 'RUNNING',
             0, 0, 0,
-            HOST_NAME(), 'GitHub Actions', GETDATE()
+            HOST_NAME(), 'Scheduler', GETDATE()
         );
 
-        -- 4. DELETE existing data (full refresh)
+        -- DELETE existing data
         DELETE FROM dbo.Timesheet;
         SET @DeletedTimesheet = @@ROWCOUNT;
-        DBCC CHECKIDENT ('dbo.Timesheet', RESEED, 0);
 
         DELETE FROM dbo.[Leave];
         SET @DeletedLeave = @@ROWCOUNT;
-        DBCC CHECKIDENT ('dbo.[Leave]', RESEED, 0);
 
-        -- 5. INSERT Timesheet (non‑leave, non‑weekend)
-        --    DISTINCT removes any duplicate rows from staging
+        -- INSERT Timesheet
         INSERT INTO dbo.Timesheet (
             EmployeeID, ClientID, Date, DayOfWeek,
             Description, BillableType, Duration,
@@ -80,9 +107,7 @@ BEGIN
 
         SET @InsertedTimesheet = @@ROWCOUNT;
 
-        -- 6. INSERT Leave (using LeaveCategory lookup)
-        --    EXCLUDES Public Holiday & Family Resp.
-        --    DISTINCT removes duplicates
+        -- INSERT Leave
         INSERT INTO dbo.[Leave] (
             EmployeeID, LeaveType, StartDate, EndDate, LeaveDays,
             Comments, CreatedDate, ModifiedDate
@@ -105,7 +130,7 @@ BEGIN
 
         SET @InsertedLeave = @@ROWCOUNT;
 
-        -- 7. Mark staging records as processed
+        -- Mark staging as processed
         UPDATE dbo.StagingTimesheet
         SET IsProcessed = 1,
             ProcessedDate = GETDATE(),
@@ -114,7 +139,7 @@ BEGIN
 
         SET @UpdatedStaging = @@ROWCOUNT;
 
-        -- 8. Log SUCCESS / COMPLETE
+        -- LOG COMPLETE
         INSERT INTO dbo.AuditLog (
             BatchID, TableName, OperationType, StatusCode,
             RowsInserted, RowsUpdated, RowsDeleted,
@@ -125,10 +150,11 @@ BEGIN
             @InsertedTimesheet + @InsertedLeave,
             @UpdatedStaging,
             @DeletedTimesheet + @DeletedLeave,
-            HOST_NAME(), 'GitHub Actions', GETDATE()
+            HOST_NAME(), 'Scheduler', GETDATE()
         );
 
-        -- Return success
+        EXEC sp_releaseapplock @Resource = 'TimesheetMigrationLock', @LockOwner = 'Session';
+
         SELECT 0 AS ExitCode, 'SUCCESS' AS Status;
 
     END TRY
@@ -136,7 +162,6 @@ BEGIN
 
         SET @ErrorMsg = ERROR_MESSAGE();
 
-        -- Log ERROR
         INSERT INTO dbo.AuditLog (
             BatchID, TableName, OperationType, StatusCode,
             RowsInserted, RowsUpdated, RowsDeleted,
@@ -145,104 +170,14 @@ BEGIN
         VALUES (
             @BatchID, 'Migration', 'ERROR', 'FAILED',
             0, 0, 0,
-            HOST_NAME(), 'GitHub Actions', GETDATE(), @ErrorMsg
+            HOST_NAME(), 'Scheduler', GETDATE(), @ErrorMsg
         );
 
-        -- Return failure
+        EXEC sp_releaseapplock @Resource = 'TimesheetMigrationLock', @LockOwner = 'Session';
+
         SELECT 1 AS ExitCode, @ErrorMsg AS Status;
 
     END CATCH
 END;
+
 GO
-
-PRINT 'Stored procedure spRunTimesheetMigration updated successfully.';
-GO
-=======
-
-    BEGIN TRY
-
-        -- Log start
-        INSERT INTO dbo.AuditLog
-        (
-            BatchID,
-            TableName,
-            OperationType,
-            RecordID,
-            ChangedColumns,
-            AffectedRows,
-            StatusCode,
-            ErrorMessage,
-            ExecutingUser,
-            HostName,
-            ApplicationName,
-            EventDateTime,
-            ProcessingTimeMs
-        )
-        VALUES
-        (
-            -1,
-            'ETL_Process',
-            'EXECUTION_START',
-            'DIRECT_EXECUTION',
-            NULL,
-            1,
-            'RUNNING',
-            NULL,
-            SYSTEM_USER,
-            HOST_NAME(),
-            'GitHub Actions',
-            @StartTime,
-            NULL
-        );
-
-   
-        EXEC msdb.dbo.sp_start_job 
-            @job_name = 'RunTimesheetMigration';
-
-        SELECT 
-            CAST(0 AS INT) AS ExitCode,
-            CAST('JOB_STARTED' AS NVARCHAR(50)) AS Status;
-
-    END TRY
-    BEGIN CATCH
-
-        INSERT INTO dbo.AuditLog
-        (
-            BatchID,
-            TableName,
-            OperationType,
-            RecordID,
-            ChangedColumns,
-            AffectedRows,
-            StatusCode,
-            ErrorMessage,
-            ExecutingUser,
-            HostName,
-            ApplicationName,
-            EventDateTime,
-            ProcessingTimeMs
-        )
-        VALUES
-        (
-            -1,
-            'ETL_Process',
-            'EXECUTION_FAILED',
-            'DIRECT_EXECUTION',
-            NULL,
-            0,
-            'FAILED',
-            ERROR_MESSAGE(),
-            SYSTEM_USER,
-            HOST_NAME(),
-            'GitHub Actions',
-            GETDATE(),
-            NULL
-        );
-
-        SELECT 
-            CAST(1 AS INT) AS ExitCode,
-            CAST(ERROR_MESSAGE() AS NVARCHAR(4000)) AS Status;
-
-    END CATCH
-END;
->>>>>>> origin/main

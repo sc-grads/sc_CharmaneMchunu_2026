@@ -1,20 +1,24 @@
-name: Deploy Timesheet Migration Project - Staging Environment
+name: Deploy Timesheet Migration Project - Production Environment
 
 on:
   push:
     branches:
-      - staging
+      - main
 
 jobs:
   deploy:
     runs-on:
       - self-hosted
-      - runner-cm-pc
+      - runner-tg-pc
 
-    environment: staging
+    environment: production
 
     env:
-      SQL_SERVER: ${{ secrets.SQL_SERVER }}
+      SQL_SERVER: ${{ vars.SQL_SERVER }}
+      SQL_PORT: ${{ vars.SQL_PORT }}
+      DATABASE_NAME: ${{ vars.SQL_DATABASE }}
+      SQL_USERNAME: ${{ secrets.SQL_USERNAME }}
+      SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
 
     steps:
       - name: Checkout Repository
@@ -39,23 +43,23 @@ jobs:
       - name: Create Database
         shell: cmd
         run: |
-          sqlcmd -S %SQL_SERVER% -E -i Database\CreateDatabase.sql
+          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -i Database\CreateDatabase.sql
       - name: Create Tables
         shell: cmd
         run: |
-          sqlcmd -S %SQL_SERVER% -E -i Database\CreateTable.sql
+          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d %DATABASE_NAME% -i Database\CreateTable.sql
       - name: Create Stored Procedures
         shell: cmd
         run: |
-          sqlcmd -S %SQL_SERVER% -E -i Database\StoredProcedure.sql
+          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d %DATABASE_NAME% -i Database\StoredProcedure.sql
       - name: Create Triggers
         shell: cmd
         run: |
-          sqlcmd -S %SQL_SERVER% -E -i Database\Triggers.sql
+          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d %DATABASE_NAME% -i Database\Triggers.sql
       - name: Seed Data
         shell: cmd
         run: |
-          sqlcmd -S %SQL_SERVER% -E -i Database\SeedData.sql
+          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d %DATABASE_NAME% -i Database\SeedData.sql
       - name: Create SSIS Catalog Folder
         shell: powershell
         run: |
@@ -72,7 +76,7 @@ jobs:
           END
           "@
           $sql | Out-File create-folder.sql -Encoding ASCII
-          sqlcmd -S "$env:SQL_SERVER" -E -d SSISDB -i create-folder.sql -b
+          sqlcmd -S "localhost,$env:SQL_PORT" -E -d SSISDB -i create-folder.sql -b
       - name: Deploy ISPAC
         shell: powershell
         run: |
@@ -89,18 +93,18 @@ jobs:
               @operation_id = @operation_id OUTPUT;
           "@
           $sql | Out-File deploy-ispac.sql -Encoding ASCII
-          sqlcmd -S "$env:SQL_SERVER" -E -d SSISDB -i deploy-ispac.sql -b
+          sqlcmd -S "localhost,$env:SQL_PORT" -E -d SSISDB -i deploy-ispac.sql -b
       - name: Create SQL Server Agent Job
         shell: cmd
         run: |
-          sqlcmd -S %SQL_SERVER% -E -d msdb -i SQLAgent\CreateJob.sql
+          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d msdb -i SQLAgent\CreateJob.sql
       - name: Start SQL Server Agent Job
         shell: cmd
         run: |
-          sqlcmd -S %SQL_SERVER% -E -d msdb -Q "EXEC msdb.dbo.sp_start_job @job_name='RunTimesheetDataPipeline';"
+          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d msdb -Q "EXEC msdb.dbo.sp_start_job @job_name='RunTimesheetDataPipeline';"
       - name: Deployment Complete
         shell: cmd
         run: |
           echo ========================================
-          echo Staging deployment completed successfully.
+          echo Deployment completed successfully.
           echo ========================================
