@@ -26,9 +26,11 @@ jobs:
       - name: test Connection
         run: |
           sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" -U "${{ secrets.SQL_USERNAME }}" -P "${{ secrets.SQL_PASSWORD }}" -C -Q "SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version"
+
       - name: deploy database table
         run: |
           sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" -U "${{ secrets.SQL_USERNAME }}" -P "${{ secrets.SQL_PASSWORD }}" -C -d master -i ./deploy-timesheetdb.sql
+
       - name: run spRunTimesheetMigration
         id: run_migration
         run: |
@@ -42,6 +44,7 @@ jobs:
             echo "migration  failed (ExitCode=$EXIT_CODE)"
             exit 1
           fi
+
     
       - name: if it is successfull(just checking for the last time)
         if: success()

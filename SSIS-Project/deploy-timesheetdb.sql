@@ -1,23 +1,10 @@
--- =============================================
--- CREATE DATABASE IF NOT EXISTS
--- =============================================
 IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'TimesheetDB')
-BEGIN
     CREATE DATABASE TimesheetDB;
-    PRINT 'Database TimesheetDB created.';
-END
-ELSE
-    PRINT 'Database TimesheetDB already exists.';
 GO
 
 USE TimesheetDB;
 GO
 
--- =============================================
--- TABLES
--- =============================================
-
--- Employee
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Employee')
 BEGIN
     CREATE TABLE dbo.Employee (
@@ -28,13 +15,9 @@ BEGIN
         CreatedDate DATETIME DEFAULT GETDATE(),
         ModifiedDate DATETIME NULL
     );
-    PRINT 'Employee table created.';
 END
-ELSE
-    PRINT 'Employee table already exists.';
 GO
 
--- Client
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Client')
 BEGIN
     CREATE TABLE dbo.Client (
@@ -45,13 +28,9 @@ BEGIN
         CreatedDate DATETIME DEFAULT GETDATE(),
         ModifiedDate DATETIME NULL
     );
-    PRINT 'Client table created.';
 END
-ELSE
-    PRINT 'Client table already exists.';
 GO
 
--- LeaveCategory
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'LeaveCategory')
 BEGIN
     CREATE TABLE dbo.LeaveCategory (
@@ -60,13 +39,9 @@ BEGIN
         LeaveType NVARCHAR(50) NOT NULL,
         IsActive BIT DEFAULT 1
     );
-    PRINT 'LeaveCategory table created.';
 END
-ELSE
-    PRINT 'LeaveCategory table already exists.';
 GO
 
--- StagingTimesheet
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'StagingTimesheet')
 BEGIN
     CREATE TABLE dbo.StagingTimesheet (
@@ -91,13 +66,9 @@ BEGIN
         ProcessedDate DATETIME NULL,
         BatchID INT NULL
     );
-    PRINT 'StagingTimesheet table created.';
 END
-ELSE
-    PRINT 'StagingTimesheet table already exists.';
 GO
 
--- Timesheet
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Timesheet')
 BEGIN
     CREATE TABLE dbo.Timesheet (
@@ -114,22 +85,12 @@ BEGIN
         Comments NVARCHAR(2000) NULL,
         CreatedDate DATETIME DEFAULT GETDATE(),
         ModifiedDate DATETIME NULL,
-        
-        CONSTRAINT FK_Timesheet_Employee 
-            FOREIGN KEY (EmployeeID) 
-            REFERENCES dbo.Employee(EmployeeID),
-        
-        CONSTRAINT FK_Timesheet_Client 
-            FOREIGN KEY (ClientID) 
-            REFERENCES dbo.Client(ClientID)
+        CONSTRAINT FK_Timesheet_Employee FOREIGN KEY (EmployeeID) REFERENCES dbo.Employee(EmployeeID),
+        CONSTRAINT FK_Timesheet_Client FOREIGN KEY (ClientID) REFERENCES dbo.Client(ClientID)
     );
-    PRINT 'Timesheet table created.';
 END
-ELSE
-    PRINT 'Timesheet table already exists.';
 GO
 
--- Leave
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Leave')
 BEGIN
     CREATE TABLE dbo.Leave (
@@ -142,17 +103,10 @@ BEGIN
         Comments NVARCHAR(500),
         CreatedDate DATETIME DEFAULT GETDATE(),
         ModifiedDate DATETIME NULL,
-        
-        CONSTRAINT FK_Leave_Employee 
-            FOREIGN KEY (EmployeeID) 
-            REFERENCES dbo.Employee(EmployeeID)
+        CONSTRAINT FK_Leave_Employee FOREIGN KEY (EmployeeID) REFERENCES dbo.Employee(EmployeeID)
     );
-    PRINT 'Leave table created.';
 END
-ELSE
-    PRINT 'Leave table already exists.';
 GO
-
 
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AuditStatusCode')
 BEGIN
@@ -165,13 +119,9 @@ BEGIN
         IsError BIT DEFAULT 0,
         IsActive BIT DEFAULT 1
     );
-    PRINT 'AuditStatusCode table created.';
 END
-ELSE
-    PRINT 'AuditStatusCode table already exists.';
 GO
 
--- AuditLog (simplified version – only the columns you want)
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AuditLog')
 BEGIN
     CREATE TABLE dbo.AuditLog (
@@ -188,15 +138,9 @@ BEGIN
         EventDateTime DATETIME NOT NULL DEFAULT GETDATE(),
         ErrorMessage NVARCHAR(MAX) NULL
     );
-    PRINT 'AuditLog table created (simplified).';
 END
-ELSE
-    PRINT 'AuditLog table already exists.';
 GO
 
--- =============================================
--- INDEXES
--- =============================================
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_StagingTimesheet_IsProcessed' AND object_id = OBJECT_ID('StagingTimesheet'))
     CREATE NONCLUSTERED INDEX IX_StagingTimesheet_IsProcessed ON dbo.StagingTimesheet(IsProcessed);
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Timesheet_EmployeeID' AND object_id = OBJECT_ID('Timesheet'))
@@ -211,18 +155,12 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_AuditLog_BatchID' AND 
     CREATE NONCLUSTERED INDEX IX_AuditLog_BatchID ON dbo.AuditLog(BatchID);
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_AuditLog_EventDateTime' AND object_id = OBJECT_ID('AuditLog'))
     CREATE NONCLUSTERED INDEX IX_AuditLog_EventDateTime ON dbo.AuditLog(EventDateTime);
-PRINT 'Indexes verified/created.';
 GO
 
--- =============================================
--- STATIC DATA
--- =============================================
-
--- Employees
 IF NOT EXISTS (SELECT 1 FROM dbo.Employee)
 BEGIN
     INSERT INTO dbo.Employee (EmployeeName, EmployeeSurname, IsActive)
-    VALUES 
+    VALUES
         ('Buhle', 'Mukhuba', 1),
         ('Charmane', 'Mchunu', 1),
         ('Jabulane', 'Poulo', 1),
@@ -231,17 +169,13 @@ BEGIN
         ('Rushil', 'Jivan', 1),
         ('Shriya', 'Hariparsad', 1),
         ('Teolan', 'Govender', 1);
-    PRINT 'Employees inserted.';
 END
-ELSE
-    PRINT 'Employees already exist.';
 GO
 
--- Clients
 IF NOT EXISTS (SELECT 1 FROM dbo.Client)
 BEGIN
     INSERT INTO dbo.Client (ClientName, ClientCode, IsActive)
-    VALUES 
+    VALUES
         ('Internal Sambe', 'INT001', 1),
         ('ADVTech', 'ADV001', 1),
         ('AFA Sasfin', 'AFA001', 1),
@@ -285,33 +219,25 @@ BEGIN
         ('SBV', 'SBV001', 1),
         ('Sibanya', 'SIB001', 1),
         ('Transport Holdings', 'TRA001', 1);
-    PRINT 'Clients inserted.';
 END
-ELSE
-    PRINT 'Clients already exist.';
 GO
 
--- AuditStatusCode
 IF NOT EXISTS (SELECT 1 FROM dbo.AuditStatusCode)
 BEGIN
     INSERT INTO dbo.AuditStatusCode (StatusCode, StatusName, Description, IsSuccess, IsError)
-    VALUES 
+    VALUES
         ('SUCCESS', 'Success', 'Operation completed successfully', 1, 0),
         ('FAILED', 'Failed', 'Operation failed', 0, 1),
         ('RUNNING', 'Running', 'Operation is in progress', 0, 0),
         ('WARNING', 'Warning', 'Operation completed with warnings', 0, 0),
         ('SKIPPED', 'Skipped', 'Operation was skipped', 0, 0);
-    PRINT 'AuditStatusCode populated.';
 END
-ELSE
-    PRINT 'AuditStatusCode already populated.';
 GO
 
--- LeaveCategory
 IF NOT EXISTS (SELECT 1 FROM dbo.LeaveCategory)
 BEGIN
     INSERT INTO dbo.LeaveCategory (SourceText, LeaveType)
-    VALUES 
+    VALUES
         ('Annual Leave', 'Annual Leave'),
         ('Sick Leave', 'Sick Leave'),
         ('Sick Leave - half day', 'Sick Leave'),
@@ -322,29 +248,13 @@ BEGIN
         ('Public Holiday', 'Public Holiday'),
         ('Unpaid Leave', 'Unpaid Leave'),
         ('Bereavement Leave', 'Bereavement Leave');
-    PRINT 'LeaveCategory populated.';
 END
-ELSE
-    PRINT 'LeaveCategory already populated.';
 GO
 
--- =============================================
--- SEQUENCE
--- =============================================
 IF NOT EXISTS (SELECT * FROM sys.sequences WHERE name = 'BatchIDSequence')
-BEGIN
     CREATE SEQUENCE dbo.BatchIDSequence START WITH 1 INCREMENT BY 1;
-    PRINT 'BatchIDSequence created.';
-END
-ELSE
-    PRINT 'BatchIDSequence already exists.';
 GO
 
--- =============================================
--- TRIGGERS (simplified to use only AuditLog columns)
--- =============================================
-
--- Trigger 1: StagingTimesheet Update Audit
 DROP TRIGGER IF EXISTS dbo.trg_StagingTimesheet_UpdateAudit;
 GO
 
@@ -354,25 +264,25 @@ AFTER UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
-    
+
     DECLARE @BatchID INT;
     DECLARE @ContextInfo VARBINARY(128) = CONTEXT_INFO();
-    
+
     IF @ContextInfo IS NOT NULL AND @ContextInfo != 0x00000000
         SET @BatchID = CONVERT(INT, @ContextInfo);
     ELSE
     BEGIN
         SELECT TOP 1 @BatchID = BatchID
         FROM dbo.AuditLog
-        WHERE TableName = 'ETL_Process' 
+        WHERE TableName = 'ETL_Process'
           AND OperationType = 'START'
           AND StatusCode = 'RUNNING'
         ORDER BY AuditID DESC;
     END
-    
+
     IF @BatchID IS NULL OR @BatchID = 0
         SET @BatchID = -1;
-    
+
     BEGIN TRY
         IF UPDATE(IsProcessed)
         BEGIN
@@ -381,17 +291,9 @@ BEGIN
                 RowsInserted, RowsUpdated, RowsDeleted,
                 HostName, ApplicationName, EventDateTime
             )
-            SELECT 
-                @BatchID,
-                'StagingTimesheet',
-                'UPDATE',
-                'SUCCESS',
-                0,
-                1,
-                0,
-                HOST_NAME(),
-                APP_NAME(),
-                GETDATE()
+            SELECT
+                @BatchID, 'StagingTimesheet', 'UPDATE', 'SUCCESS',
+                0, 1, 0, HOST_NAME(), APP_NAME(), GETDATE()
             FROM inserted i
             WHERE i.IsProcessed = 1;
         END
@@ -403,24 +305,13 @@ BEGIN
             HostName, ApplicationName, EventDateTime, ErrorMessage
         )
         VALUES (
-            @BatchID,
-            'StagingTimesheet',
-            'TRIGGER_ERROR',
-            'FAILED',
-            0, 0, 0,
-            HOST_NAME(),
-            APP_NAME(),
-            GETDATE(),
-            ERROR_MESSAGE()
+            @BatchID, 'StagingTimesheet', 'TRIGGER_ERROR', 'FAILED',
+            0, 0, 0, HOST_NAME(), APP_NAME(), GETDATE(), ERROR_MESSAGE()
         );
     END CATCH
 END;
 GO
 
-PRINT 'trg_StagingTimesheet_UpdateAudit created (simplified).';
-GO
-
--- Trigger 2: Timesheet Audit
 DROP TRIGGER IF EXISTS dbo.trg_Timesheet_Audit;
 GO
 
@@ -430,25 +321,25 @@ AFTER INSERT, UPDATE, DELETE
 AS
 BEGIN
     SET NOCOUNT ON;
-    
+
     DECLARE @BatchID INT;
     DECLARE @ContextInfo VARBINARY(128) = CONTEXT_INFO();
-    
+
     IF @ContextInfo IS NOT NULL AND @ContextInfo != 0x00000000
         SET @BatchID = CONVERT(INT, @ContextInfo);
     ELSE
     BEGIN
         SELECT TOP 1 @BatchID = BatchID
         FROM dbo.AuditLog
-        WHERE TableName = 'ETL_Process' 
+        WHERE TableName = 'ETL_Process'
           AND OperationType = 'START'
           AND StatusCode = 'RUNNING'
         ORDER BY AuditID DESC;
     END
-    
+
     IF @BatchID IS NULL OR @BatchID = 0
         SET @BatchID = -1;
-    
+
     BEGIN TRY
         IF EXISTS (SELECT 1 FROM inserted) AND NOT EXISTS (SELECT 1 FROM deleted)
         BEGIN
@@ -457,20 +348,10 @@ BEGIN
                 RowsInserted, RowsUpdated, RowsDeleted,
                 HostName, ApplicationName, EventDateTime
             )
-            SELECT
-                @BatchID,
-                'Timesheet',
-                'INSERT',
-                'SUCCESS',
-                COUNT(*),
-                0,
-                0,
-                HOST_NAME(),
-                APP_NAME(),
-                GETDATE()
+            SELECT @BatchID, 'Timesheet', 'INSERT', 'SUCCESS', COUNT(*), 0, 0, HOST_NAME(), APP_NAME(), GETDATE()
             FROM inserted;
         END
-        
+
         IF EXISTS (SELECT 1 FROM inserted) AND EXISTS (SELECT 1 FROM deleted)
         BEGIN
             INSERT INTO dbo.AuditLog (
@@ -478,20 +359,10 @@ BEGIN
                 RowsInserted, RowsUpdated, RowsDeleted,
                 HostName, ApplicationName, EventDateTime
             )
-            SELECT
-                @BatchID,
-                'Timesheet',
-                'UPDATE',
-                'SUCCESS',
-                0,
-                COUNT(*),
-                0,
-                HOST_NAME(),
-                APP_NAME(),
-                GETDATE()
+            SELECT @BatchID, 'Timesheet', 'UPDATE', 'SUCCESS', 0, COUNT(*), 0, HOST_NAME(), APP_NAME(), GETDATE()
             FROM inserted;
         END
-        
+
         IF NOT EXISTS (SELECT 1 FROM inserted) AND EXISTS (SELECT 1 FROM deleted)
         BEGIN
             INSERT INTO dbo.AuditLog (
@@ -499,17 +370,7 @@ BEGIN
                 RowsInserted, RowsUpdated, RowsDeleted,
                 HostName, ApplicationName, EventDateTime
             )
-            SELECT
-                @BatchID,
-                'Timesheet',
-                'DELETE',
-                'SUCCESS',
-                0,
-                0,
-                COUNT(*),
-                HOST_NAME(),
-                APP_NAME(),
-                GETDATE()
+            SELECT @BatchID, 'Timesheet', 'DELETE', 'SUCCESS', 0, 0, COUNT(*), HOST_NAME(), APP_NAME(), GETDATE()
             FROM deleted;
         END
     END TRY
@@ -520,24 +381,13 @@ BEGIN
             HostName, ApplicationName, EventDateTime, ErrorMessage
         )
         VALUES (
-            @BatchID,
-            'Timesheet',
-            'TRIGGER_ERROR',
-            'FAILED',
-            0, 0, 0,
-            HOST_NAME(),
-            APP_NAME(),
-            GETDATE(),
-            ERROR_MESSAGE()
+            @BatchID, 'Timesheet', 'TRIGGER_ERROR', 'FAILED',
+            0, 0, 0, HOST_NAME(), APP_NAME(), GETDATE(), ERROR_MESSAGE()
         );
     END CATCH
 END;
 GO
 
-PRINT 'trg_Timesheet_Audit created (simplified).';
-GO
-
--- Trigger 3: Leave Audit
 DROP TRIGGER IF EXISTS dbo.trg_Leave_Audit;
 GO
 
@@ -547,25 +397,25 @@ AFTER INSERT, UPDATE, DELETE
 AS
 BEGIN
     SET NOCOUNT ON;
-    
+
     DECLARE @BatchID INT;
     DECLARE @ContextInfo VARBINARY(128) = CONTEXT_INFO();
-    
+
     IF @ContextInfo IS NOT NULL AND @ContextInfo != 0x00000000
         SET @BatchID = CONVERT(INT, @ContextInfo);
     ELSE
     BEGIN
         SELECT TOP 1 @BatchID = BatchID
         FROM dbo.AuditLog
-        WHERE TableName = 'ETL_Process' 
+        WHERE TableName = 'ETL_Process'
           AND OperationType = 'START'
           AND StatusCode = 'RUNNING'
         ORDER BY AuditID DESC;
     END
-    
+
     IF @BatchID IS NULL OR @BatchID = 0
         SET @BatchID = -1;
-    
+
     BEGIN TRY
         IF EXISTS (SELECT 1 FROM inserted) AND NOT EXISTS (SELECT 1 FROM deleted)
         BEGIN
@@ -574,20 +424,10 @@ BEGIN
                 RowsInserted, RowsUpdated, RowsDeleted,
                 HostName, ApplicationName, EventDateTime
             )
-            SELECT
-                @BatchID,
-                'Leave',
-                'INSERT',
-                'SUCCESS',
-                COUNT(*),
-                0,
-                0,
-                HOST_NAME(),
-                APP_NAME(),
-                GETDATE()
+            SELECT @BatchID, 'Leave', 'INSERT', 'SUCCESS', COUNT(*), 0, 0, HOST_NAME(), APP_NAME(), GETDATE()
             FROM inserted;
         END
-        
+
         IF EXISTS (SELECT 1 FROM inserted) AND EXISTS (SELECT 1 FROM deleted)
         BEGIN
             INSERT INTO dbo.AuditLog (
@@ -595,20 +435,10 @@ BEGIN
                 RowsInserted, RowsUpdated, RowsDeleted,
                 HostName, ApplicationName, EventDateTime
             )
-            SELECT
-                @BatchID,
-                'Leave',
-                'UPDATE',
-                'SUCCESS',
-                0,
-                COUNT(*),
-                0,
-                HOST_NAME(),
-                APP_NAME(),
-                GETDATE()
+            SELECT @BatchID, 'Leave', 'UPDATE', 'SUCCESS', 0, COUNT(*), 0, HOST_NAME(), APP_NAME(), GETDATE()
             FROM inserted;
         END
-        
+
         IF NOT EXISTS (SELECT 1 FROM inserted) AND EXISTS (SELECT 1 FROM deleted)
         BEGIN
             INSERT INTO dbo.AuditLog (
@@ -616,17 +446,7 @@ BEGIN
                 RowsInserted, RowsUpdated, RowsDeleted,
                 HostName, ApplicationName, EventDateTime
             )
-            SELECT
-                @BatchID,
-                'Leave',
-                'DELETE',
-                'SUCCESS',
-                0,
-                0,
-                COUNT(*),
-                HOST_NAME(),
-                APP_NAME(),
-                GETDATE()
+            SELECT @BatchID, 'Leave', 'DELETE', 'SUCCESS', 0, 0, COUNT(*), HOST_NAME(), APP_NAME(), GETDATE()
             FROM deleted;
         END
     END TRY
@@ -637,27 +457,13 @@ BEGIN
             HostName, ApplicationName, EventDateTime, ErrorMessage
         )
         VALUES (
-            @BatchID,
-            'Leave',
-            'TRIGGER_ERROR',
-            'FAILED',
-            0, 0, 0,
-            HOST_NAME(),
-            APP_NAME(),
-            GETDATE(),
-            ERROR_MESSAGE()
+            @BatchID, 'Leave', 'TRIGGER_ERROR', 'FAILED',
+            0, 0, 0, HOST_NAME(), APP_NAME(), GETDATE(), ERROR_MESSAGE()
         );
     END CATCH
 END;
 GO
 
-PRINT 'trg_Leave_Audit created (simplified).';
-GO
-
--- =============================================
--- STORED PROCEDURE: spRunTimesheetMigration
--- (unchanged – already uses simple AuditLog columns)
--- =============================================
 IF OBJECT_ID('spRunTimesheetMigration', 'P') IS NOT NULL
     DROP PROCEDURE spRunTimesheetMigration;
 GO
@@ -678,14 +484,12 @@ BEGIN
     DECLARE @ErrorMsg NVARCHAR(MAX);
     DECLARE @LockResult INT;
 
-    -- Guard: only if new data
     IF NOT EXISTS (SELECT 1 FROM dbo.StagingTimesheet WHERE IsProcessed = 0)
     BEGIN
         SELECT 0 AS ExitCode, 'SUCCESS - No new data to process' AS Status;
         RETURN;
     END
 
-    -- Prevent overlapping runs
     EXEC @LockResult = sp_getapplock
         @Resource = 'TimesheetMigrationLock',
         @LockMode = 'Exclusive',
@@ -706,7 +510,6 @@ BEGIN
 
         SET @BatchID = NEXT VALUE FOR dbo.BatchIDSequence;
 
-        -- LOG START
         INSERT INTO dbo.AuditLog (
             BatchID, TableName, OperationType, StatusCode,
             RowsInserted, RowsUpdated, RowsDeleted,
@@ -714,18 +517,15 @@ BEGIN
         )
         VALUES (
             @BatchID, 'Migration', 'START', 'RUNNING',
-            0, 0, 0,
-            HOST_NAME(), 'Scheduler', GETDATE()
+            0, 0, 0, HOST_NAME(), 'Scheduler', GETDATE()
         );
 
-        -- DELETE existing data
         DELETE FROM dbo.Timesheet;
         SET @DeletedTimesheet = @@ROWCOUNT;
 
         DELETE FROM dbo.[Leave];
         SET @DeletedLeave = @@ROWCOUNT;
 
-        -- INSERT Timesheet
         INSERT INTO dbo.Timesheet (
             EmployeeID, ClientID, Date, DayOfWeek,
             Description, BillableType, Duration,
@@ -758,7 +558,6 @@ BEGIN
 
         SET @InsertedTimesheet = @@ROWCOUNT;
 
-        -- INSERT Leave
         INSERT INTO dbo.[Leave] (
             EmployeeID, LeaveType, StartDate, EndDate, LeaveDays,
             Comments, CreatedDate, ModifiedDate
@@ -781,7 +580,6 @@ BEGIN
 
         SET @InsertedLeave = @@ROWCOUNT;
 
-        -- Mark staging as processed
         UPDATE dbo.StagingTimesheet
         SET IsProcessed = 1,
             ProcessedDate = GETDATE(),
@@ -790,7 +588,6 @@ BEGIN
 
         SET @UpdatedStaging = @@ROWCOUNT;
 
-        -- LOG COMPLETE
         INSERT INTO dbo.AuditLog (
             BatchID, TableName, OperationType, StatusCode,
             RowsInserted, RowsUpdated, RowsDeleted,
@@ -820,8 +617,7 @@ BEGIN
         )
         VALUES (
             @BatchID, 'Migration', 'ERROR', 'FAILED',
-            0, 0, 0,
-            HOST_NAME(), 'Scheduler', GETDATE(), @ErrorMsg
+            0, 0, 0, HOST_NAME(), 'Scheduler', GETDATE(), @ErrorMsg
         );
 
         EXEC sp_releaseapplock @Resource = 'TimesheetMigrationLock', @LockOwner = 'Session';
@@ -830,31 +626,4 @@ BEGIN
 
     END CATCH
 END;
-GO
-
-PRINT 'Stored procedure spRunTimesheetMigration created.';
-GO
-
--- =============================================
--- FINAL VERIFICATION
--- =============================================
-PRINT '';
-PRINT '========================================';
-PRINT 'DEPLOYMENT COMPLETE - VERIFICATION';
-PRINT '========================================';
-
-SELECT 'Tables' AS ObjectType, COUNT(*) AS Count FROM sys.tables WHERE schema_id = SCHEMA_ID('dbo')
-UNION ALL
-SELECT 'Indexes', COUNT(*) FROM sys.indexes WHERE object_id IN (SELECT object_id FROM sys.tables WHERE schema_id = SCHEMA_ID('dbo')) AND index_id > 0
-UNION ALL
-SELECT 'Stored Procedures', COUNT(*) FROM sys.objects WHERE type = 'P' AND schema_id = SCHEMA_ID('dbo')
-UNION ALL
-SELECT 'Sequences', COUNT(*) FROM sys.sequences
-UNION ALL
-SELECT 'Triggers', COUNT(*) FROM sys.triggers WHERE parent_class = 0 AND name LIKE 'trg_%Audit%';
-
-PRINT '';
-PRINT '========================================';
-PRINT 'ALL OBJECTS VERIFIED.';
-PRINT '========================================';
 GO
