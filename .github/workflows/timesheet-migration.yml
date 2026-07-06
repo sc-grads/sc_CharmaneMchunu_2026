@@ -25,57 +25,41 @@ jobs:
 
       - name: Build SSIS Project
         shell: cmd
-        run: |
-          msbuild "SSIS-Project\TimesheetMigration\TimesheetMigration.slnx" /p:Configuration=Development
+        run: msbuild "SSIS-Project\TimesheetMigration\TimesheetMigration.slnx" /p:Configuration=Development
 
       - name: Verify ISPAC Exists
         shell: powershell
         run: |
           $ispac = "SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
-          if (!(Test-Path $ispac)) {
-              Write-Error "ISPAC file not found."
-              exit 1
-          }
-          Write-Host "ISPAC found."
+          if (!(Test-Path $ispac)) { exit 1 }
 
       - name: Create Database
         shell: cmd
-        run: |
-          sqlcmd -S %SQL_SERVER% -E -i Database\CreateDatabase.sql
+        run: sqlcmd -S %SQL_SERVER% -E -i Database\CreateDatabase.sql
 
       - name: Create Tables
         shell: cmd
-        run: |
-          sqlcmd -S %SQL_SERVER% -E -i Database\CreateTable.sql
+        run: sqlcmd -S %SQL_SERVER% -E -i Database\CreateTable.sql
 
       - name: Create Stored Procedures
         shell: cmd
-        run: |
-          sqlcmd -S %SQL_SERVER% -E -i Database\StoredProcedure.sql
+        run: sqlcmd -S %SQL_SERVER% -E -i Database\StoredProcedure.sql
 
       - name: Create Triggers
         shell: cmd
-        run: |
-          sqlcmd -S %SQL_SERVER% -E -i Database\Triggers.sql
+        run: sqlcmd -S %SQL_SERVER% -E -i Database\Triggers.sql
 
       - name: Seed Data
         shell: cmd
-        run: |
-          sqlcmd -S %SQL_SERVER% -E -i Database\SeedData.sql
+        run: sqlcmd -S %SQL_SERVER% -E -i Database\SeedData.sql
 
       - name: Create SSIS Catalog Folder
         shell: powershell
         run: |
           $sql = @"
-          IF NOT EXISTS
-          (
-              SELECT 1
-              FROM SSISDB.catalog.folders
-              WHERE name = N'TimesheetMigration'
-          )
+          IF NOT EXISTS (SELECT 1 FROM SSISDB.catalog.folders WHERE name = N'TimesheetMigration')
           BEGIN
-              EXEC SSISDB.catalog.create_folder
-                  @folder_name = N'TimesheetMigration';
+              EXEC SSISDB.catalog.create_folder @folder_name = N'TimesheetMigration';
           END
           "@
           $sql | Out-File create-folder.sql -Encoding ASCII
@@ -84,8 +68,7 @@ jobs:
       - name: Deploy ISPAC
         shell: powershell
         run: |
-          $ispac = "SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
-          $bytes = [System.IO.File]::ReadAllBytes($ispac)
+          $bytes = [System.IO.File]::ReadAllBytes("SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac")
           $hex = ($bytes | ForEach-Object { $_.ToString("X2") }) -join ""
           $sql = @"
           DECLARE @ProjectBinary VARBINARY(MAX) = 0x$hex;
@@ -99,54 +82,6 @@ jobs:
           $sql | Out-File deploy-ispac.sql -Encoding ASCII
           sqlcmd -S "$env:SQL_SERVER" -E -d SSISDB -i deploy-ispac.sql -b
 
-      # ==========================================================
-      # FIXED: Create SQL Server Agent Job (handles both <<>> and <>)
-      # ==========================================================
-      - name: Create SQL Server Agent Job
-        shell: powershell
-        run: |
-          # Read the template file
-          $template = Get-Content -Path "SQLAgent\CreateJob.sql" -Raw
-
-          # ---- REPLACE ALL TOKENS ----
-          # Double chevrons (<< >>)
-          $template = $template -replace "<<SQL_SERVER>>", "$env:SQL_SERVER"
-          $template = $template -replace "<<JOB_NAME>>", "RunTimesheetDataPipeline"
-          $template = $template -replace "<<DATABASE_NAME>>", "TimesheetDB"
-          # $template = $template -replace "<<DOMAIN>>", "YOUR_DOMAIN"
-          # $template = $template -replace "<<ACCOUNT>>", "YOUR_SERVICE_ACCOUNT"
-          # $template = $template -replace "<<SERVER_INSTANCE>>", "MSSQLSERVERDEV"
-
-          # Single chevrons (< >) – ADD these if your script uses them
-          $template = $template -replace "<SQL_SERVER>", "$env:SQL_SERVER"
-          $template = $template -replace "<JOB_NAME>", "RunTimesheetDataPipeline"
-          $template = $template -replace "<DATABASE_NAME>", "TimesheetDB"
-          # $template = $template -replace "<DOMAIN>", "YOUR_DOMAIN"
-          # $template = $template -replace "<ACCOUNT>", "YOUR_SERVICE_ACCOUNT"
-          # $template = $template -replace "<SERVER_INSTANCE>", "MSSQLSERVERDEV"
-
-          # ---------- DEBUG (Optional) ----------
-          # Write-Host "Processed SQL for debugging:"
-          # Write-Host $template
-
-          # Write to temporary file
-          $tempFile = [System.IO.Path]::GetTempFileName() + ".sql"
-          $template | Out-File -FilePath $tempFile -Encoding ASCII
-
-          # Execute the script
-          sqlcmd -S "$env:SQL_SERVER" -E -d msdb -i $tempFile -b
-
-          # Clean up
-          Remove-Item -Path $tempFile -Force
-
       - name: Start SQL Server Agent Job
         shell: cmd
-        run: |
-          sqlcmd -S %SQL_SERVER% -E -d msdb -Q "EXEC msdb.dbo.sp_start_job @job_name='RunTimesheetDataPipeline';"
-
-      - name: Deployment Complete
-        shell: cmd
-        run: |
-          echo ========================================
-          echo Staging deployment completed successfully.
-          echo ========================================
+        run: sqlcmd -S %SQL_SERVER% -E -d msdb -Q "EXEC msdb.dbo.sp_start_job @job_name='RunTimesheetDataPipeline';"
