@@ -2,7 +2,7 @@ USE [msdb]
 GO
 
 DECLARE @job_name NVARCHAR(128) = N'RunTimesheetDataPipeline';
-DECLARE @job_id BINARY(16);
+DECLARE @job_id BINARY(16);                     -- <- single variable, used everywhere
 DECLARE @ReturnCode INT = 0;
 DECLARE @ServerName NVARCHAR(128) = CAST(SERVERPROPERTY('MachineName') AS NVARCHAR(128));
 
@@ -24,7 +24,7 @@ BEGIN
 END
 ELSE
 BEGIN
-    -- Job does not exist → create it (same as original script, but without deletion)
+    -- Job does not exist → create it
     BEGIN TRANSACTION
 
     IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
@@ -44,11 +44,11 @@ BEGIN
         @description=N'No description available.', 
         @category_name=N'[Uncategorized (Local)]', 
         @owner_login_name=N'sa', 
-        @job_id = @jobId OUTPUT
+        @job_id = @job_id OUTPUT           -- using the same variable
     IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
 
     EXEC @ReturnCode = msdb.dbo.sp_add_jobstep 
-        @job_id=@jobId, 
+        @job_id = @job_id,                 -- same variable
         @step_name=N'RunTimesheetDataPipeline', 
         @step_id=1, 
         @cmdexec_success_code=0, 
@@ -65,11 +65,13 @@ BEGIN
         @flags=0
     IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
 
-    EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
+    EXEC @ReturnCode = msdb.dbo.sp_update_job 
+        @job_id = @job_id,                 -- same variable
+        @start_step_id = 1
     IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
 
     EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule 
-        @job_id=@jobId, 
+        @job_id = @job_id,                 -- same variable
         @name=N'runevery30seconds', 
         @enabled=1, 
         @freq_type=4, 
@@ -85,7 +87,9 @@ BEGIN
         @schedule_uid=N'b3bd3e28-e233-42bd-9149-fee448f5b057'
     IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
 
-    EXEC @ReturnCode = msdb.dbo.sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'
+    EXEC @ReturnCode = msdb.dbo.sp_add_jobserver 
+        @job_id = @job_id,                 -- same variable
+        @server_name = N'(local)'
     IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
 
     COMMIT TRANSACTION
