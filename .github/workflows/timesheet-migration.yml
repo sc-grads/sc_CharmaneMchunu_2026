@@ -82,6 +82,58 @@ jobs:
           $sql | Out-File deploy-ispac.sql -Encoding ASCII
           sqlcmd -S "$env:SQL_SERVER" -E -d SSISDB -i deploy-ispac.sql -b
 
-      - name: Start SQL Server Agent Job
-        shell: cmd
-        run: sqlcmd -S %SQL_SERVER% -E -d msdb -Q "EXEC msdb.dbo.sp_start_job @job_name='RunTimesheetDataPipeline';"
+      - name: Create SQL Server Agent Job (if missing)
+        shell: powershell
+        run: |
+          $jobName = "RunTimesheetDataPipeline"
+          $server = "$env:SQL_SERVER"
+
+          # Check if the job already exists
+          $checkSql = "SELECT COUNT(*) FROM msdb.dbo.sysjobs WHERE name = N'$jobName'"
+          $exists = sqlcmd -S $server -E -d msdb -Q $checkSql -h-1 -W | ForEach-Object { $_.Trim() }
+
+          if ($exists -eq "0") {
+              Write-Host "Job does not exist. Creating it..."
+              # Read the job creation template and replace tokens
+              $template = Get-Content -Path "SQLAgent\CreateJob.sql" -Raw
+              $template = $template -replace "<<SQL_SERVER>>", $server
+              $template = $template -replace "<<JOB_NAME>>", $jobName
+              $template = $template -replace "<<DATABASE_NAME>>", "TimesheetDB"
+              $template = $template -replace "<SQL_SERVER>", $server
+              $template = $template -replace "<JOB_NAME>", $jobName
+              $template = $template -replace "<DATABASE_NAME>", "TimesheetDB"
+
+              $tempFile = [System.IO.Path]::GetTempFileName() + ".sql"
+              $template | Out-File -FilePath $tempFile -Encoding ASCII
+              sqlcmd -S $server -E -d msdb -i $tempFile -b
+              Remove-Item -Path $tempFile -Force
+          } else {
+              Write-Host "Job already exists. Skipping creation."
+          }
+
+      - name: Start SQL Server Agent Job (stop if running, then start)
+        shell: powershell
+        run: |
+          $jobName = "RunTimesheetDataPipeline"
+          $server = "$env:SQL_SERVER"
+
+          # Check if the job is currently running
+          $runningQuery = @"
+          SELECT 1
+          FROM msdb.dbo.sysjobs j
+          INNER JOIN msdb.dbo.sysjobactivity a ON j.job_id = a.job_id
+          WHERE j.name = N'$jobName'
+            AND a.run_requested_date IS NOT NULL
+            AND a.stop_execution_date IS NULL
+          "@
+          $running = sqlcmd -S $server -E -d msdb -Q $runningQuery -h-1 -W | ForEach-Object { $_.Trim() }
+
+          if ($running -eq "1") {
+              Write-Host "Job is currently running. Stopping it first..."
+              sqlcmd -S $server -E -d msdb -Q "EXEC msdb.dbo.sp_stop_job @job_name = N'$jobName';"
+              # Give it a moment to stop
+              Start-Sleep -Seconds 3
+          }
+
+          Write-Host "Starting job: $jobName"
+          sqlcmd -S $server -E -d msdb -Q "EXEC msdb.dbo.sp_start_job @job_name = N'$jobName';"
