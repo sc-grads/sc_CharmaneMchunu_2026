@@ -1,0 +1,77 @@
+name: Deploy Timesheet Migration Project - Production Environment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on:
+      - self-hosted
+      - runner-tg-pc
+
+    environment: production
+
+    env:
+      SQL_SERVER: ${{ vars.SQL_SERVER }}
+      SQL_PORT: ${{ vars.SQL_PORT }}
+      DATABASE_NAME: ${{ vars.SQL_DATABASE }}
+      SQL_USERNAME: ${{ secrets.SQL_USERNAME }}
+      SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build SSIS Project
+        shell: cmd
+        run: |
+          msbuild "SSIS-Project\TimesheetMigration\TimesheetMigration.sln" /p:Configuration=Development
+
+      - name: Create Database
+        shell: cmd
+        run: |
+          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -i Database\CreateDatabase.sql
+
+      - name: Create Tables
+        shell: cmd
+        run: |
+          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d %DATABASE_NAME% -i Database\CreateTable.sql
+
+      - name: Create Stored Procedures
+        shell: cmd
+        run: |
+          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d %DATABASE_NAME% -i Database\StoredProcedure.sql
+
+      - name: Create Triggers
+        shell: cmd
+        run: |
+          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d %DATABASE_NAME% -i Database\Triggers.sql
+
+      - name: Seed Data
+        shell: cmd
+        run: |
+          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d %DATABASE_NAME% -i Database\SeedData.sql
+
+      - name: Deploy ISPAC
+        shell: cmd
+        run: |
+          "C:\Program Files\Microsoft SQL Server\160\DTS\Binn\ISDeploymentWizard.exe" ^
+          /Silent ^
+          /ModelType:Project ^
+          /SourcePath:"SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac" ^
+          /DestinationServer:%SQL_SERVER% ^
+          /DestinationPath:"/SSISDB/TimesheetMigration"
+
+      - name: Create SQL Server Agent Job
+        shell: cmd
+        run: |
+          sqlcmd -S %SQL_SERVER%,%SQL_PORT% -U %SQL_USERNAME% -P %SQL_PASSWORD% -d msdb -i SQLAgent\CreateJob.sql
+
+      - name: Finished
+        shell: cmd
+        run: echo Deployment completed successfully.
