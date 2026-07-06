@@ -1,7 +1,7 @@
 -- Remove existing job first so reruns don't fail
-IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'RunTimesheetDataPipeline')
+IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'TimesheetDataPipeline')
 BEGIN
-    EXEC msdb.dbo.sp_delete_job @job_name = N'RunTimesheetDataPipeline', @delete_unused_schedule = 1;
+    EXEC msdb.dbo.sp_delete_job @job_name = N'TimesheetDataPipeline', @delete_unused_schedule = 1;
 END
 GO
 
@@ -20,8 +20,10 @@ END
 
 DECLARE @jobId BINARY(16)
 DECLARE @ServerName NVARCHAR(128) = CAST(SERVERPROPERTY('MachineName') AS NVARCHAR(128))
+
+
 DECLARE @Command NVARCHAR(MAX) = 
-    N'/ISSERVER "\"\SSISDB\TimesheetMigration\TimesheetMigration\ImportTimesheets.dtsx\"" /SERVER "\"' + @ServerName + N'\"" /Par "\"$ServerOption::LOGGING_LEVEL(Int16)\"";1 /Par "\"$ServerOption::SYNCHRONIZED(Boolean)\"";True /CALLERINFO SQLAGENT /REPORTING E'
+    N'/ISSERVER "\"\SSISDB\TimesheetMigration\TimesheetMigration\TimesheetMigrationPipeline.dtsx\"" /SERVER "\"' + @ServerName + N'\"" /Par "\"$ServerOption::LOGGING_LEVEL(Int16)\"";1 /Par "\"$ServerOption::SYNCHRONIZED(Boolean)\"";True /CALLERINFO SQLAGENT /REPORTING E'
 
 EXEC @ReturnCode = msdb.dbo.sp_add_job 
     @job_name=N'RunTimesheetDataPipeline', 
