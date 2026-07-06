@@ -127,6 +127,22 @@ END
 GO
 
 /* =========================
+   AUDIT STATUS CODE
+========================= */
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AuditStatusCode')
+BEGIN
+    CREATE TABLE dbo.AuditStatusCode (
+        StatusCode NVARCHAR(20) PRIMARY KEY,
+        StatusName NVARCHAR(50) NOT NULL,
+        Description NVARCHAR(255),
+        IsSuccess BIT DEFAULT 0,
+        IsError BIT DEFAULT 0,
+        CreatedDate DATETIME DEFAULT GETDATE()
+    );
+END
+GO
+
+/* =========================
    AUDIT LOG
 ========================= */
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AuditLog')

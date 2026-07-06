@@ -1,3 +1,10 @@
+-- Remove existing job first so reruns don't fail
+IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'RunTimesheetDataPipeline')
+BEGIN
+    EXEC msdb.dbo.sp_delete_job @job_name = N'RunTimesheetDataPipeline', @delete_unused_schedule = 1;
+END
+GO
+
 USE [msdb]
 GO
 
@@ -13,6 +20,9 @@ IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
 END
 
 DECLARE @jobId BINARY(16)
+DECLARE @ServerName NVARCHAR(128) = CAST(SERVERPROPERTY('MachineName') AS NVARCHAR(128))
+DECLARE @Command NVARCHAR(MAX) = N'/ISSERVER "\"\SSISDB\TimesheetMigration\TimesheetMigration\ImportTimesheets.dtsx\"" /SERVER "\"' + @ServerName + N'\"" /Par "\"$ServerOption::LOGGING_LEVEL(Int16)\"";1 /Par "\"$ServerOption::SYNCHRONIZED(Boolean)\"";True /CALLERINFO SQLAGENT /REPORTING E'
+
 EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'RunTimesheetDataPipeline', 
 		@enabled=1, 
 		@notify_level_eventlog=0, 
@@ -22,7 +32,7 @@ EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'RunTimesheetDataPipeline',
 		@delete_level=0, 
 		@description=N'No description available.', 
 		@category_name=N'[Uncategorized (Local)]', 
-		@owner_login_name=N'DESKTOP-CHGLJR8\Charmaine Mchunu', @job_id = @jobId OUTPUT
+		@owner_login_name=N'sa', @job_id = @jobId OUTPUT
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
 
 EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'RunTimesheetDataPipeline', 
@@ -35,7 +45,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'RunTimes
 		@retry_attempts=0, 
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'SSIS', 
-		@command=N'/ISSERVER "\"\SSISDB\TimesheetDataPipeline\TimesheetMigration\TimesheetMigrationPipeline.dtsx\"" /SERVER "\"DESKTOP-CHGLJR8\"" /Par "\"$ServerOption::LOGGING_LEVEL(Int16)\"";1 /Par "\"$ServerOption::SYNCHRONIZED(Boolean)\"";True /CALLERINFO SQLAGENT /REPORTING E', 
+		@command=@Command, 
 		@database_name=N'master', 
 		@flags=0
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
@@ -63,5 +73,3 @@ QuitWithRollback:
     IF (@@TRANCOUNT > 0) ROLLBACK TRANSACTION
 EndSave:
 GO
-
-

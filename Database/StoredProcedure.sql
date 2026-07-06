@@ -8,6 +8,8 @@ GO
 SET QUOTED_IDENTIFIER OFF
 GO
 
+DROP PROCEDURE IF EXISTS [dbo].[spRunTimesheetMigration]
+GO
 
 CREATE PROCEDURE [dbo].[spRunTimesheetMigration]
 AS
@@ -179,5 +181,3 @@ BEGIN
 END;
 
 GO
-
-
