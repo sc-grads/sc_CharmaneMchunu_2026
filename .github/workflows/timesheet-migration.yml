@@ -1,4 +1,4 @@
-name: Deploy Timesheet Migration Project - Staging Environment
+name: Deploy the migration project to the staging env.
 
 on:
   push:
@@ -9,31 +9,30 @@ jobs:
   deploy:
     runs-on:
       - self-hosted
-      - runner-cm-pc
-
+      
     environment: staging
 
     env:
       SQL_SERVER: ${{ secrets.SQL_SERVER }}
 
     steps:
-      - name: Checkout Repository
+      - name: checkout timesheetmigrationSSIS pro
         uses: actions/checkout@v4
 
-      - name: Setup MSBuild
+      - name: set up
         uses: microsoft/setup-msbuild@v2
 
-      - name: Build SSIS Project
+      - name: build the project
         shell: cmd
         run: msbuild "SSIS-Project\TimesheetMigration\TimesheetMigration.slnx" /p:Configuration=Development
 
-      - name: Verify ISPAC Exists
+      - name: check if the file exists
         shell: powershell
         run: |
           $ispac = "SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
           if (!(Test-Path $ispac)) { exit 1 }
 
-      - name: Create Database
+      - name: create database
         shell: cmd
         run: sqlcmd -S %SQL_SERVER% -E -i Database\CreateDatabase.sql
 
@@ -41,15 +40,7 @@ jobs:
         shell: cmd
         run: sqlcmd -S %SQL_SERVER% -E -i Database\CreateTable.sql
 
-      - name: Create Stored Procedures
-        shell: cmd
-        run: sqlcmd -S %SQL_SERVER% -E -i Database\StoredProcedure.sql
-
-      - name: Create Triggers
-        shell: cmd
-        run: sqlcmd -S %SQL_SERVER% -E -i Database\Triggers.sql
-
-      - name: Create SSIS Catalog Folder
+      - name: create the catalog 
         shell: powershell
         run: |
           $sql = @"
@@ -61,7 +52,7 @@ jobs:
           $sql | Out-File create-folder.sql -Encoding ASCII
           sqlcmd -S "$env:SQL_SERVER" -E -d SSISDB -i create-folder.sql -b
 
-      - name: Deploy ISPAC
+      - name: deploy ISPAC package
         shell: powershell
         run: |
           $bytes = [System.IO.File]::ReadAllBytes("SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac")
@@ -78,13 +69,13 @@ jobs:
           $sql | Out-File deploy-ispac.sql -Encoding ASCII
           sqlcmd -S "$env:SQL_SERVER" -E -d SSISDB -i deploy-ispac.sql -b
 
-      - name: Create SQL Server Agent Job (if missing)
+      - name: create job if its missing
         shell: powershell
         run: |
           $jobName = "RunTimesheetDataPipeline"
           $server = "$env:SQL_SERVER"
 
-          # Check if the job already exists
+          
           $checkSql = "SELECT COUNT(*) FROM msdb.dbo.sysjobs WHERE name = N'$jobName'"
           $exists = sqlcmd -S $server -E -d msdb -Q $checkSql -h-1 -W | ForEach-Object { $_.Trim() }
 
@@ -104,16 +95,16 @@ jobs:
               sqlcmd -S $server -E -d msdb -i $tempFile -b
               Remove-Item -Path $tempFile -Force
           } else {
-              Write-Host "Job already exists. Skipping creation."
+              Write-Host "Job already exists"
           }
 
-      - name: Start SQL Server Agent Job (stop if running, then start)
+      - name: start job,stop then run again
         shell: powershell
         run: |
           $jobName = "RunTimesheetDataPipeline"
           $server = "$env:SQL_SERVER"
 
-          # Check if the job is currently running
+          # check if the job is currently running
           $runningQuery = @"
           SELECT 1
           FROM msdb.dbo.sysjobs j
@@ -125,11 +116,8 @@ jobs:
           $running = sqlcmd -S $server -E -d msdb -Q $runningQuery -h-1 -W | ForEach-Object { $_.Trim() }
 
           if ($running -eq "1") {
-              Write-Host "Job is currently running. Stopping it first..."
               sqlcmd -S $server -E -d msdb -Q "EXEC msdb.dbo.sp_stop_job @job_name = N'$jobName';"
-              # Give it a moment to stop
               Start-Sleep -Seconds 3
           }
 
-          Write-Host "Starting job: $jobName"
           sqlcmd -S $server -E -d msdb -Q "EXEC msdb.dbo.sp_start_job @job_name = N'$jobName';"
