@@ -190,7 +190,7 @@ jobs:
           BEGIN
               EXEC [catalog].[create_folder] @folder_name = N'$folderName';
           END
-          DECLARE @project_stream VARBINARY(MAX) = @hex;
+          DECLARE @project_stream VARBINARY(MAX) = CONVERT(VARBINARY(MAX), @hex, 1);
           EXEC [catalog].[deploy_project]
               @folder_name = N'$folderName',
               @project_name = N'$projectName',
