@@ -122,7 +122,8 @@ jobs:
             exit $LASTEXITCODE
           }
 
-      - name: Deploy SSIS using Helper Job (runs under Integrated Auth)
+      # ========== DEPLOY SSIS USING HELPER JOB WITH CmdExec ==========
+      - name: Deploy SSIS via Helper Job (CmdExec)
         shell: pwsh
         run: |
           $ispacPath = "${{ github.workspace }}\SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
@@ -151,59 +152,158 @@ jobs:
               exit 1
           }
 
-          $deploySql = @"
-          USE [SSISDB];
-          IF NOT EXISTS (SELECT 1 FROM [catalog].[folders] WHERE name = N'$folderName')
+          # The hex string can be very large – we'll pass it via sqlcmd -v
+          $deployScript = @"
+          USE SSISDB;
+          IF NOT EXISTS (SELECT 1 FROM [catalog].[folders] WHERE name = N'$(folderName)')
           BEGIN
-              EXEC [catalog].[create_folder] @folder_name = N'$folderName';
+              EXEC [catalog].[create_folder] @folder_name = N'$(folderName)';
           END
-          DECLARE @project_stream VARBINARY(MAX) = $hexString;
+          DECLARE @project_stream VARBINARY(MAX) = $(HexString);
           EXEC [catalog].[deploy_project]
-              @folder_name = N'$folderName',
-              @project_name = N'$projectName',
+              @folder_name = N'$(folderName)',
+              @project_name = N'$(projectName)',
               @project_stream = @project_stream;
           "@
 
-          # Create a helper job that will run the deployment under the Agent's Integrated Auth
+          # Create a temporary .sql file with the deployment script (with placeholders)
+          $tempSqlFile = Join-Path $env:TEMP "deploy_temp.sql"
+          $deployScript | Out-File -FilePath $tempSqlFile -Encoding utf8
+
+          # Build the CmdExec command for the helper job
+          # We'll use sqlcmd with -v to pass the hex string and other parameters
+          $cmdCommand = "sqlcmd -S . -E -d SSISDB -v HexString=`"$hexString`" -v folderName=`"$folderName`" -v projectName=`"$projectName`" -i `"$tempSqlFile`""
+
           $helperJobName = "GitHub_SSIS_Deploy_Helper_CM"
-          $jobSql = @"
+
+          # Create the helper job with a CmdExec step
+          $createJobSql = @"
           USE [msdb];
           IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$helperJobName')
           BEGIN
               EXEC dbo.sp_delete_job @job_name = N'$helperJobName', @delete_unused_schedule=1;
           END
           EXEC dbo.sp_add_job @job_name = N'$helperJobName', @enabled = 1, @start_step_id = 1;
-          DECLARE @deploy_script NVARCHAR(MAX) = N'$($deploySql.Replace("'", "''"))';
           EXEC dbo.sp_add_jobstep
               @job_name = N'$helperJobName',
               @step_name = N'Run Deploy',
-              @subsystem = N'TSQL',
-              @command = @deploy_script,
+              @subsystem = N'CmdExec',
+              @command = N'$($cmdCommand -replace "'", "''")',
               @retry_attempts = 0;
           EXEC dbo.sp_add_jobserver
               @job_name = N'$helperJobName',
               @server_name = N'(local)';
           EXEC dbo.sp_start_job @job_name = N'$helperJobName';
-          WAITFOR DELAY '00:00:07';
-          EXEC dbo.sp_delete_job @job_name = N'$helperJobName';
           "@
 
+          Write-Host "Creating and starting helper job with CmdExec step..."
           $connStr = "Data Source=$tunnelAddress;Initial Catalog=msdb;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
           $connection = New-Object System.Data.SqlClient.SqlConnection($connStr)
           try {
               $connection.Open()
               $command = $connection.CreateCommand()
-              $command.CommandText = $jobSql
+              $command.CommandText = $createJobSql
               $command.ExecuteNonQuery() | Out-Null
-              Write-Host "SUCCESS: SSIS project deployed using helper job."
+              Write-Host "Helper job started. Waiting 15 seconds for completion..."
           } catch {
-              Write-Error "Deployment failed: $_"
+              Write-Error "Failed to start helper job: $_"
               exit 1
           } finally {
               if ($connection.State -eq 'Open') { $connection.Close() }
           }
 
-      - name: Create Permanent SQL Agent Job (T‑SQL step)
+          Start-Sleep -Seconds 15
+
+          # Check job status
+          $statusSql = @"
+          USE [msdb];
+          SELECT TOP 1
+              j.name,
+              ja.run_status,
+              ja.last_run_date,
+              ja.last_run_time,
+              ja.last_run_duration
+          FROM msdb.dbo.sysjobs j
+          INNER JOIN msdb.dbo.sysjobactivity ja ON j.job_id = ja.job_id
+          WHERE j.name = N'$helperJobName'
+          ORDER BY ja.start_execution_date DESC;
+          "@
+
+          $statusConn = New-Object System.Data.SqlClient.SqlConnection($connStr)
+          try {
+              $statusConn.Open()
+              $statusCmd = $statusConn.CreateCommand()
+              $statusCmd.CommandText = $statusSql
+              $reader = $statusCmd.ExecuteReader()
+              if ($reader.Read()) {
+                  $runStatus = $reader["run_status"]
+                  Write-Host "Job status code: $runStatus (1 = success, 0 = fail, 2 = retry, 3 = cancelled, 4 = in progress)"
+                  if ($runStatus -ne 1) {
+                      Write-Error "Helper job failed with status code $runStatus. Check SQL Agent history for details."
+                      exit 1
+                  }
+                  Write-Host "Helper job succeeded."
+              } else {
+                  Write-Error "Could not retrieve job status."
+                  exit 1
+              }
+          } catch {
+              Write-Error "Failed to check job status: $_"
+              exit 1
+          } finally {
+              if ($statusConn.State -eq 'Open') { $statusConn.Close() }
+          }
+
+          # Clean up helper job
+          $cleanupSql = @"
+          USE [msdb];
+          IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$helperJobName')
+          BEGIN
+              EXEC dbo.sp_delete_job @job_name = N'$helperJobName', @delete_unused_schedule=1;
+          END
+          "@
+          $cleanConn = New-Object System.Data.SqlClient.SqlConnection($connStr)
+          try {
+              $cleanConn.Open()
+              $cleanCmd = $cleanConn.CreateCommand()
+              $cleanCmd.CommandText = $cleanupSql
+              $cleanCmd.ExecuteNonQuery() | Out-Null
+              Write-Host "Helper job deleted."
+          } catch {
+              Write-Warning "Cleanup failed: $_"
+          } finally {
+              if ($cleanConn.State -eq 'Open') { $cleanConn.Close() }
+          }
+
+          # Verify the project was created
+          $verifySql = @"
+          SELECT COUNT(*) FROM SSISDB.catalog.projects
+          WHERE name = N'$projectName' AND folder_name = N'$folderName';
+          "@
+          $verifyConn = New-Object System.Data.SqlClient.SqlConnection($connStr)
+          try {
+              $verifyConn.Open()
+              $verifyCmd = $verifyConn.CreateCommand()
+              $verifyCmd.CommandText = $verifySql
+              $count = $verifyCmd.ExecuteScalar()
+              if ($count -eq 0) {
+                  Write-Error "Project '$projectName' was not found in folder '$folderName' after deployment."
+                  exit 1
+              } else {
+                  Write-Host "Project '$projectName' verified in SSISDB."
+              }
+          } catch {
+              Write-Error "Verification query failed: $_"
+              exit 1
+          } finally {
+              if ($verifyConn.State -eq 'Open') { $verifyConn.Close() }
+          }
+
+          # Clean up temp file
+          Remove-Item $tempSqlFile -Force -ErrorAction SilentlyContinue
+
+      # ========== CREATE PERMANENT SCHEDULED JOB ==========
+      - name: Create SQL Agent Job (T‑SQL step)
         shell: pwsh
         run: |
           $tunnelAddress = "$env:SQL_SERVER,$env:SQL_PORT"
@@ -231,7 +331,6 @@ jobs:
               @owner_login_name = N'sa',
               @job_id = @jobId OUTPUT;
 
-          -- T‑SQL step (runs under Agent's Integrated Auth)
           DECLARE @run_command NVARCHAR(MAX);
           SET @run_command = N'
           DECLARE @execution_id BIGINT;
@@ -288,4 +387,4 @@ jobs:
           }
 
       - name: Deployment Complete
-        run: echo "Database deployed, SSIS deployed, and job '${{ vars.SQL_JOB_NAME }}' created with 30‑second schedule."
+        run: echo "✅ Database deployed, SSIS deployed, and job '${{ vars.SQL_JOB_NAME }}' created with 30‑second schedule."
