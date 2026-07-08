@@ -1,113 +1,127 @@
-name: Deploy TimesheetDB (Staging)
+name: Deployment (Staging)
 
 on:
   push:
-    branches: [ staging ]          # ← trigger on staging
-  workflow_dispatch:
+    branches:
+      - staging
 
 jobs:
-  deploy-and-migrate:
-    name: Deploy TimesheetDB
+  deploy:
+    name: Deploy Database and SQL Agent
     runs-on: windows-latest
-    environment:
-      name: staging                # ← staging environment
+
+    environment: staging
+
+    env:
+      SQL_SERVER: ${{ secrets.SQL_SERVER }}
+      SQL_USERNAME: ${{ secrets.SQL_USERNAME }}
+      SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
+
+      SQL_PORT: ${{ vars.SQL_PORT }}
+      DATABASE_NAME: ${{ vars.DATABASE_NAME }}
 
     steps:
-      - name: Checkout code
+
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-    
-
-      # ---- Deploy SSIS project using Publish-ISProject (supports SQL Auth) ----
-      - name: Deploy SSIS project
-        shell: pwsh
+      - name: Install SQLCMD
+        shell: powershell
         run: |
-          $ispacPath = Join-Path $env:GITHUB_WORKSPACE `
-            "SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
+          choco install sqlcmd -y
 
-          if (-not (Test-Path $ispacPath)) {
-            Write-Error ".ispac not found at $ispacPath"
-            exit 1
-          }
-
-          # Install the SqlServer module (includes Publish-ISProject)
-          Install-Module -Name SqlServer -Force -Scope CurrentUser -AllowClobber
-          Import-Module SqlServer -Force
-
-          $server      = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
-          $user        = "${{ secrets.SQL_USERNAME }}"
-          $pass        = "${{ secrets.SQL_PASSWORD }}"
-          $folderName  = "TimesheetsMigration"
-          $projectName = [System.IO.Path]::GetFileNameWithoutExtension($ispacPath)
-
-          # Build a connection string for SSISDB
-          $connString = "Data Source=$server;User ID=$user;Password=$pass;Initial Catalog=SSISDB;"
-
-          Write-Host "Publishing $projectName to folder '$folderName'..."
-          Publish-ISProject `
-            -ProjectPath $ispacPath `
-            -DestinationConnectionString $connString `
-            -DestinationFolderName $folderName `
-            -ProjectName $projectName
-
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "SSIS project deployment failed (exit code $LASTEXITCODE)"
-            exit 1
-          }
-          Write-Host "SSIS project deployed successfully."
-
-      # ---- Test connection (optional) ----
-      - name: Test Connection
-        shell: pwsh
+      - name: Verify sqlcmd
+        shell: powershell
         run: |
-          & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
-                   -U "${{ secrets.SQL_USERNAME }}" `
-                   -P "${{ secrets.SQL_PASSWORD }}" `
-                   -C `
-                   -Q "SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version"
+          sqlcmd -?
 
-      # ---- Deploy database objects ----
-      - name: Deploy database tables
-        shell: pwsh
+      ##########################################################
+      # Create Database
+      ##########################################################
+
+      - name: Create Database
+        shell: powershell
         run: |
-          & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
-                   -U "${{ secrets.SQL_USERNAME }}" `
-                   -P "${{ secrets.SQL_PASSWORD }}" `
-                   -C `
-                   -d master `
-                   -i "./deploy-timesheetdb.sql"
+          sqlcmd `
+          -S "$env:SQL_SERVER,$env:SQL_PORT" `
+          -U "$env:SQL_USERNAME" `
+          -P "$env:SQL_PASSWORD" `
+          -v DATABASE_NAME="$env:DATABASE_NAME" `
+          -i "Database/CreateDatabase.sql"
 
-      # ---- Run migration ----
-      - name: Run spRunTimesheetMigration
-        id: run_migration
-        shell: pwsh
+      ##########################################################
+      # Create Tables
+      ##########################################################
+
+      - name: Create Tables
+        shell: powershell
         run: |
-          $result = & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
-                             -U "${{ secrets.SQL_USERNAME }}" `
-                             -P "${{ secrets.SQL_PASSWORD }}" `
-                             -d "${{ vars.SQL_DATABASE }}" `
-                             -C `
-                             -h -1 -W `
-                             -Q "SET NOCOUNT ON; EXEC dbo.spRunTimesheetMigration;" 2>&1
-          $lines = $result -split "`n" | Where-Object { $_.Trim() -ne "" }
-          if ($lines.Count -eq 0) {
-            Write-Error "No output from stored procedure"
-            exit 1
-          }
-          $lastLine = $lines[-1].Trim()
-          $parts = $lastLine -split "\s+", 2
-          $exitCode = [int]$parts[0]
-          $status   = if ($parts.Count -gt 1) { $parts[1] } else { "" }
+          sqlcmd `
+          -S "$env:SQL_SERVER,$env:SQL_PORT" `
+          -U "$env:SQL_USERNAME" `
+          -P "$env:SQL_PASSWORD" `
+          -d "$env:DATABASE_NAME" `
+          -v DATABASE_NAME="$env:DATABASE_NAME" `
+          -i "Database/CreateTable.sql"
 
-          "exit_code=$exitCode" >> $env:GITHUB_OUTPUT
-          "status=$status"      >> $env:GITHUB_OUTPUT
+      ##########################################################
+      # Stored Procedures
+      ##########################################################
 
-          if ($exitCode -ne 0) {
-            Write-Error "Migration failed (ExitCode=$exitCode, Status=$status)"
-            exit 1
-          }
-          Write-Host "Migration successful (ExitCode=$exitCode, Status=$status)"
+      - name: Create Stored Procedures
+        shell: powershell
+        run: |
+          sqlcmd `
+          -S "$env:SQL_SERVER,$env:SQL_PORT" `
+          -U "$env:SQL_USERNAME" `
+          -P "$env:SQL_PASSWORD" `
+          -d "$env:DATABASE_NAME" `
+          -v DATABASE_NAME="$env:DATABASE_NAME" `
+          -i "Database/StoredProcedure.sql"
 
-      - name: Success confirmation
-        if: success()
-        run: echo "Deployment and migration completed successfully for staging."
+      ##########################################################
+      # Triggers
+      ##########################################################
+
+      - name: Create Triggers
+        shell: powershell
+        run: |
+          sqlcmd `
+          -S "$env:SQL_SERVER,$env:SQL_PORT" `
+          -U "$env:SQL_USERNAME" `
+          -P "$env:SQL_PASSWORD" `
+          -d "$env:DATABASE_NAME" `
+          -v DATABASE_NAME="$env:DATABASE_NAME" `
+          -i "Database/Triggers.sql"
+
+      ##########################################################
+      # Seed Data
+      ##########################################################
+
+      - name: Seed Database
+        shell: powershell
+        run: |
+          sqlcmd `
+          -S "$env:SQL_SERVER,$env:SQL_PORT" `
+          -U "$env:SQL_USERNAME" `
+          -P "$env:SQL_PASSWORD" `
+          -d "$env:DATABASE_NAME" `
+          -v DATABASE_NAME="$env:DATABASE_NAME" `
+          -i "Database/SeedData.sql"
+
+      ##########################################################
+      # SQL Agent Job
+      ##########################################################
+
+      - name: Create SQL Agent Job
+        shell: powershell
+        run: |
+          sqlcmd `
+          -S "$env:SQL_SERVER,$env:SQL_PORT" `
+          -U "$env:SQL_USERNAME" `
+          -P "$env:SQL_PASSWORD" `
+          -d msdb `
+          -i "SQLAgent/CreateJob.sql"
+
+      - name: Deployment Complete
+        run: echo "Database and SQL Agent deployment completed successfully."
