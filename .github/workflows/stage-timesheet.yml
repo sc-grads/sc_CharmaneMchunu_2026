@@ -101,7 +101,7 @@ jobs:
             -i "Database/SeedData.sql"
 
       # ------------------------------------------------------------------
-      # NEW: SSIS Package Deployment Steps
+      # SSIS Build & Deployment via Helper Job (using wrapper)
       # ------------------------------------------------------------------
       - name: Locate Visual Studio DevEnv Tool
         shell: powershell
@@ -114,7 +114,6 @@ jobs:
       - name: Build SSIS Project to ISPAC
         shell: powershell
         run: |
-          # Adjust project path to match your repository structure
           $projectPath = "SSIS-Project\TimesheetMigration\TimesheetMigration.dtproj"
           if (-not (Test-Path $projectPath)) {
             Write-Error "Project file not found: $projectPath"
@@ -126,38 +125,43 @@ jobs:
             exit $LASTEXITCODE
           }
 
-      - name: Deploy ISPAC to SSISDB
-        shell: powershell
+      - name: Deploy ISPAC via SQL Agent Helper Job (uses wrapper)
+        shell: pwsh
         run: |
+          Write-Host "Reading compiled ISPAC..."
           $ispacPath = "SSIS-Project/TimesheetMigration/bin/Development/TimesheetMigration.ispac"
           if (-not (Test-Path $ispacPath)) {
             Write-Error "ISPAC not found at $ispacPath"
             exit 1
           }
-
-          # Read ISPAC as binary and convert to hex string for T‑SQL
           $fileBytes = [System.IO.File]::ReadAllBytes($ispacPath)
           $hexString = "0x" + [System.BitConverter]::ToString($fileBytes).Replace("-", "")
 
-          $folderName = "TimesheetMigration"          # Adjust if needed
-          $projectName = "TimesheetMigrationPipeline" # Should match your project name
+          $folderName = "TimesheetMigration"
+          $projectName = "TimesheetMigrationPipeline"
+          $helperJobName = "GitHub_SSIS_Deploy_Helper_CM"
 
-          $sql = @"
+          $dynamicSql = @"
           SET NOCOUNT ON;
-          IF NOT EXISTS (SELECT 1 FROM [SSISDB].[catalog].[folders] WHERE name = '$folderName')
-          BEGIN
-              EXEC [SSISDB].[catalog].[create_folder] @folder_name = '$folderName';
-          END
-
+          DECLARE @dynamic_tsql NVARCHAR(MAX);
+          SET @dynamic_tsql = N'
+          SET NOCOUNT ON;
           DECLARE @project_binary VARBINARY(MAX) = $hexString;
-          EXEC [SSISDB].[catalog].[deploy_project]
-              @folder_name   = '$folderName',
-              @project_name  = '$projectName',
+          EXEC [SSISDB].[catalog].[deploy_project_wrapper]
+              @folder_name   = N''$folderName'',
+              @project_name  = N''$projectName'',
               @project_stream = @project_binary;
+          ';
+          EXEC msdb.dbo.sp_update_jobstep
+              @job_name = N'$helperJobName',
+              @step_id = 1,
+              @command = @dynamic_tsql;
+          EXEC msdb.dbo.sp_start_job @job_name = N'$helperJobName';
+          WAITFOR DELAY '00:00:05';
           "@
 
-          $tempSqlFile = Join-Path $env:RUNNER_TEMP "DeploySSIS.sql"
-          $sql | Out-File -FilePath $tempSqlFile -Encoding utf8 -Force
+          $tempSqlFile = Join-Path $env:RUNNER_TEMP "RunHelperJob.sql"
+          $dynamicSql | Out-File -FilePath $tempSqlFile -Encoding utf8 -Force
 
           sqlcmd -b `
             -S "$env:SQL_SERVER,$env:SQL_PORT" `
@@ -166,9 +170,10 @@ jobs:
             -i $tempSqlFile
 
           if ($LASTEXITCODE -ne 0) {
-            Write-Error "SSIS deployment failed with exit code $LASTEXITCODE"
+            Write-Error "SSIS deployment via helper job failed with exit code $LASTEXITCODE"
             exit $LASTEXITCODE
           }
+          Write-Host "SSIS package deployed successfully via helper job."
       # ------------------------------------------------------------------
 
       - name: Create SQL Agent Job
@@ -182,9 +187,6 @@ jobs:
             -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "SQLAgent/CreateJob.sql"
 
-      # ------------------------------------------------------------------
-      # Stop (if running) and start the SQL Agent Job using a temporary file
-      # ------------------------------------------------------------------
       - name: Stop and Start SQL Agent Job
         shell: powershell
         run: |
