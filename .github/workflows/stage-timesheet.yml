@@ -140,7 +140,6 @@ jobs:
           $tunnelAddress = "$env:SQL_SERVER,$env:SQL_PORT"
           $dbUser        = "$env:SQL_USERNAME"
           $dbPassword    = "$env:SQL_PASSWORD"
-          $initialDb     = "msdb"
           $folderName    = "TimesheetMigration"
           $projectName   = "TimesheetMigrationPipeline"
           $packageName   = "Package.dtsx"
@@ -154,59 +153,43 @@ jobs:
               exit 1
           }
 
-          $sqlScript = @"
-          SET NOCOUNT ON;
-          USE [msdb];
-
-          IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'GitHub_SSIS_Deploy_Helper')
-          BEGIN
-              EXEC dbo.sp_delete_job @job_name = N'GitHub_SSIS_Deploy_Helper', @delete_unused_schedule=1;
-          END
-
-          EXEC dbo.sp_add_job @job_name = N'GitHub_SSIS_Deploy_Helper', @enabled = 1, @start_step_id = 1;
-
-          DECLARE @deploy_script NVARCHAR(MAX);
-          SET @deploy_script = N'
+          # ---- Step 1: Deploy the project directly (no helper job) ----
+          $deploySql = @"
           USE [SSISDB];
-          IF NOT EXISTS (SELECT 1 FROM [catalog].[folders] WHERE name = N''$folderName'')
+
+          IF NOT EXISTS (SELECT 1 FROM [catalog].[folders] WHERE name = N'$folderName')
           BEGIN
-              EXEC [catalog].[create_folder] @folder_name = N''$folderName'';
+              EXEC [catalog].[create_folder] @folder_name = N'$folderName';
           END
+
           DECLARE @project_stream VARBINARY(MAX) = $hexString;
           EXEC [catalog].[deploy_project]
-              @folder_name = N''$folderName'',
-              @project_name = N''$projectName'',
+              @folder_name = N'$folderName',
+              @project_name = N'$projectName',
               @project_stream = @project_stream;
-          ';
+          "@
 
-          EXEC dbo.sp_add_jobstep
-              @job_name = N'GitHub_SSIS_Deploy_Helper_CM',
-              @step_name = N'Run Deploy',
-              @subsystem = N'TSQL',
-              @command = @deploy_script,
-              @retry_attempts = 0;
+          # ---- Step 2: Create the scheduled job (using msdb) ----
+          $jobSql = @"
+          USE [msdb];
 
-          EXEC dbo.sp_add_jobserver
-              @job_name = N'GitHub_SSIS_Deploy_Helper_CM',
-              @server_name = N'(local)';
-
-          EXEC dbo.sp_start_job @job_name = N'GitHub_SSIS_Deploy_Helper_CM';
-
-          WAITFOR DELAY '00:00:07';
-
-          EXEC dbo.sp_delete_job @job_name = N'GitHub_SSIS_Deploy_Helper_CM';
-
+          -- Drop the job if it already exists
           IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$executionJobName')
           BEGIN
               EXEC dbo.sp_delete_job @job_name = N'$executionJobName', @delete_unused_schedule=1;
           END
 
+          -- Create the job
+          DECLARE @jobId BINARY(16);
           EXEC dbo.sp_add_job
               @job_name = N'$executionJobName',
               @enabled = 1,
               @description = N'Automated execution of TimesheetMigration SSIS package.',
-              @start_step_id = 1;
+              @category_name = N'[Uncategorized (Local)]',
+              @owner_login_name = N'sa',
+              @job_id = @jobId OUTPUT;
 
+          -- Add the SSIS step
           DECLARE @run_command NVARCHAR(MAX);
           SET @run_command = N'/ISSERVER ' + CHAR(34) + N'\SSISDB\$folderName\$projectName\$packageName' + CHAR(34) + N' /SERVER ' + CHAR(34) + @@SERVERNAME + CHAR(34) + N' /Par ' + CHAR(34) + N'`$ServerOption::LOGGING_LEVEL(Int16)' + CHAR(34) + N';1 /CALLERINFO SQLAGENT /REPORTING E';
 
@@ -217,10 +200,12 @@ jobs:
               @command = @run_command,
               @retry_attempts = 0;
 
+          -- Target the job to the local server
           EXEC dbo.sp_add_jobserver
               @job_name = N'$executionJobName',
               @server_name = N'(local)';
 
+          -- Schedule: every 30 seconds, 24/7
           EXEC dbo.sp_add_jobschedule
               @job_name = N'$executionJobName',
               @name = N'Every30Seconds',
@@ -233,14 +218,17 @@ jobs:
               @active_end_time = 235959;
           "@
 
-          $connStr = "Data Source=$tunnelAddress;Initial Catalog=$initialDb;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
+          # ---- Execute both scripts in one connection ----
+          $fullScript = $deploySql + "`n" + $jobSql
+
+          $connStr = "Data Source=$tunnelAddress;Initial Catalog=master;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
           $connection = New-Object System.Data.SqlClient.SqlConnection($connStr)
           try {
               $connection.Open()
               $command = $connection.CreateCommand()
-              $command.CommandText = $sqlScript
+              $command.CommandText = $fullScript
               $command.ExecuteNonQuery() | Out-Null
-              Write-Host "SUCCESS: SSIS package deployed and execution job created."
+              Write-Host "SUCCESS: SSIS package deployed and job '$executionJobName' created."
           } catch {
               Write-Error "SQL execution failed: $_"
               exit 1
@@ -249,4 +237,4 @@ jobs:
           }
 
       - name: Deployment Complete
-        run: echo "Database deployed, SSIS package deployed, and SQL Agent job '${{ vars.SQL_JOB_NAME }}' created with a 30‑second schedule."
+        run: echo "✅ Database deployed, SSIS package deployed, and SQL Agent job '${{ vars.SQL_JOB_NAME }}' created with a 30‑second schedule."
