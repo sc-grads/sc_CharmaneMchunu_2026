@@ -13,23 +13,17 @@ jobs:
     environment: staging
 
     env:
-      # Secrets (keep these)
       SQL_USERNAME: ${{ secrets.SQL_USERNAME }}
       SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
-
-      # Variables (non‑sensitive) – all from the environment
       SQL_SERVER: ${{ vars.SQL_SERVER }}
       SQL_PORT: ${{ vars.SQL_PORT }}
       DATABASE_NAME: ${{ vars.SQL_DATABASE }}
-      SQL_JOB_NAME: ${{ vars.SQL_JOB }}    # Matches your variable name
+      # SQL_JOB_NAME is not used in the fixed step, but keep if you need it elsewhere
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # ------------------------------------------------------------------
-      # Install Chocolatey and sqlcmd
-      # ------------------------------------------------------------------
       - name: Install Chocolatey and sqlcmd
         shell: powershell
         run: |
@@ -46,20 +40,14 @@ jobs:
         shell: powershell
         run: sqlcmd -?
 
-      # ------------------------------------------------------------------
-      # Debug: show non‑secret environment (secrets are masked)
-      # ------------------------------------------------------------------
       - name: Debug Environment
         shell: powershell
         run: |
           Write-Host "SQL_SERVER: $env:SQL_SERVER"
           Write-Host "SQL_PORT: $env:SQL_PORT"
           Write-Host "DATABASE_NAME: $env:DATABASE_NAME"
-          Write-Host "SQL_JOB_NAME: $env:SQL_JOB_NAME"
+          Write-Host "SQL_JOB (from vars): ${{ vars.SQL_JOB }}"
 
-      # ------------------------------------------------------------------
-      # 1. Create Database
-      # ------------------------------------------------------------------
       - name: Create Database
         shell: powershell
         run: |
@@ -70,9 +58,6 @@ jobs:
             -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "Database/CreateDatabase.sql"
 
-      # ------------------------------------------------------------------
-      # 2. Create Tables
-      # ------------------------------------------------------------------
       - name: Create Tables
         shell: powershell
         run: |
@@ -84,9 +69,6 @@ jobs:
             -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "Database/CreateTable.sql"
 
-      # ------------------------------------------------------------------
-      # 3. Stored Procedures
-      # ------------------------------------------------------------------
       - name: Create Stored Procedures
         shell: powershell
         run: |
@@ -98,9 +80,6 @@ jobs:
             -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "Database/StoredProcedure.sql"
 
-      # ------------------------------------------------------------------
-      # 4. Triggers
-      # ------------------------------------------------------------------
       - name: Create Triggers
         shell: powershell
         run: |
@@ -109,12 +88,8 @@ jobs:
             -U "$env:SQL_USERNAME" `
             -P "$env:SQL_PASSWORD" `
             -d "$env:DATABASE_NAME" `
-            -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "Database/Triggers.sql"
 
-      # ------------------------------------------------------------------
-      # 5. Seed Data
-      # ------------------------------------------------------------------
       - name: Seed Database
         shell: powershell
         run: |
@@ -126,9 +101,6 @@ jobs:
             -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "Database/SeedData.sql"
 
-      # ------------------------------------------------------------------
-      # 6. Create SQL Agent Job
-      # ------------------------------------------------------------------
       - name: Create SQL Agent Job
         shell: powershell
         run: |
@@ -137,20 +109,21 @@ jobs:
             -U "$env:SQL_USERNAME" `
             -P "$env:SQL_PASSWORD" `
             -d msdb `
+            -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "SQLAgent/CreateJob.sql"
 
-      # ------------------------------------------------------------------
-      # 7. Start the SQL Agent Job
-      # ------------------------------------------------------------------
+      # ---------- FIXED STEP ----------
       - name: Start SQL Agent Job
         shell: powershell
         run: |
+          $JobName = "${{ vars.SQL_JOB }}"
+          Write-Host "Starting job: $JobName"
           sqlcmd -b `
             -S "$env:SQL_SERVER,$env:SQL_PORT" `
             -U "$env:SQL_USERNAME" `
             -P "$env:SQL_PASSWORD" `
             -d msdb `
-            -Q "EXEC msdb.dbo.sp_start_job N'$env:SQL_JOB_NAME';"
+            -Q "EXEC msdb.dbo.sp_start_job N'$JobName';"
 
       - name: Deployment Complete
         run: echo "Database deployed and SQL Agent job '${{ vars.SQL_JOB }}' started successfully."
