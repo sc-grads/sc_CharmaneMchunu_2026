@@ -101,7 +101,7 @@ jobs:
             -i "Database/SeedData.sql"
 
       # ------------------------------------------------------------------
-      # SSIS Build & Deployment via Helper Job (using wrapper)
+      # SSIS Build & Deployment (Option B: explicit folder creation)
       # ------------------------------------------------------------------
       - name: Locate Visual Studio DevEnv Tool
         shell: powershell
@@ -125,7 +125,7 @@ jobs:
             exit $LASTEXITCODE
           }
 
-      - name: Deploy ISPAC via SQL Agent Helper Job (uses wrapper)
+      - name: Deploy ISPAC via SQL Agent Helper Job (with explicit folder creation)
         shell: pwsh
         run: |
           Write-Host "Reading compiled ISPAC..."
@@ -137,8 +137,8 @@ jobs:
           $fileBytes = [System.IO.File]::ReadAllBytes($ispacPath)
           $hexString = "0x" + [System.BitConverter]::ToString($fileBytes).Replace("-", "")
 
-          $folderName = "TimesheetMigration"
-          $projectName = "TimesheetMigrationPipeline"
+          $folderName = "TimesheetMigration"             
+          $projectName = "TimesheetMigrationPipeline"    
           $helperJobName = "GitHub_SSIS_Deploy_Helper_CM"
 
           $dynamicSql = @"
@@ -146,7 +146,14 @@ jobs:
           DECLARE @dynamic_tsql NVARCHAR(MAX);
           SET @dynamic_tsql = N'
           SET NOCOUNT ON;
+          -- Explicit folder creation (Option B)
+          IF NOT EXISTS (SELECT 1 FROM [SSISDB].[catalog].[folders] WHERE name = N''$folderName'')
+          BEGIN
+              EXEC [SSISDB].[catalog].[create_folder] @folder_name = N''$folderName'';
+          END
+
           DECLARE @project_binary VARBINARY(MAX) = $hexString;
+          -- Now call the wrapper (which also creates the folder, but it's idempotent)
           EXEC [SSISDB].[catalog].[deploy_project_wrapper]
               @folder_name   = N''$folderName'',
               @project_name  = N''$projectName'',
@@ -176,7 +183,7 @@ jobs:
           Write-Host "SSIS package deployed successfully via helper job."
       # ------------------------------------------------------------------
 
-      - name: Create SQL Agent Job
+      - name: Create SQL Agent Job (main application job)
         shell: powershell
         run: |
           sqlcmd -b `
