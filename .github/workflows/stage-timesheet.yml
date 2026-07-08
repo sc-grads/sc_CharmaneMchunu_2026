@@ -116,7 +116,7 @@ jobs:
       - name: Start SQL Agent Job
         shell: powershell
         run: |
-          $JobName = "${{ vars.SQL_JOB }}"
+          $JobName = "${{ vars.SQL_JOB_NAME }}"
           Write-Host "Starting job: $JobName"
           sqlcmd -b `
             -S "$env:SQL_SERVER,$env:SQL_PORT" `
@@ -126,4 +126,4 @@ jobs:
             -Q "EXEC msdb.dbo.sp_start_job N'$JobName';"
 
       - name: Deployment Complete
-        run: echo "Database deployed and SQL Agent job '${{ vars.SQL_JOB }}' started successfully."
+        run: echo "Database deployed and SQL Agent job '${{ vars.SQL_JOB_NAME }}' started successfully."
