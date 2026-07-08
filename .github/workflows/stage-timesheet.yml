@@ -138,7 +138,7 @@ jobs:
           $hexString = "0x" + [System.BitConverter]::ToString($fileBytes).Replace("-", "")
 
           $folderName   = "TimesheetMigration"
-          $projectName  = "TimesheetMigrationPipeine"   # adjust as needed
+          $projectName  = "TimesheetMigrationPipeline"   
           $helperJobName = "GitHub_SSIS_Deploy_Helper_CM"
 
           # Build the T‑SQL that the job step will execute directly
