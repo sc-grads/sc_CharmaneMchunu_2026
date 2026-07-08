@@ -18,7 +18,7 @@ jobs:
       SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
 
       SQL_PORT: ${{ vars.SQL_PORT }}
-      DATABASE_NAME: ${{ vars.DATABASE_NAME }}
+      DATABASE_NAME: ${{ vars.SQL_DATABASE }}
 
     steps:
 
