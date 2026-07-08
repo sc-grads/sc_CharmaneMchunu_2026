@@ -122,7 +122,7 @@ jobs:
             exit $LASTEXITCODE
           }
 
-      - name: Deploy SSIS and Create Execution Job
+      - name: Deploy SSIS Project (Direct, No Helper Job)
         shell: pwsh
         run: |
           $ispacPath = "${{ github.workspace }}\SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
@@ -142,8 +142,6 @@ jobs:
           $dbPassword    = "$env:SQL_PASSWORD"
           $folderName    = "TimesheetMigration"
           $projectName   = "TimesheetMigrationPipeline"
-          $packageName   = "Package.dtsx"
-          $executionJobName = "${{ vars.SQL_JOB_NAME }}"
 
           try {
               $fileBytes = [System.IO.File]::ReadAllBytes($ispacPath)
@@ -153,15 +151,12 @@ jobs:
               exit 1
           }
 
-          # ---- Step 1: Deploy the project directly (no helper job) ----
           $deploySql = @"
           USE [SSISDB];
-
           IF NOT EXISTS (SELECT 1 FROM [catalog].[folders] WHERE name = N'$folderName')
           BEGIN
               EXEC [catalog].[create_folder] @folder_name = N'$folderName';
           END
-
           DECLARE @project_stream VARBINARY(MAX) = $hexString;
           EXEC [catalog].[deploy_project]
               @folder_name = N'$folderName',
@@ -169,7 +164,32 @@ jobs:
               @project_stream = @project_stream;
           "@
 
-          # ---- Step 2: Create the scheduled job (using msdb) ----
+          $connStr = "Data Source=$tunnelAddress;Initial Catalog=SSISDB;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
+          $connection = New-Object System.Data.SqlClient.SqlConnection($connStr)
+          try {
+              $connection.Open()
+              $command = $connection.CreateCommand()
+              $command.CommandText = $deploySql
+              $command.ExecuteNonQuery() | Out-Null
+              Write-Host "SUCCESS: SSIS project deployed."
+          } catch {
+              Write-Error "Deployment failed: $_"
+              exit 1
+          } finally {
+              if ($connection.State -eq 'Open') { $connection.Close() }
+          }
+
+      - name: Create SQL Agent Job (T‑SQL Step, no Integrated Auth needed at creation)
+        shell: pwsh
+        run: |
+          $tunnelAddress = "$env:SQL_SERVER,$env:SQL_PORT"
+          $dbUser        = "$env:SQL_USERNAME"
+          $dbPassword    = "$env:SQL_PASSWORD"
+          $folderName    = "TimesheetMigration"
+          $projectName   = "TimesheetMigrationPipeline"
+          $packageName   = "Package.dtsx"
+          $executionJobName = "${{ vars.SQL_JOB_NAME }}"
+
           $jobSql = @"
           USE [msdb];
 
@@ -189,14 +209,28 @@ jobs:
               @owner_login_name = N'sa',
               @job_id = @jobId OUTPUT;
 
-          -- Add the SSIS step
+          -- Add a T‑SQL step that runs the package via catalog stored procedures
           DECLARE @run_command NVARCHAR(MAX);
-          SET @run_command = N'/ISSERVER ' + CHAR(34) + N'\SSISDB\$folderName\$projectName\$packageName' + CHAR(34) + N' /SERVER ' + CHAR(34) + @@SERVERNAME + CHAR(34) + N' /Par ' + CHAR(34) + N'`$ServerOption::LOGGING_LEVEL(Int16)' + CHAR(34) + N';1 /CALLERINFO SQLAGENT /REPORTING E';
+          SET @run_command = N'
+          DECLARE @execution_id BIGINT;
+          EXEC [SSISDB].[catalog].[create_execution]
+              @folder_name = N''$folderName'',
+              @project_name = N''$projectName'',
+              @package_name = N''$packageName'',
+              @use32bitruntime = False,
+              @execution_id = @execution_id OUTPUT;
+          EXEC [SSISDB].[catalog].[set_execution_parameter_value]
+              @execution_id,
+              @object_type = 50,
+              @parameter_name = N''LOGGING_LEVEL'',
+              @parameter_value = 1;
+          EXEC [SSISDB].[catalog].[start_execution] @execution_id;
+          ';
 
           EXEC dbo.sp_add_jobstep
               @job_name = N'$executionJobName',
               @step_name = N'Execute SSIS Package',
-              @subsystem = N'SSIS',
+              @subsystem = N'TSQL',          -- T‑SQL step avoids integrated‑auth validation at creation
               @command = @run_command,
               @retry_attempts = 0;
 
@@ -218,23 +252,20 @@ jobs:
               @active_end_time = 235959;
           "@
 
-          # ---- Execute both scripts in one connection ----
-          $fullScript = $deploySql + "`n" + $jobSql
-
-          $connStr = "Data Source=$tunnelAddress;Initial Catalog=master;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
+          $connStr = "Data Source=$tunnelAddress;Initial Catalog=msdb;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
           $connection = New-Object System.Data.SqlClient.SqlConnection($connStr)
           try {
               $connection.Open()
               $command = $connection.CreateCommand()
-              $command.CommandText = $fullScript
+              $command.CommandText = $jobSql
               $command.ExecuteNonQuery() | Out-Null
-              Write-Host "SUCCESS: SSIS package deployed and job '$executionJobName' created."
+              Write-Host "SUCCESS: SQL Agent job '$executionJobName' created."
           } catch {
-              Write-Error "SQL execution failed: $_"
+              Write-Error "Job creation failed: $_"
               exit 1
           } finally {
               if ($connection.State -eq 'Open') { $connection.Close() }
           }
 
       - name: Deployment Complete
-        run: echo "✅ Database deployed, SSIS package deployed, and SQL Agent job '${{ vars.SQL_JOB_NAME }}' created with a 30‑second schedule."
+        run: echo "Database deployed, SSIS package deployed, and SQL Agent job '${{ vars.SQL_JOB_NAME }}' created with a 30‑second schedule."
