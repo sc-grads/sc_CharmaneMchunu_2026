@@ -153,7 +153,7 @@ jobs:
           END
 
           DECLARE @project_binary VARBINARY(MAX) = $hexString;
-          -- Now call the wrapper (which also creates the folder, but it's idempotent)
+          -- Now call the wrapper (which also creates the folder, but it is idempotent)
           EXEC [SSISDB].[catalog].[deploy_project_wrapper]
               @folder_name   = N''$folderName'',
               @project_name  = N''$projectName'',
