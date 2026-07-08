@@ -13,12 +13,15 @@ jobs:
     environment: staging
 
     env:
-      SQL_SERVER: ${{ secrets.SQL_SERVER }}
+      # Secrets (keep these)
       SQL_USERNAME: ${{ secrets.SQL_USERNAME }}
       SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
+
+      # Variables (non‑sensitive) – all from the environment
+      SQL_SERVER: ${{ vars.SQL_SERVER }}
       SQL_PORT: ${{ vars.SQL_PORT }}
       DATABASE_NAME: ${{ vars.SQL_DATABASE }}
-      SQL_JOB_NAME: ${{ vars.SQL_JOB_NAME }}          # Add this variable
+      SQL_JOB_NAME: ${{ vars.SQL_JOB }}    # Matches your variable name
 
     steps:
       - name: Checkout Repository
@@ -44,7 +47,7 @@ jobs:
         run: sqlcmd -?
 
       # ------------------------------------------------------------------
-      # Debug: print non‑secret variables
+      # Debug: show non‑secret environment (secrets are masked)
       # ------------------------------------------------------------------
       - name: Debug Environment
         shell: powershell
@@ -150,4 +153,4 @@ jobs:
             -Q "EXEC msdb.dbo.sp_start_job N'$env:SQL_JOB_NAME';"
 
       - name: Deployment Complete
-        run: echo "Database deployed and SQL Agent job '${{ vars.SQL_JOB_NAME }}' started successfully."
+        run: echo "Database deployed and SQL Agent job '${{ vars.SQL_JOB }}' started successfully."
