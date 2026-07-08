@@ -1,0 +1,110 @@
+name: Deploy Timesheet Pipeline (STAGING)
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+
+    environment: staging
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    # -----------------------------
+    # 1. Deploy Database Scripts
+    # -----------------------------
+    - name: Deploy Database Schema
+      shell: powershell
+      run: |
+        sqlcmd -S "${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }}" `
+               -U "${{ secrets.SQL_USERNAME }}" `
+               -P "${{ secrets.SQL_PASSWORD }}" `
+               -d master `
+               -i Database/CreateDatabase.sql
+
+        sqlcmd -S "${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }}" `
+               -U "${{ secrets.SQL_USERNAME }}" `
+               -P "${{ secrets.SQL_PASSWORD }}" `
+               -d TimesheetDB `
+               -i Database/DeploySchema.sql
+
+        sqlcmd -S "${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }}" `
+               -U "${{ secrets.SQL_USERNAME }}" `
+               -P "${{ secrets.SQL_PASSWORD }}" `
+               -d TimesheetDB `
+               -i Database/Triggers.sql
+
+        sqlcmd -S "${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }}" `
+               -U "${{ secrets.SQL_USERNAME }}" `
+               -P "${{ secrets.SQL_PASSWORD }}" `
+               -d TimesheetDB `
+               -i Database/SeedData.sql
+
+    # -----------------------------
+    # 2. Build SSIS Project 
+    # -----------------------------
+    - name: Build SSIS Project
+      shell: powershell
+      run: |
+        msbuild SSIS\TimesheetMigration.dtproj /p:Configuration=Release
+
+    # -----------------------------
+    # 3. Deploy ISPAC to SSISDB
+    # -----------------------------
+    - name: Deploy ISPAC to SSISDB
+      shell: powershell
+      run: |
+        $server = "${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }}"
+
+        & "C:\Program Files (x86)\Microsoft SQL Server\150\DTS\Binn\ISDeploymentWizard.exe" `
+          /Silent `
+          /ModelType:Project `
+          /SourcePath:"SSIS\bin\Release\TimesheetMigration.ispac" `
+          /DestinationServerName:$server `
+          /DestinationFolder:"TimesheetDataPipeline"
+
+    # -----------------------------
+    # 4. Start SQL Agent Job
+    # -----------------------------
+    - name: Start SQL Agent Job
+      shell: powershell
+      run: |
+        sqlcmd -S "${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }}" `
+               -U "${{ secrets.SQL_USERNAME }}" `
+               -P "${{ secrets.SQL_PASSWORD }}" `
+               -Q "EXEC msdb.dbo.sp_start_job @job_name = 'RunTimesheetDataPipeline';"
+
+    # -----------------------------
+    # 5. Monitor Job Execution
+    # -----------------------------
+    - name: Monitor Job Execution
+      shell: powershell
+      run: |
+        $server = "${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }}"
+        $user = "${{ secrets.SQL_USERNAME }}"
+        $pass = "${{ secrets.SQL_PASSWORD }}"
+
+        for ($i = 0; $i -lt 60; $i++) {
+
+            $result = sqlcmd -S $server -U $user -P $pass -h -1 -W -Q "
+            SELECT TOP 1 run_status
+            FROM msdb.dbo.sysjobhistory h
+            JOIN msdb.dbo.sysjobs j ON j.job_id = h.job_id
+            WHERE j.name = 'RunTimesheetDataPipeline'
+            ORDER BY h.instance_id DESC;
+            "
+
+            $status = $result.Trim()
+
+            if ($status -eq "1") { exit 0 }
+            if ($status -eq "3") { exit 1 }
+
+            Start-Sleep -Seconds 10
+        }
+
+        exit 1
