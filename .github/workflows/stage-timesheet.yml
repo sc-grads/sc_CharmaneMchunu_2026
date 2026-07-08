@@ -200,35 +200,76 @@ jobs:
           } finally {
               if ($connection.State -eq 'Open') { $connection.Close() }
           }
-          Start-Sleep -Seconds 20
-          # 7. Check job status
-          $statusSql = @"
+          # 7. Poll until the job finishes, then read its real outcome.
+          #    NOTE: sysjobactivity has NO run_status column - it only tells you
+          #    whether a job is currently executing (stop_execution_date IS NULL
+          #    while running, populated once it stops). The actual pass/fail
+          #    outcome lives in sysjobhistory, where step_id = 0 is the job-level
+          #    summary row (run_status: 0=Failed, 1=Succeeded, 2=Retry, 3=Cancelled).
+          $isRunningSql = @"
           USE [msdb];
-          SELECT TOP 1
-              run_status
-          FROM sysjobactivity ja
-          INNER JOIN sysjobs j ON ja.job_id = j.job_id
+          SELECT TOP 1 ja.stop_execution_date
+          FROM msdb.dbo.sysjobactivity ja
+          INNER JOIN msdb.dbo.sysjobs j ON ja.job_id = j.job_id
           WHERE j.name = N'$helperJobName'
           ORDER BY ja.start_execution_date DESC;
           "@
+          $outcomeSql = @"
+          USE [msdb];
+          DECLARE @job_id UNIQUEIDENTIFIER = (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$helperJobName');
+          SELECT TOP 1 run_status
+          FROM msdb.dbo.sysjobhistory
+          WHERE job_id = @job_id AND step_id = 0
+          ORDER BY instance_id DESC;
+          "@
+          $maxWaitSeconds = 300
+          $pollInterval = 5
+          $elapsed = 0
+          $finished = $false
+          while ($elapsed -lt $maxWaitSeconds) {
+              Start-Sleep -Seconds $pollInterval
+              $elapsed += $pollInterval
+              $pollConn = New-Object System.Data.SqlClient.SqlConnection($connStr)
+              try {
+                  $pollConn.Open()
+                  $pollCmd = $pollConn.CreateCommand()
+                  $pollCmd.CommandText = $isRunningSql
+                  $stopDate = $pollCmd.ExecuteScalar()
+                  if ($stopDate -ne $null -and $stopDate -isnot [DBNull]) {
+                      $finished = $true
+                  } else {
+                      Write-Host "Still running... (${elapsed}s elapsed)"
+                  }
+              } catch {
+                  Write-Error "Failed to poll job activity: $_"
+                  exit 1
+              } finally {
+                  if ($pollConn.State -eq 'Open') { $pollConn.Close() }
+              }
+              if ($finished) { break }
+          }
+          if (-not $finished) {
+              Write-Error "Helper job did not finish within $maxWaitSeconds seconds."
+              exit 1
+          }
           $statusConn = New-Object System.Data.SqlClient.SqlConnection($connStr)
           try {
               $statusConn.Open()
               $statusCmd = $statusConn.CreateCommand()
-              $statusCmd.CommandText = $statusSql
+              $statusCmd.CommandText = $outcomeSql
               $runStatus = $statusCmd.ExecuteScalar()
-              if ($null -eq $runStatus) {
-                  Write-Error "Could not retrieve job status."
+              if ($null -eq $runStatus -or $runStatus -is [DBNull]) {
+                  Write-Error "Could not retrieve job outcome from sysjobhistory."
                   exit 1
               }
-              Write-Host "Job run_status: $runStatus (1=success, 0=fail, 2=retry, 3=cancelled, 4=in progress)"
+              Write-Host "Job run_status: $runStatus (1=success, 0=fail, 2=retry, 3=cancelled)"
               if ($runStatus -ne 1) {
                   Write-Error "Helper job failed with status code $runStatus."
                   exit 1
               }
               Write-Host "Helper job succeeded."
           } catch {
-              Write-Error "Failed to check job status: $_"
+              Write-Error "Failed to check job outcome: $_"
               exit 1
           } finally {
               if ($statusConn.State -eq 'Open') { $statusConn.Close() }
