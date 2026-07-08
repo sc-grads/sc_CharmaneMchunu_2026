@@ -1,4 +1,4 @@
-name: Deploy the migration project to the staging env using ngrok.
+name: Deploy the migration project to the staging env.
 
 on:
   push:
@@ -12,21 +12,16 @@ jobs:
     environment: staging
 
     env:
-      SQL_SERVER: ${{ vars.SQL_SERVER }}         
-      SQL_PORT: ${{ vars.SQL_PORT }}              
-      SQL_USERNAME: ${{ secrets.SQL_USERNAME }}   
-      SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}   
+      SQL_SERVER: ${{ vars.SQL_SERVER }}         # repository variable (plain text)
+      SQL_PORT: ${{ vars.SQL_PORT }}              # repository variable (plain text)
+      SQL_USERNAME: ${{ secrets.SQL_USERNAME }}   # secret
+      SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}   # secret
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
-      - name: Build the project
-        shell: cmd
-        run: msbuild "SSIS-Project\TimesheetMigration\TimesheetMigration.slnx" /p:Configuration=Development
+      # ---- BUILD STEP REMOVED (uses pre-built .ispac) ----
 
       - name: Check if ISPAC exists
         shell: powershell
@@ -39,7 +34,6 @@ jobs:
         run: |
           choco install mssql-tools -y
           refreshenv
-          # Make sqlcmd available immediately
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
       - name: Create database
@@ -81,32 +75,15 @@ jobs:
           $sql | Out-File deploy-ispac.sql -Encoding ASCII
           sqlcmd -S "$env:SQL_SERVER,$env:SQL_PORT" -U "$env:SQL_USERNAME" -P "$env:SQL_PASSWORD" -d SSISDB -i deploy-ispac.sql -b
 
-      - name: Create SQL Agent job if missing
+      # ---- SIMPLIFIED JOB CREATION/UPDATING ----
+      - name: Create or update SQL Agent job
         shell: powershell
         run: |
-          $jobName = "RunTimesheetDataPipeline"
           $server = "$env:SQL_SERVER,$env:SQL_PORT"
-
-          $checkSql = "SELECT COUNT(*) FROM msdb.dbo.sysjobs WHERE name = N'$jobName'"
-          $exists = sqlcmd -S $server -U "$env:SQL_USERNAME" -P "$env:SQL_PASSWORD" -d msdb -Q $checkSql -h-1 -W | ForEach-Object { $_.Trim() }
-
-          if ($exists -eq "0") {
-              Write-Host "Job does not exist. Creating it..."
-              $template = Get-Content -Path "SQLAgent\CreateJob.sql" -Raw
-              $template = $template -replace "<<SQL_SERVER>>", $server
-              $template = $template -replace "<<JOB_NAME>>", $jobName
-              $template = $template -replace "<<DATABASE_NAME>>", "TimesheetDB"
-              $template = $template -replace "<SQL_SERVER>", $server
-              $template = $template -replace "<JOB_NAME>", $jobName
-              $template = $template -replace "<DATABASE_NAME>", "TimesheetDB"
-
-              $tempFile = [System.IO.Path]::GetTempFileName() + ".sql"
-              $template | Out-File -FilePath $tempFile -Encoding ASCII
-              sqlcmd -S $server -U "$env:SQL_USERNAME" -P "$env:SQL_PASSWORD" -d msdb -i $tempFile -b
-              Remove-Item -Path $tempFile -Force
-          } else {
-              Write-Host "Job already exists"
-          }
+          $scriptPath = "SQLAgent\CreateJob.sql"
+          if (!(Test-Path $scriptPath)) { throw "SQL script not found: $scriptPath" }
+          Write-Host "Running $scriptPath to create or update the job..."
+          sqlcmd -S $server -U "$env:SQL_USERNAME" -P "$env:SQL_PASSWORD" -d msdb -i $scriptPath -b
 
       - name: Start/restart the job
         shell: powershell
