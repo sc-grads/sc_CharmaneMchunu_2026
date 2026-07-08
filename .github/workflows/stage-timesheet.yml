@@ -23,7 +23,7 @@ jobs:
         shell: pwsh
         run: |
           $ispacPath = Join-Path $env:GITHUB_WORKSPACE `
-            "Projects 2026/TimesheetDataMigration/TimesheetsMigrationSSIS/bin/Development/TimesheetsMigrationSSIS.ispac"
+            "SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
 
           if (-not (Test-Path $ispacPath)) {
             Write-Error ".ispac not found at $ispacPath"
