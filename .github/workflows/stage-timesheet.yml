@@ -112,7 +112,7 @@ jobs:
             -i "SQLAgent/CreateJob.sql"
 
       # ------------------------------------------------------------------
-      # Stop (if running) and start the SQL Agent Job
+      # Stop (if running) and start the SQL Agent Job using a temporary file
       # ------------------------------------------------------------------
       - name: Stop and Start SQL Agent Job
         shell: powershell
@@ -149,11 +149,19 @@ jobs:
           END
           "@
 
-          $sql | sqlcmd -b `
-              -S "$env:SQL_SERVER,$env:SQL_PORT" `
-              -U "$env:SQL_USERNAME" `
-              -P "$env:SQL_PASSWORD" `
-              -d msdb
+          # Write the SQL to a temporary file and run it with -i
+          $tempFile = [System.IO.Path]::GetTempFileName() + ".sql"
+          $sql | Out-File -FilePath $tempFile -Encoding ASCII
+          try {
+              sqlcmd -b `
+                -S "$env:SQL_SERVER,$env:SQL_PORT" `
+                -U "$env:SQL_USERNAME" `
+                -P "$env:SQL_PASSWORD" `
+                -d msdb `
+                -i $tempFile
+          } finally {
+              Remove-Item $tempFile -Force -ErrorAction SilentlyContinue
+          }
 
       - name: Deployment Complete
         run: echo "Database deployed and SQL Agent job '${{ vars.SQL_JOB_NAME }}' started successfully."
