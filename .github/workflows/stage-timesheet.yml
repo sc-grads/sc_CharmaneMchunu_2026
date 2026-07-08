@@ -16,112 +16,126 @@ jobs:
       SQL_SERVER: ${{ secrets.SQL_SERVER }}
       SQL_USERNAME: ${{ secrets.SQL_USERNAME }}
       SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
-
       SQL_PORT: ${{ vars.SQL_PORT }}
-      DATABASE_NAME: ${{ vars.SQL_DATABASE }}
+      DATABASE_NAME: ${{ vars.SQL_DATABASE }}   # kept as DATABASE_NAME
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install SQLCMD
+      # ------------------------------------------------------------------
+      # Install Chocolatey (if not present) and then sqlcmd
+      # ------------------------------------------------------------------
+      - name: Install Chocolatey and sqlcmd
         shell: powershell
         run: |
+          # Install Chocolatey if not already installed
+          if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+            Write-Host "Installing Chocolatey..."
+            Set-ExecutionPolicy Bypass -Scope Process -Force
+            [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+            iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+          }
+          # Install sqlcmd
           choco install sqlcmd -y
+          # Refresh environment to pick up sqlcmd path
+          refreshenv
 
       - name: Verify sqlcmd
         shell: powershell
+        run: sqlcmd -?
+
+      # ------------------------------------------------------------------
+      # Debug: print variables (secrets are masked automatically)
+      # ------------------------------------------------------------------
+      - name: Debug Environment
+        shell: powershell
         run: |
-          sqlcmd -?
+          Write-Host "SQL_SERVER: $env:SQL_SERVER"
+          Write-Host "SQL_PORT: $env:SQL_PORT"
+          Write-Host "DATABASE_NAME: $env:DATABASE_NAME"
 
-      ##########################################################
-      # Create Database
-      ##########################################################
-
+      # ------------------------------------------------------------------
+      # 1. Create Database (connects to default DB, e.g., master)
+      # ------------------------------------------------------------------
       - name: Create Database
         shell: powershell
         run: |
-          sqlcmd `
-          -S "$env:SQL_SERVER,$env:SQL_PORT" `
-          -U "$env:SQL_USERNAME" `
-          -P "$env:SQL_PASSWORD" `
-          -v DATABASE_NAME="$env:SQL_DATABASE" `
-          -i "Database/CreateDatabase.sql"
+          sqlcmd -b `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
+            -U "$env:SQL_USERNAME" `
+            -P "$env:SQL_PASSWORD" `
+            -v DATABASE_NAME="$env:DATABASE_NAME" `
+            -i "Database/CreateDatabase.sql"
 
-      ##########################################################
-      # Create Tables
-      ##########################################################
-
+      # ------------------------------------------------------------------
+      # 2. Create Tables
+      # ------------------------------------------------------------------
       - name: Create Tables
         shell: powershell
         run: |
-          sqlcmd `
-          -S "$env:SQL_SERVER,$env:SQL_PORT" `
-          -U "$env:SQL_USERNAME" `
-          -P "$env:SQL_PASSWORD" `
-          -d "$env:DATABASE_NAME" `
-          -v DATABASE_NAME="$env:DATABASE_NAME" `
-          -i "Database/CreateTable.sql"
+          sqlcmd -b `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
+            -U "$env:SQL_USERNAME" `
+            -P "$env:SQL_PASSWORD" `
+            -d "$env:DATABASE_NAME" `
+            -v DATABASE_NAME="$env:DATABASE_NAME" `
+            -i "Database/CreateTable.sql"
 
-      ##########################################################
-      # Stored Procedures
-      ##########################################################
-
+      # ------------------------------------------------------------------
+      # 3. Stored Procedures
+      # ------------------------------------------------------------------
       - name: Create Stored Procedures
         shell: powershell
         run: |
-          sqlcmd `
-          -S "$env:SQL_SERVER,$env:SQL_PORT" `
-          -U "$env:SQL_USERNAME" `
-          -P "$env:SQL_PASSWORD" `
-          -d "$env:DATABASE_NAME" `
-          -v DATABASE_NAME="$env:DATABASE_NAME" `
-          -i "Database/StoredProcedure.sql"
+          sqlcmd -b `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
+            -U "$env:SQL_USERNAME" `
+            -P "$env:SQL_PASSWORD" `
+            -d "$env:DATABASE_NAME" `
+            -v DATABASE_NAME="$env:DATABASE_NAME" `
+            -i "Database/StoredProcedure.sql"
 
-      ##########################################################
-      # Triggers
-      ##########################################################
-
+      # ------------------------------------------------------------------
+      # 4. Triggers
+      # ------------------------------------------------------------------
       - name: Create Triggers
         shell: powershell
         run: |
-          sqlcmd `
-          -S "$env:SQL_SERVER,$env:SQL_PORT" `
-          -U "$env:SQL_USERNAME" `
-          -P "$env:SQL_PASSWORD" `
-          -d "$env:DATABASE_NAME" `
-          -v DATABASE_NAME="$env:DATABASE_NAME" `
-          -i "Database/Triggers.sql"
+          sqlcmd -b `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
+            -U "$env:SQL_USERNAME" `
+            -P "$env:SQL_PASSWORD" `
+            -d "$env:DATABASE_NAME" `
+            -v DATABASE_NAME="$env:DATABASE_NAME" `
+            -i "Database/Triggers.sql"
 
-      ##########################################################
-      # Seed Data
-      ##########################################################
-
+      # ------------------------------------------------------------------
+      # 5. Seed Data
+      # ------------------------------------------------------------------
       - name: Seed Database
         shell: powershell
         run: |
-          sqlcmd `
-          -S "$env:SQL_SERVER,$env:SQL_PORT" `
-          -U "$env:SQL_USERNAME" `
-          -P "$env:SQL_PASSWORD" `
-          -d "$env:DATABASE_NAME" `
-          -v DATABASE_NAME="$env:DATABASE_NAME" `
-          -i "Database/SeedData.sql"
+          sqlcmd -b `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
+            -U "$env:SQL_USERNAME" `
+            -P "$env:SQL_PASSWORD" `
+            -d "$env:DATABASE_NAME" `
+            -v DATABASE_NAME="$env:DATABASE_NAME" `
+            -i "Database/SeedData.sql"
 
-      ##########################################################
-      # SQL Agent Job
-      ##########################################################
-
+      # ------------------------------------------------------------------
+      # 6. Create SQL Agent Job (connects to msdb)
+      # ------------------------------------------------------------------
       - name: Create SQL Agent Job
         shell: powershell
         run: |
-          sqlcmd `
-          -S "$env:SQL_SERVER,$env:SQL_PORT" `
-          -U "$env:SQL_USERNAME" `
-          -P "$env:SQL_PASSWORD" `
-          -d msdb `
-          -i "SQLAgent/CreateJob.sql"
+          sqlcmd -b `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
+            -U "$env:SQL_USERNAME" `
+            -P "$env:SQL_PASSWORD" `
+            -d msdb `
+            -i "SQLAgent/CreateJob.sql"
 
       - name: Deployment Complete
         run: echo "Database and SQL Agent deployment completed successfully."
