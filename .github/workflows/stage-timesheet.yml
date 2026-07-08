@@ -100,6 +100,77 @@ jobs:
             -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "Database/SeedData.sql"
 
+      # ------------------------------------------------------------------
+      # NEW: SSIS Package Deployment Steps
+      # ------------------------------------------------------------------
+      - name: Locate Visual Studio DevEnv Tool
+        shell: powershell
+        run: |
+          $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property productPath
+          if (-not $vsPath) { $vsPath = & "${env:ProgramFiles}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property productPath }
+          $devenvCom = Join-Path (Split-Path $vsPath) "devenv.com"
+          echo "DEVENV_PATH=$devenvCom" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Build SSIS Project to ISPAC
+        shell: powershell
+        run: |
+          # Adjust project path to match your repository structure
+          $projectPath = "SSIS-Project\TimesheetMigration\TimesheetMigration.dtproj"
+          if (-not (Test-Path $projectPath)) {
+            Write-Error "Project file not found: $projectPath"
+            exit 1
+          }
+          & "$env:DEVENV_PATH" $projectPath /Rebuild "Development"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Build failed with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
+
+      - name: Deploy ISPAC to SSISDB
+        shell: powershell
+        run: |
+          $ispacPath = "SSIS-Project/TimesheetMigration/bin/Development/TimesheetMigration.ispac"
+          if (-not (Test-Path $ispacPath)) {
+            Write-Error "ISPAC not found at $ispacPath"
+            exit 1
+          }
+
+          # Read ISPAC as binary and convert to hex string for T‑SQL
+          $fileBytes = [System.IO.File]::ReadAllBytes($ispacPath)
+          $hexString = "0x" + [System.BitConverter]::ToString($fileBytes).Replace("-", "")
+
+          $folderName = "TimesheetMigration"          # Adjust if needed
+          $projectName = "TimesheetMigrationPipeline" # Should match your project name
+
+          $sql = @"
+          SET NOCOUNT ON;
+          IF NOT EXISTS (SELECT 1 FROM [SSISDB].[catalog].[folders] WHERE name = '$folderName')
+          BEGIN
+              EXEC [SSISDB].[catalog].[create_folder] @folder_name = '$folderName';
+          END
+
+          DECLARE @project_binary VARBINARY(MAX) = $hexString;
+          EXEC [SSISDB].[catalog].[deploy_project]
+              @folder_name   = '$folderName',
+              @project_name  = '$projectName',
+              @project_stream = @project_binary;
+          "@
+
+          $tempSqlFile = Join-Path $env:RUNNER_TEMP "DeploySSIS.sql"
+          $sql | Out-File -FilePath $tempSqlFile -Encoding utf8 -Force
+
+          sqlcmd -b `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
+            -U "$env:SQL_USERNAME" `
+            -P "$env:SQL_PASSWORD" `
+            -i $tempSqlFile
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "SSIS deployment failed with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
+      # ------------------------------------------------------------------
+
       - name: Create SQL Agent Job
         shell: powershell
         run: |
@@ -149,7 +220,6 @@ jobs:
           END
           "@
 
-          # Write the SQL to a temporary file and run it with -i
           $tempFile = [System.IO.Path]::GetTempFileName() + ".sql"
           $sql | Out-File -FilePath $tempFile -Encoding ASCII
           try {
@@ -164,4 +234,4 @@ jobs:
           }
 
       - name: Deployment Complete
-        run: echo "Database deployed and SQL Agent job '${{ vars.SQL_JOB_NAME }}' started successfully."
+        run: echo "Database deployed, SSIS package deployed, and SQL Agent job '${{ vars.SQL_JOB_NAME }}' started successfully."
