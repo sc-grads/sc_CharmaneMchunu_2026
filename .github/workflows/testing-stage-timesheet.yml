@@ -15,35 +15,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    # -----------------------------
-    # 1. Deploy Database Scripts
-    # -----------------------------
-    - name: Deploy Database Schema
-      shell: powershell
-      run: |
-        sqlcmd -S "${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }}" `
-               -U "${{ secrets.SQL_USERNAME }}" `
-               -P "${{ secrets.SQL_PASSWORD }}" `
-               -d master `
-               -i Database/CreateDatabase.sql
 
-        sqlcmd -S "${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }}" `
-               -U "${{ secrets.SQL_USERNAME }}" `
-               -P "${{ secrets.SQL_PASSWORD }}" `
-               -d TimesheetDB `
-               -i Database/DeploySchema.sql
-
-        sqlcmd -S "${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }}" `
-               -U "${{ secrets.SQL_USERNAME }}" `
-               -P "${{ secrets.SQL_PASSWORD }}" `
-               -d TimesheetDB `
-               -i Database/Triggers.sql
-
-        sqlcmd -S "${{ secrets.SQL_SERVER }},${{ secrets.SQL_PORT }}" `
-               -U "${{ secrets.SQL_USERNAME }}" `
-               -P "${{ secrets.SQL_PASSWORD }}" `
-               -d TimesheetDB `
-               -i Database/SeedData.sql
 
     # -----------------------------
     # 2. Build SSIS Project 
