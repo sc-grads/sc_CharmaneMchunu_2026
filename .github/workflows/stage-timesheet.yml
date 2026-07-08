@@ -100,9 +100,6 @@ jobs:
             -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "Database/SeedData.sql"
 
-      # ------------------------------------------------------------------
-      # SSIS Build & Deployment (fixed quoting)
-      # ------------------------------------------------------------------
       - name: Locate Visual Studio DevEnv Tool
         shell: powershell
         run: |
@@ -125,126 +122,131 @@ jobs:
             exit $LASTEXITCODE
           }
 
-      - name: Deploy ISPAC via SQL Agent Helper Job (with explicit folder creation)
+      - name: Deploy SSIS and Create Execution Job
         shell: pwsh
         run: |
-          Write-Host "Reading compiled ISPAC..."
-          $ispacPath = "SSIS-Project/TimesheetMigration/bin/Development/TimesheetMigration.ispac"
-          if (-not (Test-Path $ispacPath)) {
-            Write-Error "ISPAC not found at $ispacPath"
-            exit 1
+          $ispacPath = "${{ github.workspace }}\SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
+          if (-not (Test-Path -Path $ispacPath)) {
+              Write-Host "Primary path not found. Checking alternative workspace path..."
+              $ispacPath = "${{ github.workspace }}\..\SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
+              $ispacPath = [System.IO.Path]::GetFullPath($ispacPath)
           }
-          $fileBytes = [System.IO.File]::ReadAllBytes($ispacPath)
-          $hexString = "0x" + [System.BitConverter]::ToString($fileBytes).Replace("-", "")
-
-          $folderName   = "TimesheetMigration"
-          $projectName  = "TimesheetMigrationPipeline"   
-          $helperJobName = "GitHub_SSIS_Deploy_Helper_CM"
-
-          # Build the T‑SQL that the job step will execute directly
-          $deploySql = @"
-          SET NOCOUNT ON;
-          -- Create folder if not exists
-          IF NOT EXISTS (SELECT 1 FROM [SSISDB].[catalog].[folders] WHERE name = N'$folderName')
-          BEGIN
-              EXEC [SSISDB].[catalog].[create_folder] @folder_name = N'$folderName';
-          END
-
-          DECLARE @project_binary VARBINARY(MAX) = $hexString;
-          EXEC [SSISDB].[catalog].[deploy_project_wrapper]
-              @folder_name   = N'$folderName',
-              @project_name  = N'$projectName',
-              @project_stream = @project_binary;
-          "@
-
-          # Now update the job step with this complete script
-          $updateSql = @"
-          EXEC msdb.dbo.sp_update_jobstep
-              @job_name = N'$helperJobName',
-              @step_id = 1,
-              @command = N'$($deploySql.Replace("'", "''"))';
-          EXEC msdb.dbo.sp_start_job @job_name = N'$helperJobName';
-          WAITFOR DELAY '00:00:05';
-          "@
-
-          $tempFile = Join-Path $env:RUNNER_TEMP "RunHelperJob.sql"
-          $updateSql | Out-File -FilePath $tempFile -Encoding utf8 -Force
-
-          # (Optional) print the generated SQL for debugging
-          Write-Host "Generated SQL:"
-          Get-Content $tempFile
-
-          sqlcmd -b `
-            -S "$env:SQL_SERVER,$env:SQL_PORT" `
-            -U "$env:SQL_USERNAME" `
-            -P "$env:SQL_PASSWORD" `
-            -i $tempFile
-
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "SSIS deployment via helper job failed with exit code $LASTEXITCODE"
-            exit $LASTEXITCODE
+          if (-not (Test-Path -Path $ispacPath)) {
+              Write-Error "CRITICAL ERROR: Could not locate TimesheetMigration.ispac file."
+              exit 1
           }
-          Write-Host "SSIS package deployed successfully via helper job."
-      # ------------------------------------------------------------------
+          Write-Host "Found ISPAC at: $ispacPath"
 
-      - name: Create SQL Agent Job (main application job)
-        shell: powershell
-        run: |
-          sqlcmd -b `
-            -S "$env:SQL_SERVER,$env:SQL_PORT" `
-            -U "$env:SQL_USERNAME" `
-            -P "$env:SQL_PASSWORD" `
-            -d msdb `
-            -v DATABASE_NAME="$env:DATABASE_NAME" `
-            -i "SQLAgent/CreateJob.sql"
+          $tunnelAddress = "$env:SQL_SERVER,$env:SQL_PORT"
+          $dbUser        = "$env:SQL_USERNAME"
+          $dbPassword    = "$env:SQL_PASSWORD"
+          $initialDb     = "msdb"
+          $folderName    = "TimesheetMigration"
+          $projectName   = "TimesheetMigrationPipeline"
+          $packageName   = "Package.dtsx"
+          $executionJobName = "${{ vars.SQL_JOB_NAME }}"
 
-      - name: Stop and Start SQL Agent Job
-        shell: powershell
-        run: |
-          $JobName = "${{ vars.SQL_JOB_NAME }}"
-          Write-Host "Managing job: $JobName"
-
-          $sql = @"
-          DECLARE @job_name NVARCHAR(128) = N'$JobName';
-          DECLARE @job_id UNIQUEIDENTIFIER;
-
-          SELECT @job_id = job_id FROM msdb.dbo.sysjobs WHERE name = @job_name;
-
-          IF @job_id IS NOT NULL
-          BEGIN
-              IF EXISTS (
-                  SELECT 1 FROM msdb.dbo.sysjobactivity
-                  WHERE job_id = @job_id
-                  AND start_execution_date IS NOT NULL
-                  AND stop_execution_date IS NULL
-              )
-              BEGIN
-                  RAISERROR('Job is running – stopping it...', 0, 1) WITH NOWAIT;
-                  EXEC msdb.dbo.sp_stop_job @job_id = @job_id;
-                  WAITFOR DELAY '00:00:03';
-              END
-
-              RAISERROR('Starting job...', 0, 1) WITH NOWAIT;
-              EXEC msdb.dbo.sp_start_job @job_id = @job_id;
-          END
-          ELSE
-          BEGIN
-              RAISERROR('Job not found – create it first.', 16, 1);
-          END
-          "@
-
-          $tempFile = [System.IO.Path]::GetTempFileName() + ".sql"
-          $sql | Out-File -FilePath $tempFile -Encoding ASCII
           try {
-              sqlcmd -b `
-                -S "$env:SQL_SERVER,$env:SQL_PORT" `
-                -U "$env:SQL_USERNAME" `
-                -P "$env:SQL_PASSWORD" `
-                -d msdb `
-                -i $tempFile
+              $fileBytes = [System.IO.File]::ReadAllBytes($ispacPath)
+              $hexString = "0x" + [System.BitConverter]::ToString($fileBytes).Replace("-", "")
+          } catch {
+              Write-Error "Failed to read ISPAC or convert to hex: $_"
+              exit 1
+          }
+
+          $sqlScript = @"
+          SET NOCOUNT ON;
+          USE [msdb];
+
+          IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'GitHub_SSIS_Deploy_Helper')
+          BEGIN
+              EXEC dbo.sp_delete_job @job_name = N'GitHub_SSIS_Deploy_Helper', @delete_unused_schedule=1;
+          END
+
+          EXEC dbo.sp_add_job @job_name = N'GitHub_SSIS_Deploy_Helper', @enabled = 1, @start_step_id = 1;
+
+          DECLARE @deploy_script NVARCHAR(MAX);
+          SET @deploy_script = N'
+          USE [SSISDB];
+          IF NOT EXISTS (SELECT 1 FROM [catalog].[folders] WHERE name = N''$folderName'')
+          BEGIN
+              EXEC [catalog].[create_folder] @folder_name = N''$folderName'';
+          END
+          DECLARE @project_stream VARBINARY(MAX) = $hexString;
+          EXEC [catalog].[deploy_project]
+              @folder_name = N''$folderName'',
+              @project_name = N''$projectName'',
+              @project_stream = @project_stream;
+          ';
+
+          EXEC dbo.sp_add_jobstep
+              @job_name = N'GitHub_SSIS_Deploy_Helper_CM',
+              @step_name = N'Run Deploy',
+              @subsystem = N'TSQL',
+              @command = @deploy_script,
+              @retry_attempts = 0;
+
+          EXEC dbo.sp_add_jobserver
+              @job_name = N'GitHub_SSIS_Deploy_Helper_CM',
+              @server_name = N'(local)';
+
+          EXEC dbo.sp_start_job @job_name = N'GitHub_SSIS_Deploy_Helper_CM';
+
+          WAITFOR DELAY '00:00:07';
+
+          EXEC dbo.sp_delete_job @job_name = N'GitHub_SSIS_Deploy_Helper_CM';
+
+          IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$executionJobName')
+          BEGIN
+              EXEC dbo.sp_delete_job @job_name = N'$executionJobName', @delete_unused_schedule=1;
+          END
+
+          EXEC dbo.sp_add_job
+              @job_name = N'$executionJobName',
+              @enabled = 1,
+              @description = N'Automated execution of TimesheetMigration SSIS package.',
+              @start_step_id = 1;
+
+          DECLARE @run_command NVARCHAR(MAX);
+          SET @run_command = N'/ISSERVER ' + CHAR(34) + N'\SSISDB\$folderName\$projectName\$packageName' + CHAR(34) + N' /SERVER ' + CHAR(34) + @@SERVERNAME + CHAR(34) + N' /Par ' + CHAR(34) + N'`$ServerOption::LOGGING_LEVEL(Int16)' + CHAR(34) + N';1 /CALLERINFO SQLAGENT /REPORTING E';
+
+          EXEC dbo.sp_add_jobstep
+              @job_name = N'$executionJobName',
+              @step_name = N'Execute SSIS Package',
+              @subsystem = N'SSIS',
+              @command = @run_command,
+              @retry_attempts = 0;
+
+          EXEC dbo.sp_add_jobserver
+              @job_name = N'$executionJobName',
+              @server_name = N'(local)';
+
+          EXEC dbo.sp_add_jobschedule
+              @job_name = N'$executionJobName',
+              @name = N'Every30Seconds',
+              @enabled = 1,
+              @freq_type = 4,
+              @freq_interval = 1,
+              @freq_subday_type = 2,
+              @freq_subday_interval = 30,
+              @active_start_time = 000000,
+              @active_end_time = 235959;
+          "@
+
+          $connStr = "Data Source=$tunnelAddress;Initial Catalog=$initialDb;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
+          $connection = New-Object System.Data.SqlClient.SqlConnection($connStr)
+          try {
+              $connection.Open()
+              $command = $connection.CreateCommand()
+              $command.CommandText = $sqlScript
+              $command.ExecuteNonQuery() | Out-Null
+              Write-Host "SUCCESS: SSIS package deployed and execution job created."
+          } catch {
+              Write-Error "SQL execution failed: $_"
+              exit 1
           } finally {
-              Remove-Item $tempFile -Force -ErrorAction SilentlyContinue
+              if ($connection.State -eq 'Open') { $connection.Close() }
           }
 
       - name: Deployment Complete
-        run: echo "Database deployed, SSIS package deployed, and SQL Agent job '${{ vars.SQL_JOB_NAME }}' started successfully."
+        run: echo "Database deployed, SSIS package deployed, and SQL Agent job '${{ vars.SQL_JOB_NAME }}' created with a 30‑second schedule."
