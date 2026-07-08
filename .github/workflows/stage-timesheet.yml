@@ -17,28 +17,26 @@ jobs:
       SQL_USERNAME: ${{ secrets.SQL_USERNAME }}
       SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
       SQL_PORT: ${{ vars.SQL_PORT }}
-      DATABASE_NAME: ${{ vars.SQL_DATABASE }}   # kept as DATABASE_NAME
+      DATABASE_NAME: ${{ vars.SQL_DATABASE }}
+      SQL_JOB_NAME: ${{ vars.SQL_JOB_NAME }}          # Add this variable
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       # ------------------------------------------------------------------
-      # Install Chocolatey (if not present) and then sqlcmd
+      # Install Chocolatey and sqlcmd
       # ------------------------------------------------------------------
       - name: Install Chocolatey and sqlcmd
         shell: powershell
         run: |
-          # Install Chocolatey if not already installed
           if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
             Write-Host "Installing Chocolatey..."
             Set-ExecutionPolicy Bypass -Scope Process -Force
             [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
             iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
           }
-          # Install sqlcmd
           choco install sqlcmd -y
-          # Refresh environment to pick up sqlcmd path
           refreshenv
 
       - name: Verify sqlcmd
@@ -46,7 +44,7 @@ jobs:
         run: sqlcmd -?
 
       # ------------------------------------------------------------------
-      # Debug: print variables (secrets are masked automatically)
+      # Debug: print non‑secret variables
       # ------------------------------------------------------------------
       - name: Debug Environment
         shell: powershell
@@ -54,9 +52,10 @@ jobs:
           Write-Host "SQL_SERVER: $env:SQL_SERVER"
           Write-Host "SQL_PORT: $env:SQL_PORT"
           Write-Host "DATABASE_NAME: $env:DATABASE_NAME"
+          Write-Host "SQL_JOB_NAME: $env:SQL_JOB_NAME"
 
       # ------------------------------------------------------------------
-      # 1. Create Database (connects to default DB, e.g., master)
+      # 1. Create Database
       # ------------------------------------------------------------------
       - name: Create Database
         shell: powershell
@@ -125,7 +124,7 @@ jobs:
             -i "Database/SeedData.sql"
 
       # ------------------------------------------------------------------
-      # 6. Create SQL Agent Job (connects to msdb)
+      # 6. Create SQL Agent Job
       # ------------------------------------------------------------------
       - name: Create SQL Agent Job
         shell: powershell
@@ -137,5 +136,18 @@ jobs:
             -d msdb `
             -i "SQLAgent/CreateJob.sql"
 
+      # ------------------------------------------------------------------
+      # 7. Start the SQL Agent Job
+      # ------------------------------------------------------------------
+      - name: Start SQL Agent Job
+        shell: powershell
+        run: |
+          sqlcmd -b `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
+            -U "$env:SQL_USERNAME" `
+            -P "$env:SQL_PASSWORD" `
+            -d msdb `
+            -Q "EXEC msdb.dbo.sp_start_job N'$env:SQL_JOB_NAME';"
+
       - name: Deployment Complete
-        run: echo "Database and SQL Agent deployment completed successfully."
+        run: echo "Database deployed and SQL Agent job '${{ vars.SQL_JOB_NAME }}' started successfully."
