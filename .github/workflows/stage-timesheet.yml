@@ -46,7 +46,7 @@ jobs:
           -S "$env:SQL_SERVER,$env:SQL_PORT" `
           -U "$env:SQL_USERNAME" `
           -P "$env:SQL_PASSWORD" `
-          -v DATABASE_NAME="$env:DATABASE_NAME" `
+          -v DATABASE_NAME="$env:SQL_DATABASE" `
           -i "Database/CreateDatabase.sql"
 
       ##########################################################
