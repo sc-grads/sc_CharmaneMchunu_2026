@@ -156,31 +156,32 @@ jobs:
               exit 1
           }
 
-          # 4. Create a temporary table in SSISDB and insert the hex string
-          Write-Host "Creating temporary table '$tempTable' and storing hex string..."
+          # 4. Create a temporary .sql file that inserts the hex string into the temp table.
+          #    This avoids command-line length limits because the hex literal is inside the file.
+          $tempSql = Join-Path $env:TEMP "create_temp_$([System.Guid]::NewGuid().ToString('N')).sql"
           $createTableSql = @"
           USE SSISDB;
           IF OBJECT_ID('dbo.$tempTable', 'U') IS NOT NULL DROP TABLE dbo.$tempTable;
           CREATE TABLE dbo.$tempTable (HexString NVARCHAR(MAX) NOT NULL);
           INSERT INTO dbo.$tempTable (HexString) VALUES (N'$hexString');
           "@
+          $createTableSql | Out-File -FilePath $tempSql -Encoding utf8
+          Write-Host "Created temporary SQL file for hex insertion: $tempSql"
 
-          $connStr = "Data Source=$tunnelAddress;Initial Catalog=SSISDB;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
-          $conn = New-Object System.Data.SqlClient.SqlConnection($connStr)
-          try {
-              $conn.Open()
-              $cmd = $conn.CreateCommand()
-              $cmd.CommandText = $createTableSql
-              $cmd.ExecuteNonQuery() | Out-Null
-              Write-Host "Hex string stored in temporary table."
-          } catch {
-              Write-Error "Failed to create temp table: $_"
+          # 5. Execute the script using sqlcmd (SQL Authentication) via ngrok
+          Write-Host "Inserting hex string into temp table using sqlcmd..."
+          sqlcmd -b `
+            -S "$tunnelAddress" `
+            -U "$dbUser" `
+            -P "$dbPassword" `
+            -i $tempSql
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Failed to insert hex string into temp table."
               exit 1
-          } finally {
-              if ($conn.State -eq 'Open') { $conn.Close() }
           }
+          Write-Host "Hex string inserted into temporary table."
 
-          # 5. Build the T‑SQL script for the helper job (reads hex from table)
+          # 6. Build the T‑SQL script for the helper job (reads hex from table)
           $deployScript = @"
           USE SSISDB;
           DECLARE @hex NVARCHAR(MAX);
@@ -198,7 +199,7 @@ jobs:
 
           $helperJobName = "GitHub_SSIS_Deploy_Helper_CM"
 
-          # 6. Create and start the helper job (T‑SQL step)
+          # 7. Create and start the helper job (T‑SQL step)
           $createJobSql = @"
           USE [msdb];
           IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$helperJobName')
@@ -234,7 +235,7 @@ jobs:
               if ($conn2.State -eq 'Open') { $conn2.Close() }
           }
 
-          # 7. Wait for job to complete (polling sysjobactivity for stop_execution_date)
+          # 8. Wait for job to complete (polling sysjobactivity for stop_execution_date)
           $isRunningSql = @"
           USE [msdb];
           SELECT TOP 1 ja.stop_execution_date
@@ -283,7 +284,7 @@ jobs:
               exit 1
           }
 
-          # 8. Get outcome from sysjobhistory
+          # 9. Get outcome from sysjobhistory and, if failed, get the detailed error message
           $statusConn = New-Object System.Data.SqlClient.SqlConnection($connStrMsdb)
           try {
               $statusConn.Open()
@@ -296,7 +297,19 @@ jobs:
               }
               Write-Host "Job run_status: $runStatus (1=success, 0=fail, 2=retry, 3=cancelled)"
               if ($runStatus -ne 1) {
-                  Write-Error "Helper job failed with status code $runStatus."
+                  # Fetch the error message from the last step (step_id <> 0)
+                  $errorDetailsSql = @"
+          USE [msdb];
+          SELECT TOP 1 message
+          FROM msdb.dbo.sysjobhistory
+          WHERE job_id = (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$helperJobName')
+          AND step_id <> 0
+          ORDER BY instance_id DESC;
+          "@
+                  $errorCmd = $statusConn.CreateCommand()
+                  $errorCmd.CommandText = $errorDetailsSql
+                  $errorMsg = $errorCmd.ExecuteScalar()
+                  Write-Error "Helper job failed with status code $runStatus. Error: $errorMsg"
                   exit 1
               }
               Write-Host "Helper job succeeded."
@@ -307,7 +320,7 @@ jobs:
               if ($statusConn.State -eq 'Open') { $statusConn.Close() }
           }
 
-          # 9. Clean up helper job and temp table
+          # 10. Clean up helper job and temp table
           $cleanupSql = @"
           USE [msdb];
           IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$helperJobName')
@@ -330,9 +343,9 @@ jobs:
               if ($cleanConn.State -eq 'Open') { $cleanConn.Close() }
           }
 
-          # 10. Verify project exists
+          # 11. Verify project exists
           $verifySql = "SELECT COUNT(*) FROM SSISDB.catalog.projects WHERE folder_name = N'$folderName' AND name = N'$projectName';"
-          $verifyConn = New-Object System.Data.SqlClient.SqlConnection($connStr)
+          $verifyConn = New-Object System.Data.SqlClient.SqlConnection($connStrMsdb)
           try {
               $verifyConn.Open()
               $verifyCmd = $verifyConn.CreateCommand()
@@ -350,6 +363,9 @@ jobs:
               if ($verifyConn.State -eq 'Open') { $verifyConn.Close() }
           }
 
+          # Clean up temp file
+          Remove-Item $tempSql -Force -ErrorAction SilentlyContinue
+
           Write-Host "SUCCESS: SSIS project deployed."
 
       # ==================== CREATE PERMANENT SCHEDULED JOB ====================
@@ -361,7 +377,7 @@ jobs:
           $dbPassword    = "$env:SQL_PASSWORD"
           $folderName    = "TimesheetMigration"
           $projectName   = "TimesheetMigrationPipeline"
-          $packageName   = "TimesheetMigrationPipeline.dtsx"   # <-- Your package name
+          $packageName   = "TimesheetMigrationPipeline.dtsx"   # Your package name
           $executionJobName = "${{ vars.SQL_JOB_NAME }}"
 
           $jobSql = @"
