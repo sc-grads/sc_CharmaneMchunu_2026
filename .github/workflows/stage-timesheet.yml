@@ -309,7 +309,47 @@ jobs:
                   $errorCmd = $statusConn.CreateCommand()
                   $errorCmd.CommandText = $errorDetailsSql
                   $errorMsg = $errorCmd.ExecuteScalar()
-                  Write-Error "Helper job failed with status code $runStatus. Error: $errorMsg"
+                  Write-Host "Helper job failed. Error message from job step: $errorMsg"
+
+                  # Try to extract the operation_id from the error message
+                  $operationId = $null
+                  if ($errorMsg -match "operation identifier '(\d+)'") {
+                      $operationId = $matches[1]
+                      Write-Host "Extracted operation_id: $operationId"
+                  }
+
+                  if ($operationId) {
+                      # Query the SSISDB catalog for detailed error messages
+                      $detailSql = @"
+          SELECT message_time, message_type, message_source_type, message
+          FROM SSISDB.catalog.operation_messages
+          WHERE operation_id = $operationId
+          ORDER BY message_time;
+          "@
+                      $detailConn = New-Object System.Data.SqlClient.SqlConnection("Data Source=$tunnelAddress;Initial Catalog=SSISDB;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;")
+                      try {
+                          $detailConn.Open()
+                          $detailCmd = $detailConn.CreateCommand()
+                          $detailCmd.CommandText = $detailSql
+                          $reader = $detailCmd.ExecuteReader()
+                          $hasRows = $false
+                          while ($reader.Read()) {
+                              $hasRows = $true
+                              Write-Host "SSISDB Detail: $($reader['message_time']) - $($reader['message_type']) - $($reader['message'])"
+                          }
+                          if (-not $hasRows) {
+                              Write-Host "No additional messages found in SSISDB for operation $operationId."
+                          }
+                      } catch {
+                          Write-Warning "Could not retrieve SSISDB operation messages: $_"
+                      } finally {
+                          if ($detailConn.State -eq 'Open') { $detailConn.Close() }
+                      }
+                  } else {
+                      Write-Host "No operation_id found in error message."
+                  }
+
+                  Write-Error "Helper job failed with status code $runStatus. See above for details."
                   exit 1
               }
               Write-Host "Helper job succeeded."
@@ -345,7 +385,7 @@ jobs:
 
           # 11. Verify project exists
           $verifySql = "SELECT COUNT(*) FROM SSISDB.catalog.projects WHERE folder_name = N'$folderName' AND name = N'$projectName';"
-          $verifyConn = New-Object System.Data.SqlClient.SqlConnection($connStrMsdb)
+          $verifyConn = New-Object System.Data.SqlClient.SqlConnection("Data Source=$tunnelAddress;Initial Catalog=SSISDB;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;")
           try {
               $verifyConn.Open()
               $verifyCmd = $verifyConn.CreateCommand()
