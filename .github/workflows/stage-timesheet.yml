@@ -325,7 +325,7 @@ jobs:
           $dbPassword    = "$env:SQL_PASSWORD"
           $folderName    = "TimesheetMigration"
           $projectName   = "TimesheetMigrationPipeline"
-          $packageName   = "Package.dtsx"
+          $packageName   = "TimesheetMigrationPipeline.dtsx"
           $executionJobName = "${{ vars.SQL_JOB_NAME }}"
           $jobSql = @"
           USE [msdb];
