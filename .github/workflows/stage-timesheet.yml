@@ -122,17 +122,17 @@ jobs:
             exit $LASTEXITCODE
           }
 
-      - name: Deploy SSIS Project (Direct, No Helper Job)
+      - name: Deploy SSIS using Helper Job (runs under Integrated Auth)
         shell: pwsh
         run: |
           $ispacPath = "${{ github.workspace }}\SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
           if (-not (Test-Path -Path $ispacPath)) {
-              Write-Host "Primary path not found. Checking alternative workspace path..."
+              Write-Host "Primary path not found. Checking alternative..."
               $ispacPath = "${{ github.workspace }}\..\SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
               $ispacPath = [System.IO.Path]::GetFullPath($ispacPath)
           }
           if (-not (Test-Path -Path $ispacPath)) {
-              Write-Error "CRITICAL ERROR: Could not locate TimesheetMigration.ispac file."
+              Write-Error "CRITICAL ERROR: ISPAC not found."
               exit 1
           }
           Write-Host "Found ISPAC at: $ispacPath"
@@ -164,14 +164,38 @@ jobs:
               @project_stream = @project_stream;
           "@
 
-          $connStr = "Data Source=$tunnelAddress;Initial Catalog=SSISDB;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
+          # Create a helper job that will run the deployment under the Agent's Integrated Auth
+          $helperJobName = "GitHub_SSIS_Deploy_Helper_CM"
+          $jobSql = @"
+          USE [msdb];
+          IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$helperJobName')
+          BEGIN
+              EXEC dbo.sp_delete_job @job_name = N'$helperJobName', @delete_unused_schedule=1;
+          END
+          EXEC dbo.sp_add_job @job_name = N'$helperJobName', @enabled = 1, @start_step_id = 1;
+          DECLARE @deploy_script NVARCHAR(MAX) = N'$($deploySql.Replace("'", "''"))';
+          EXEC dbo.sp_add_jobstep
+              @job_name = N'$helperJobName',
+              @step_name = N'Run Deploy',
+              @subsystem = N'TSQL',
+              @command = @deploy_script,
+              @retry_attempts = 0;
+          EXEC dbo.sp_add_jobserver
+              @job_name = N'$helperJobName',
+              @server_name = N'(local)';
+          EXEC dbo.sp_start_job @job_name = N'$helperJobName';
+          WAITFOR DELAY '00:00:07';
+          EXEC dbo.sp_delete_job @job_name = N'$helperJobName';
+          "@
+
+          $connStr = "Data Source=$tunnelAddress;Initial Catalog=msdb;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
           $connection = New-Object System.Data.SqlClient.SqlConnection($connStr)
           try {
               $connection.Open()
               $command = $connection.CreateCommand()
-              $command.CommandText = $deploySql
+              $command.CommandText = $jobSql
               $command.ExecuteNonQuery() | Out-Null
-              Write-Host "SUCCESS: SSIS project deployed."
+              Write-Host "SUCCESS: SSIS project deployed using helper job."
           } catch {
               Write-Error "Deployment failed: $_"
               exit 1
@@ -179,7 +203,7 @@ jobs:
               if ($connection.State -eq 'Open') { $connection.Close() }
           }
 
-      - name: Create SQL Agent Job (T‑SQL Step, no Integrated Auth needed at creation)
+      - name: Create Permanent SQL Agent Job (T‑SQL step)
         shell: pwsh
         run: |
           $tunnelAddress = "$env:SQL_SERVER,$env:SQL_PORT"
@@ -193,13 +217,11 @@ jobs:
           $jobSql = @"
           USE [msdb];
 
-          -- Drop the job if it already exists
           IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$executionJobName')
           BEGIN
               EXEC dbo.sp_delete_job @job_name = N'$executionJobName', @delete_unused_schedule=1;
           END
 
-          -- Create the job
           DECLARE @jobId BINARY(16);
           EXEC dbo.sp_add_job
               @job_name = N'$executionJobName',
@@ -209,7 +231,7 @@ jobs:
               @owner_login_name = N'sa',
               @job_id = @jobId OUTPUT;
 
-          -- Add a T‑SQL step that runs the package via catalog stored procedures
+          -- T‑SQL step (runs under Agent's Integrated Auth)
           DECLARE @run_command NVARCHAR(MAX);
           SET @run_command = N'
           DECLARE @execution_id BIGINT;
@@ -230,16 +252,14 @@ jobs:
           EXEC dbo.sp_add_jobstep
               @job_name = N'$executionJobName',
               @step_name = N'Execute SSIS Package',
-              @subsystem = N'TSQL',          -- T‑SQL step avoids integrated‑auth validation at creation
+              @subsystem = N'TSQL',
               @command = @run_command,
               @retry_attempts = 0;
 
-          -- Target the job to the local server
           EXEC dbo.sp_add_jobserver
               @job_name = N'$executionJobName',
               @server_name = N'(local)';
 
-          -- Schedule: every 30 seconds, 24/7
           EXEC dbo.sp_add_jobschedule
               @job_name = N'$executionJobName',
               @name = N'Every30Seconds',
@@ -268,4 +288,4 @@ jobs:
           }
 
       - name: Deployment Complete
-        run: echo "Database deployed, SSIS package deployed, and SQL Agent job '${{ vars.SQL_JOB_NAME }}' created with a 30‑second schedule."
+        run: echo "Database deployed, SSIS deployed, and job '${{ vars.SQL_JOB_NAME }}' created with 30‑second schedule."
