@@ -16,11 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ---- Install sqlcmd and SSIS deployment tools ----
-      - name: Install SQL Server tools
-        run: |
-          choco install sqlcmd -y --no-progress
-          choco install sql-server-ssis -y --no-progress   # includes ISDeploymentWizard
+    
 
       # ---- Deploy SSIS project using Publish-ISProject (supports SQL Auth) ----
       - name: Deploy SSIS project
