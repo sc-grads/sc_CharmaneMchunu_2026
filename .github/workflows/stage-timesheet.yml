@@ -1,109 +1,117 @@
-name: Deploy the migration project to the staging env.
+name: Deploy TimesheetDB (Staging)
 
 on:
   push:
-    branches:
-      - staging
+    branches: [ staging ]          # ← trigger on staging
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-and-migrate:
+    name: Deploy TimesheetDB
     runs-on: windows-latest
-
-    environment: staging
-
-    env:
-      SQL_SERVER: ${{ vars.SQL_SERVER }}         # repository variable (plain text)
-      SQL_PORT: ${{ vars.SQL_PORT }}              # repository variable (plain text)
-      SQL_USERNAME: ${{ secrets.SQL_USERNAME }}   # secret
-      SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}   # secret
+    environment:
+      name: staging                # ← staging environment
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ---- BUILD STEP REMOVED (uses pre-built .ispac) ----
-
-      - name: Check if ISPAC exists
-        shell: powershell
+      # ---- Install sqlcmd and SSIS deployment tools ----
+      - name: Install SQL Server tools
         run: |
-          $ispac = "SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
-          if (!(Test-Path $ispac)) { exit 1 }
+          choco install sqlcmd -y --no-progress
+          choco install sql-server-ssis -y --no-progress   # includes ISDeploymentWizard
 
-      - name: Install sqlcmd
-        shell: powershell
+      # ---- Deploy SSIS project using Publish-ISProject (supports SQL Auth) ----
+      - name: Deploy SSIS project
+        shell: pwsh
         run: |
-          choco install mssql-tools -y
-          refreshenv
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          $ispacPath = Join-Path $env:GITHUB_WORKSPACE `
+            "Projects 2026/TimesheetDataMigration/TimesheetsMigrationSSIS/bin/Development/TimesheetsMigrationSSIS.ispac"
 
-      - name: Create database
-        shell: powershell
-        run: |
-          sqlcmd -S "$env:SQL_SERVER,$env:SQL_PORT" -U "$env:SQL_USERNAME" -P "$env:SQL_PASSWORD" -i Database\CreateDatabase.sql
-
-      - name: Create tables
-        shell: powershell
-        run: |
-          sqlcmd -S "$env:SQL_SERVER,$env:SQL_PORT" -U "$env:SQL_USERNAME" -P "$env:SQL_PASSWORD" -i Database\CreateTable.sql
-
-      - name: Create the SSIS catalog folder
-        shell: powershell
-        run: |
-          $sql = @"
-          IF NOT EXISTS (SELECT 1 FROM SSISDB.catalog.folders WHERE name = N'TimesheetMigration')
-          BEGIN
-              EXEC SSISDB.catalog.create_folder @folder_name = N'TimesheetMigration';
-          END
-          "@
-          $sql | Out-File create-folder.sql -Encoding ASCII
-          sqlcmd -S "$env:SQL_SERVER,$env:SQL_PORT" -U "$env:SQL_USERNAME" -P "$env:SQL_PASSWORD" -d SSISDB -i create-folder.sql -b
-
-      - name: Deploy ISPAC package
-        shell: powershell
-        run: |
-          $bytes = [System.IO.File]::ReadAllBytes("SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac")
-          $hex = ($bytes | ForEach-Object { $_.ToString("X2") }) -join ""
-          $sql = @"
-          DECLARE @ProjectBinary VARBINARY(MAX) = 0x$hex;
-          DECLARE @operation_id BIGINT;
-          EXEC catalog.deploy_project
-              @folder_name = N'TimesheetMigration',
-              @project_name = N'TimesheetMigration',
-              @project_stream = @ProjectBinary,
-              @operation_id = @operation_id OUTPUT;
-          "@
-          $sql | Out-File deploy-ispac.sql -Encoding ASCII
-          sqlcmd -S "$env:SQL_SERVER,$env:SQL_PORT" -U "$env:SQL_USERNAME" -P "$env:SQL_PASSWORD" -d SSISDB -i deploy-ispac.sql -b
-
-      # ---- SIMPLIFIED JOB CREATION/UPDATING ----
-      - name: Create or update SQL Agent job
-        shell: powershell
-        run: |
-          $server = "$env:SQL_SERVER,$env:SQL_PORT"
-          $scriptPath = "SQLAgent\CreateJob.sql"
-          if (!(Test-Path $scriptPath)) { throw "SQL script not found: $scriptPath" }
-          Write-Host "Running $scriptPath to create or update the job..."
-          sqlcmd -S $server -U "$env:SQL_USERNAME" -P "$env:SQL_PASSWORD" -d msdb -i $scriptPath -b
-
-      - name: Start/restart the job
-        shell: powershell
-        run: |
-          $jobName = "RunTimesheetDataPipeline"
-          $server = "$env:SQL_SERVER,$env:SQL_PORT"
-
-          $runningQuery = @"
-          SELECT 1
-          FROM msdb.dbo.sysjobs j
-          INNER JOIN msdb.dbo.sysjobactivity a ON j.job_id = a.job_id
-          WHERE j.name = N'$jobName'
-            AND a.run_requested_date IS NOT NULL
-            AND a.stop_execution_date IS NULL
-          "@
-          $running = sqlcmd -S $server -U "$env:SQL_USERNAME" -P "$env:SQL_PASSWORD" -d msdb -Q $runningQuery -h-1 -W | ForEach-Object { $_.Trim() }
-
-          if ($running -eq "1") {
-              sqlcmd -S $server -U "$env:SQL_USERNAME" -P "$env:SQL_PASSWORD" -d msdb -Q "EXEC msdb.dbo.sp_stop_job @job_name = N'$jobName';"
-              Start-Sleep -Seconds 3
+          if (-not (Test-Path $ispacPath)) {
+            Write-Error ".ispac not found at $ispacPath"
+            exit 1
           }
 
-          sqlcmd -S $server -U "$env:SQL_USERNAME" -P "$env:SQL_PASSWORD" -d msdb -Q "EXEC msdb.dbo.sp_start_job @job_name = N'$jobName';"
+          # Install the SqlServer module (includes Publish-ISProject)
+          Install-Module -Name SqlServer -Force -Scope CurrentUser -AllowClobber
+          Import-Module SqlServer -Force
+
+          $server      = "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}"
+          $user        = "${{ secrets.SQL_USERNAME }}"
+          $pass        = "${{ secrets.SQL_PASSWORD }}"
+          $folderName  = "TimesheetsMigration"
+          $projectName = [System.IO.Path]::GetFileNameWithoutExtension($ispacPath)
+
+          # Build a connection string for SSISDB
+          $connString = "Data Source=$server;User ID=$user;Password=$pass;Initial Catalog=SSISDB;"
+
+          Write-Host "Publishing $projectName to folder '$folderName'..."
+          Publish-ISProject `
+            -ProjectPath $ispacPath `
+            -DestinationConnectionString $connString `
+            -DestinationFolderName $folderName `
+            -ProjectName $projectName
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "SSIS project deployment failed (exit code $LASTEXITCODE)"
+            exit 1
+          }
+          Write-Host "SSIS project deployed successfully."
+
+      # ---- Test connection (optional) ----
+      - name: Test Connection
+        shell: pwsh
+        run: |
+          & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
+                   -U "${{ secrets.SQL_USERNAME }}" `
+                   -P "${{ secrets.SQL_PASSWORD }}" `
+                   -C `
+                   -Q "SELECT @@SERVERNAME AS ServerName, @@VERSION AS Version"
+
+      # ---- Deploy database objects ----
+      - name: Deploy database tables
+        shell: pwsh
+        run: |
+          & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
+                   -U "${{ secrets.SQL_USERNAME }}" `
+                   -P "${{ secrets.SQL_PASSWORD }}" `
+                   -C `
+                   -d master `
+                   -i "./deploy-timesheetdb.sql"
+
+      # ---- Run migration ----
+      - name: Run spRunTimesheetMigration
+        id: run_migration
+        shell: pwsh
+        run: |
+          $result = & sqlcmd -S "${{ vars.SQL_SERVER }},${{ vars.SQL_PORT }}" `
+                             -U "${{ secrets.SQL_USERNAME }}" `
+                             -P "${{ secrets.SQL_PASSWORD }}" `
+                             -d "${{ vars.SQL_DATABASE }}" `
+                             -C `
+                             -h -1 -W `
+                             -Q "SET NOCOUNT ON; EXEC dbo.spRunTimesheetMigration;" 2>&1
+          $lines = $result -split "`n" | Where-Object { $_.Trim() -ne "" }
+          if ($lines.Count -eq 0) {
+            Write-Error "No output from stored procedure"
+            exit 1
+          }
+          $lastLine = $lines[-1].Trim()
+          $parts = $lastLine -split "\s+", 2
+          $exitCode = [int]$parts[0]
+          $status   = if ($parts.Count -gt 1) { $parts[1] } else { "" }
+
+          "exit_code=$exitCode" >> $env:GITHUB_OUTPUT
+          "status=$status"      >> $env:GITHUB_OUTPUT
+
+          if ($exitCode -ne 0) {
+            Write-Error "Migration failed (ExitCode=$exitCode, Status=$status)"
+            exit 1
+          }
+          Write-Host "Migration successful (ExitCode=$exitCode, Status=$status)"
+
+      - name: Success confirmation
+        if: success()
+        run: echo "Deployment and migration completed successfully for staging."
