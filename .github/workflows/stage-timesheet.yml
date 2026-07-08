@@ -101,7 +101,7 @@ jobs:
             -i "Database/SeedData.sql"
 
       # ------------------------------------------------------------------
-      # SSIS Build & Deployment (Option B: explicit folder creation)
+      # SSIS Build & Deployment (fixed quoting)
       # ------------------------------------------------------------------
       - name: Locate Visual Studio DevEnv Tool
         shell: powershell
@@ -137,44 +137,48 @@ jobs:
           $fileBytes = [System.IO.File]::ReadAllBytes($ispacPath)
           $hexString = "0x" + [System.BitConverter]::ToString($fileBytes).Replace("-", "")
 
-          $folderName = "TimesheetMigration"             
-          $projectName = "TimesheetMigrationPipeline"    
+          $folderName   = "TimesheetMigration"
+          $projectName  = "TimesheetMigrationPipeine"   # adjust as needed
           $helperJobName = "GitHub_SSIS_Deploy_Helper_CM"
 
-          $dynamicSql = @"
+          # Build the T‑SQL that the job step will execute directly
+          $deploySql = @"
           SET NOCOUNT ON;
-          DECLARE @dynamic_tsql NVARCHAR(MAX);
-          SET @dynamic_tsql = N'
-          SET NOCOUNT ON;
-          -- Explicit folder creation (Option B)
-          IF NOT EXISTS (SELECT 1 FROM [SSISDB].[catalog].[folders] WHERE name = N''$folderName'')
+          -- Create folder if not exists
+          IF NOT EXISTS (SELECT 1 FROM [SSISDB].[catalog].[folders] WHERE name = N'$folderName')
           BEGIN
-              EXEC [SSISDB].[catalog].[create_folder] @folder_name = N''$folderName'';
+              EXEC [SSISDB].[catalog].[create_folder] @folder_name = N'$folderName';
           END
 
           DECLARE @project_binary VARBINARY(MAX) = $hexString;
-          -- Now call the wrapper (which also creates the folder, but it is idempotent)
           EXEC [SSISDB].[catalog].[deploy_project_wrapper]
-              @folder_name   = N''$folderName'',
-              @project_name  = N''$projectName'',
+              @folder_name   = N'$folderName',
+              @project_name  = N'$projectName',
               @project_stream = @project_binary;
-          ';
+          "@
+
+          # Now update the job step with this complete script
+          $updateSql = @"
           EXEC msdb.dbo.sp_update_jobstep
               @job_name = N'$helperJobName',
               @step_id = 1,
-              @command = @dynamic_tsql;
+              @command = N'$($deploySql.Replace("'", "''"))';
           EXEC msdb.dbo.sp_start_job @job_name = N'$helperJobName';
           WAITFOR DELAY '00:00:05';
           "@
 
-          $tempSqlFile = Join-Path $env:RUNNER_TEMP "RunHelperJob.sql"
-          $dynamicSql | Out-File -FilePath $tempSqlFile -Encoding utf8 -Force
+          $tempFile = Join-Path $env:RUNNER_TEMP "RunHelperJob.sql"
+          $updateSql | Out-File -FilePath $tempFile -Encoding utf8 -Force
+
+          # (Optional) print the generated SQL for debugging
+          Write-Host "Generated SQL:"
+          Get-Content $tempFile
 
           sqlcmd -b `
             -S "$env:SQL_SERVER,$env:SQL_PORT" `
             -U "$env:SQL_USERNAME" `
             -P "$env:SQL_PASSWORD" `
-            -i $tempSqlFile
+            -i $tempFile
 
           if ($LASTEXITCODE -ne 0) {
             Write-Error "SSIS deployment via helper job failed with exit code $LASTEXITCODE"
