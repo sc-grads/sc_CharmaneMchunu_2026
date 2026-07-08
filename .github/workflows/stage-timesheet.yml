@@ -18,7 +18,6 @@ jobs:
       SQL_SERVER: ${{ vars.SQL_SERVER }}
       SQL_PORT: ${{ vars.SQL_PORT }}
       DATABASE_NAME: ${{ vars.SQL_DATABASE }}
-      # SQL_JOB_NAME is not used in the fixed step, but keep if you need it elsewhere
 
     steps:
       - name: Checkout Repository
@@ -46,7 +45,7 @@ jobs:
           Write-Host "SQL_SERVER: $env:SQL_SERVER"
           Write-Host "SQL_PORT: $env:SQL_PORT"
           Write-Host "DATABASE_NAME: $env:DATABASE_NAME"
-          Write-Host "SQL_JOB (from vars): ${{ vars.SQL_JOB }}"
+          Write-Host "SQL_JOB_NAME (from vars): ${{ vars.SQL_JOB_NAME }}"
 
       - name: Create Database
         shell: powershell
@@ -112,18 +111,49 @@ jobs:
             -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "SQLAgent/CreateJob.sql"
 
-      # ---------- FIXED STEP ----------
-      - name: Start SQL Agent Job
+      # ------------------------------------------------------------------
+      # Stop (if running) and start the SQL Agent Job
+      # ------------------------------------------------------------------
+      - name: Stop and Start SQL Agent Job
         shell: powershell
         run: |
           $JobName = "${{ vars.SQL_JOB_NAME }}"
-          Write-Host "Starting job: $JobName"
-          sqlcmd -b `
-            -S "$env:SQL_SERVER,$env:SQL_PORT" `
-            -U "$env:SQL_USERNAME" `
-            -P "$env:SQL_PASSWORD" `
-            -d msdb `
-            -Q "EXEC msdb.dbo.sp_start_job N'$JobName';"
+          Write-Host "Managing job: $JobName"
+
+          $sql = @"
+          DECLARE @job_name NVARCHAR(128) = N'$JobName';
+          DECLARE @job_id UNIQUEIDENTIFIER;
+
+          SELECT @job_id = job_id FROM msdb.dbo.sysjobs WHERE name = @job_name;
+
+          IF @job_id IS NOT NULL
+          BEGIN
+              IF EXISTS (
+                  SELECT 1 FROM msdb.dbo.sysjobactivity
+                  WHERE job_id = @job_id
+                  AND start_execution_date IS NOT NULL
+                  AND stop_execution_date IS NULL
+              )
+              BEGIN
+                  RAISERROR('Job is running – stopping it...', 0, 1) WITH NOWAIT;
+                  EXEC msdb.dbo.sp_stop_job @job_id = @job_id;
+                  WAITFOR DELAY '00:00:03';
+              END
+
+              RAISERROR('Starting job...', 0, 1) WITH NOWAIT;
+              EXEC msdb.dbo.sp_start_job @job_id = @job_id;
+          END
+          ELSE
+          BEGIN
+              RAISERROR('Job not found – create it first.', 16, 1);
+          END
+          "@
+
+          $sql | sqlcmd -b `
+              -S "$env:SQL_SERVER,$env:SQL_PORT" `
+              -U "$env:SQL_USERNAME" `
+              -P "$env:SQL_PASSWORD" `
+              -d msdb
 
       - name: Deployment Complete
         run: echo "Database deployed and SQL Agent job '${{ vars.SQL_JOB_NAME }}' started successfully."
