@@ -23,7 +23,7 @@ jobs:
     - name: Build SSIS Project
       shell: powershell
       run: |
-        msbuild SSIS\TimesheetMigration.dtproj /p:Configuration=Release
+        "SSIS-Project\TimesheetMigration\TimesheetMigration.slnx" /p:Configuration=Development
 
     # -----------------------------
     # 3. Deploy ISPAC to SSISDB
@@ -36,7 +36,7 @@ jobs:
         & "C:\Program Files (x86)\Microsoft SQL Server\150\DTS\Binn\ISDeploymentWizard.exe" `
           /Silent `
           /ModelType:Project `
-          /SourcePath:"SSIS\bin\Release\TimesheetMigration.ispac" `
+          /SourcePath:"SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac" `
           /DestinationServerName:$server `
           /DestinationFolder:"TimesheetDataPipeline"
 
