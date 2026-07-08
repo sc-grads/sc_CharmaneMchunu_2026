@@ -15,12 +15,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # ------------------------------------------------------------
-      # 1. OPTIONAL: Install SSDT for SSIS builds
-      #    GitHub-hosted runners do not have SSDT pre-installed.
-      #    If you use a self-hosted runner with SSDT already installed,
-      #    you can remove or comment out this step.
-      # ------------------------------------------------------------
       - name: Install SSDT for Visual Studio 2022
         shell: powershell
         run: |
@@ -29,12 +23,7 @@ jobs:
           Invoke-WebRequest -Uri $url -OutFile $installer
           Start-Process msiexec -Wait -ArgumentList "/i $installer /quiet /norestart"
 
-      # ------------------------------------------------------------
-      # 2. Build SSIS Project
-      #    - Locates MSBuild using vswhere (works for VS 2022)
-      #    - Builds the solution (.sln) or project (.dtproj).
-      #    - Adjust the file path if your project has a different name.
-      # ------------------------------------------------------------
+
       - name: Build SSIS Project
         shell: powershell
         run: |
@@ -46,12 +35,8 @@ jobs:
           }
           Write-Host "Using MSBuild: $msbuild"
           # Build the solution – adjust the file name/extension if needed
-          & $msbuild "SSIS-Project\TimesheetMigration\TimesheetMigration.sln" /p:Configuration=Development
+          & $msbuild "SSIS-Project\TimesheetMigration\TimesheetMigration.slnx" /p:Configuration=Development
 
-      # ------------------------------------------------------------
-      # 3. Deploy ISPAC to SSISDB
-      #    Uses the SQL Server Deployment Wizard (ISDeploymentWizard.exe)
-      # ------------------------------------------------------------
       - name: Deploy ISPAC to SSISDB
         shell: powershell
         run: |
@@ -63,9 +48,6 @@ jobs:
             /DestinationServerName:$server `
             /DestinationFolder:"TimesheetDataPipeline"
 
-      # ------------------------------------------------------------
-      # 4. Start SQL Agent Job
-      # ------------------------------------------------------------
       - name: Start SQL Agent Job
         shell: powershell
         run: |
@@ -74,11 +56,7 @@ jobs:
                  -P "${{ secrets.SQL_PASSWORD }}" `
                  -Q "EXEC msdb.dbo.sp_start_job @job_name = 'RunTimesheetDataPipeline';"
 
-      # ------------------------------------------------------------
-      # 5. Monitor Job Execution
-      #    Polls sysjobhistory until completion (max 10 minutes)
-      #    Run_status: 1 = succeeded, 3 = failed, other = executing
-      # ------------------------------------------------------------
+
       - name: Monitor Job Execution
         shell: powershell
         run: |
