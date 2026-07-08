@@ -122,7 +122,7 @@ jobs:
             exit $LASTEXITCODE
           }
 
-      # ==================== DEPLOY SSIS USING HELPER JOB (Hex stored in temp table) ====================
+      # ==================== DEPLOY SSIS USING HELPER JOB ====================
       - name: Deploy SSIS via Helper Job (Hex stored in temp table)
         shell: pwsh
         run: |
@@ -156,7 +156,7 @@ jobs:
               exit 1
           }
 
-          # 4. Create a temporary .sql file that inserts the hex string into the temp table.
+          # 4. Create temporary SQL file to insert hex into temp table
           $tempSql = Join-Path $env:TEMP "create_temp_$([System.Guid]::NewGuid().ToString('N')).sql"
           $createTableSql = @"
           USE SSISDB;
@@ -234,7 +234,7 @@ jobs:
               if ($conn2.State -eq 'Open') { $conn2.Close() }
           }
 
-          # 8. Wait for job to complete (polling sysjobactivity for stop_execution_date)
+          # 8. Wait for job to complete
           $isRunningSql = @"
           USE [msdb];
           SELECT TOP 1 ja.stop_execution_date
@@ -283,7 +283,7 @@ jobs:
               exit 1
           }
 
-          # 9. Get outcome from sysjobhistory and, if failed, get the detailed error message
+          # 9. Get outcome from sysjobhistory
           $statusConn = New-Object System.Data.SqlClient.SqlConnection($connStrMsdb)
           try {
               $statusConn.Open()
@@ -296,7 +296,6 @@ jobs:
               }
               Write-Host "Job run_status: $runStatus (1=success, 0=fail, 2=retry, 3=cancelled)"
               if ($runStatus -ne 1) {
-                  # Fetch the error message from the last step (step_id <> 0)
                   $errorDetailsSql = @"
           USE [msdb];
           SELECT TOP 1 message
@@ -309,16 +308,12 @@ jobs:
                   $errorCmd.CommandText = $errorDetailsSql
                   $errorMsg = $errorCmd.ExecuteScalar()
                   Write-Host "Helper job failed. Error message from job step: $errorMsg"
-
-                  # Try to extract the operation_id from the error message
                   $operationId = $null
                   if ($errorMsg -match "operation identifier '(\d+)'") {
                       $operationId = $matches[1]
                       Write-Host "Extracted operation_id: $operationId"
                   }
-
                   if ($operationId) {
-                      # Query the SSISDB catalog for detailed error messages
                       $detailSql = @"
           SELECT message_time, message_type, message_source_type, message
           FROM SSISDB.catalog.operation_messages
@@ -331,23 +326,15 @@ jobs:
                           $detailCmd = $detailConn.CreateCommand()
                           $detailCmd.CommandText = $detailSql
                           $reader = $detailCmd.ExecuteReader()
-                          $hasRows = $false
                           while ($reader.Read()) {
-                              $hasRows = $true
                               Write-Host "SSISDB Detail: $($reader['message_time']) - $($reader['message_type']) - $($reader['message'])"
-                          }
-                          if (-not $hasRows) {
-                              Write-Host "No additional messages found in SSISDB for operation $operationId."
                           }
                       } catch {
                           Write-Warning "Could not retrieve SSISDB operation messages: $_"
                       } finally {
                           if ($detailConn.State -eq 'Open') { $detailConn.Close() }
                       }
-                  } else {
-                      Write-Host "No operation_id found in error message."
                   }
-
                   Write-Error "Helper job failed with status code $runStatus. See above for details."
                   exit 1
               }
@@ -382,8 +369,8 @@ jobs:
               if ($cleanConn.State -eq 'Open') { $cleanConn.Close() }
           }
 
-          # 11. Verify project exists
-          $verifySql = "SELECT COUNT(*) FROM SSISDB.catalog.projects WHERE folder_name = N'$folderName' AND name = N'$projectName';"
+          # 11. Verify project exists (fix: use project_name only)
+          $verifySql = "SELECT COUNT(*) FROM SSISDB.catalog.projects WHERE project_name = N'$projectName';"
           $verifyConn = New-Object System.Data.SqlClient.SqlConnection("Data Source=$tunnelAddress;Initial Catalog=SSISDB;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;")
           try {
               $verifyConn.Open()
@@ -415,8 +402,8 @@ jobs:
           $dbUser        = "$env:SQL_USERNAME"
           $dbPassword    = "$env:SQL_PASSWORD"
           $folderName    = "TimesheetMigration"
-          $projectName   = "TimesheetMigration"          # must match the project name
-          $packageName   = "TimesheetMigrationPipeline.dtsx"   # your entry package
+          $projectName   = "TimesheetMigration"
+          $packageName   = "TimesheetMigrationPipeline.dtsx"
           $executionJobName = "${{ vars.SQL_JOB_NAME }}"
 
           $jobSql = @"
@@ -492,4 +479,4 @@ jobs:
           }
 
       - name: Deployment Complete
-        run: echo "Database deployed, SSIS deployed, and job '${{ vars.SQL_JOB_NAME }}' created with 30‑second schedule."
+        run: echo "✅ Database deployed, SSIS deployed, and job '${{ vars.SQL_JOB_NAME }}' created with 30‑second schedule."
