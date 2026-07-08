@@ -1,9 +1,7 @@
 name: Deploy the migration project to the staging env.
 
 on:
-  push:
-    branches:
-      - staging
+  workflow_dispatch:
 
 jobs:
   deploy:
