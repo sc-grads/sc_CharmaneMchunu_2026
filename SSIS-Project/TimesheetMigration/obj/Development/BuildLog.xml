@@ -2,13 +2,13 @@
 <BuildLog xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ProjectInfo>
     <Name>TimesheetMigration</Name>
-    <LastWriteTime>2026-07-09T09:20:51.5522773Z</LastWriteTime>
+    <LastWriteTime>2026-07-09T19:46:39.0845383Z</LastWriteTime>
     <LastKnownProtectionLevel>EncryptSensitiveWithUserKey</LastKnownProtectionLevel>
   </ProjectInfo>
   <LastBuildInfos>
     <ProjectBuildItemInfo>
       <Name>TimesheetMigrationPipeline.dtsx</Name>
-      <LastWriteTime>2026-07-09T18:49:30.4368756Z</LastWriteTime>
+      <LastWriteTime>2026-07-09T19:46:22.5123686Z</LastWriteTime>
       <LastKnownProtectionLevel>EncryptSensitiveWithUserKey</LastKnownProtectionLevel>
     </ProjectBuildItemInfo>
   </LastBuildInfos>

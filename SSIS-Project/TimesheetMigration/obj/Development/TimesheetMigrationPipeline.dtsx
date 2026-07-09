@@ -11,8 +11,8 @@
   DTS:LocaleID="7177"
   DTS:ObjectName="TimesheetMigrationPipeline"
   DTS:PackageType="5"
-  DTS:VersionBuild="45"
-  DTS:VersionGUID="{39ECCD07-6603-4142-AB6B-98464207E9A1}">
+  DTS:VersionBuild="46"
+  DTS:VersionGUID="{85CB9094-CAC4-45E6-A906-47CDF93C3671}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -390,7 +390,7 @@
                   contactInfo="Includes and runs custom script code. For example, apply a business rule that limits the range of valid values in an &quot;income&quot; column or add values in two columns and calculate the average of the sum.;Microsoft Corporation; Microsoft SQL Server; Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;13"
                   description="Includes and runs custom script code. For example, apply a business rule that limits the range of valid values in an &quot;income&quot; column or add values in two columns and calculate the average of the sum."
                   name="Excel Source"
-                  version="13">
+                  version="12">
                   <properties>
                     <property
                       dataType="System.String"
@@ -400,218 +400,6 @@
                       state="cdata">
                       <arrayElements
                         arrayElementCount="30">
-                        <arrayElement
-                          dataType="System.String"><![CDATA[ComponentWrapper.cs]]></arrayElement>
-                        <arrayElement
-                          dataType="System.String"><![CDATA[UTF8]]></arrayElement>
-                        <arrayElement
-                          dataType="System.String"><![CDATA[/* THIS IS AUTO-GENERATED CODE THAT WILL BE OVERWRITTEN! DO NOT EDIT!
-*  Microsoft SQL Server Integration Services component wrapper
-*  This module defines the base class for your component
-*  THIS IS AUTO-GENERATED CODE THAT WILL BE OVERWRITTEN! DO NOT EDIT! */
-
-using System;
-using System.Data;
-using Microsoft.SqlServer.Dts.Pipeline;
-using Microsoft.SqlServer.Dts.Pipeline.Wrapper;
-using Microsoft.SqlServer.Dts.Runtime.Wrapper;
-
-public class UserComponent: ScriptComponent
-{
-    public Connections Connections;
-    public Variables Variables;
-    public UserComponent()
-    {
-        Connections = new Connections(this);
-        Variables = new Variables(this);
-    }
-
-    public ExcelDataBuffer ExcelDataBuffer;
-
-    public virtual void FinishOutputs()
-    {
-    }
-
-    private void MarkOutputsFinished()
-    {
-
-        if (null != ExcelDataBuffer)
-        {
-            ExcelDataBuffer.SetEndOfRowset();
-            ExcelDataBuffer = null;
-        }
-
-    }
-
-    public override void PrimeOutput(int Outputs, int[] OutputIDs, PipelineBuffer[] Buffers, OutputNameMap OutputMap)
-    {
-       for(int Idx = 0; Idx < Outputs; Idx++)
-       {
-            if(OutputIDs[Idx] == GetOutputID(OutputMap, @"ExcelData"))
-            {
-                ExcelDataBuffer = new ExcelDataBuffer(Buffers[Idx], GetColumnIndexes(OutputIDs[Idx]), OutputMap);
-            }
-        }
-
-        CreateNewOutputRows();
-
-        FinishOutputs();
-        MarkOutputsFinished();
-
-    }
-
-    public virtual void CreateNewOutputRows()
-    {
-    }
-
-}
-
-public class Connections
-{
-    ScriptComponent ParentComponent;
-
-    public Connections(ScriptComponent Component)
-    {
-        ParentComponent = Component;
-    }
-
-}
-
-public class Variables
-{
-    ScriptComponent ParentComponent;
-
-    public Variables(ScriptComponent Component)
-    {
-        ParentComponent = Component;
-    }
-
-    public Int32 BatchID
-    {
-        get
-        {
-            return (Int32)(ParentComponent.ReadOnlyVariables["BatchID"].GetValueWithContext(ScriptComponent.EvaluatorContext));
-        }
-    }
-
-    public Int32 EmployeeID
-    {
-        get
-        {
-            return (Int32)(ParentComponent.ReadOnlyVariables["EmployeeID"].GetValueWithContext(ScriptComponent.EvaluatorContext));
-        }
-    }
-
-    public String FullFilePath
-    {
-        get
-        {
-            return (String)(ParentComponent.ReadOnlyVariables["FullFilePath"].GetValueWithContext(ScriptComponent.EvaluatorContext));
-        }
-    }
-
-    public String Month
-    {
-        get
-        {
-            return (String)(ParentComponent.ReadOnlyVariables["Month"].GetValueWithContext(ScriptComponent.EvaluatorContext));
-        }
-    }
-
-    public String SheetNameTimesheet
-    {
-        get
-        {
-            return (String)(ParentComponent.ReadOnlyVariables["SheetNameTimesheet"].GetValueWithContext(ScriptComponent.EvaluatorContext));
-        }
-    }
-
-    public String CurrentFolder
-    {
-        get
-        {
-            return (String)(ParentComponent.ReadWriteVariables["CurrentFolder"].GetValueWithContext(ScriptComponent.EvaluatorContext));
-        }
-        set
-        {
-            ParentComponent.ReadWriteVariables["CurrentFolder"].Value = value;
-        }
-    }
-
-    public String EmployeeName
-    {
-        get
-        {
-            return (String)(ParentComponent.ReadWriteVariables["EmployeeName"].GetValueWithContext(ScriptComponent.EvaluatorContext));
-        }
-        set
-        {
-            ParentComponent.ReadWriteVariables["EmployeeName"].Value = value;
-        }
-    }
-
-    public String filePath
-    {
-        get
-        {
-            return (String)(ParentComponent.ReadWriteVariables["filePath"].GetValueWithContext(ScriptComponent.EvaluatorContext));
-        }
-        set
-        {
-            ParentComponent.ReadWriteVariables["filePath"].Value = value;
-        }
-    }
-
-    public Boolean ProcessTimesheet
-    {
-        get
-        {
-            return (Boolean)(ParentComponent.ReadWriteVariables["ProcessTimesheet"].GetValueWithContext(ScriptComponent.EvaluatorContext));
-        }
-        set
-        {
-            ParentComponent.ReadWriteVariables["ProcessTimesheet"].Value = value;
-        }
-    }
-
-    public String RootFolder
-    {
-        get
-        {
-            return (String)(ParentComponent.ReadWriteVariables["RootFolder"].GetValueWithContext(ScriptComponent.EvaluatorContext));
-        }
-        set
-        {
-            ParentComponent.ReadWriteVariables["RootFolder"].Value = value;
-        }
-    }
-
-    public String SheetName
-    {
-        get
-        {
-            return (String)(ParentComponent.ReadWriteVariables["SheetName"].GetValueWithContext(ScriptComponent.EvaluatorContext));
-        }
-        set
-        {
-            ParentComponent.ReadWriteVariables["SheetName"].Value = value;
-        }
-    }
-
-    public String TableName
-    {
-        get
-        {
-            return (String)(ParentComponent.ReadWriteVariables["TableName"].GetValueWithContext(ScriptComponent.EvaluatorContext));
-        }
-        set
-        {
-            ParentComponent.ReadWriteVariables["TableName"].Value = value;
-        }
-    }
-
-}
-]]></arrayElement>
                         <arrayElement
                           dataType="System.String"><![CDATA[Properties\Resources.resx]]></arrayElement>
                         <arrayElement
@@ -1477,36 +1265,215 @@ public class ExcelDataBuffer: ScriptBuffer
 }
 ]]></arrayElement>
                         <arrayElement
-                          dataType="System.String"><![CDATA[Properties\Settings.Designer.cs]]></arrayElement>
+                          dataType="System.String"><![CDATA[ComponentWrapper.cs]]></arrayElement>
                         <arrayElement
                           dataType="System.String"><![CDATA[UTF8]]></arrayElement>
                         <arrayElement
-                          dataType="System.String"><![CDATA[//------------------------------------------------------------------------------
-// <auto-generated>
-//     This code was generated by a tool.
-//
-//     Changes to this file may cause incorrect behavior and will be lost if
-//     the code is regenerated.
-// </auto-generated>
-//------------------------------------------------------------------------------
+                          dataType="System.String"><![CDATA[/* THIS IS AUTO-GENERATED CODE THAT WILL BE OVERWRITTEN! DO NOT EDIT!
+*  Microsoft SQL Server Integration Services component wrapper
+*  This module defines the base class for your component
+*  THIS IS AUTO-GENERATED CODE THAT WILL BE OVERWRITTEN! DO NOT EDIT! */
 
-[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="SC_1c22d19af6f54906b5588cd1440648c0.Properties.Settings.get_Default():SC_1c22d19af6f54906b5588cd1440648c0.Properties.Sett" +
-    "ings")]
+using System;
+using System.Data;
+using Microsoft.SqlServer.Dts.Pipeline;
+using Microsoft.SqlServer.Dts.Pipeline.Wrapper;
+using Microsoft.SqlServer.Dts.Runtime.Wrapper;
 
-namespace SC_1c22d19af6f54906b5588cd1440648c0.Properties {
-    
-    
-    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
-        
-        [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-        private static Settings defaultInstance = new Settings();
-        
-        public static Settings Default {
-            get {
-                return defaultInstance;
+public class UserComponent: ScriptComponent
+{
+    public Connections Connections;
+    public Variables Variables;
+    public UserComponent()
+    {
+        Connections = new Connections(this);
+        Variables = new Variables(this);
+    }
+
+    public ExcelDataBuffer ExcelDataBuffer;
+
+    public virtual void FinishOutputs()
+    {
+    }
+
+    private void MarkOutputsFinished()
+    {
+
+        if (null != ExcelDataBuffer)
+        {
+            ExcelDataBuffer.SetEndOfRowset();
+            ExcelDataBuffer = null;
+        }
+
+    }
+
+    public override void PrimeOutput(int Outputs, int[] OutputIDs, PipelineBuffer[] Buffers, OutputNameMap OutputMap)
+    {
+       for(int Idx = 0; Idx < Outputs; Idx++)
+       {
+            if(OutputIDs[Idx] == GetOutputID(OutputMap, @"ExcelData"))
+            {
+                ExcelDataBuffer = new ExcelDataBuffer(Buffers[Idx], GetColumnIndexes(OutputIDs[Idx]), OutputMap);
             }
         }
+
+        CreateNewOutputRows();
+
+        FinishOutputs();
+        MarkOutputsFinished();
+
     }
+
+    public virtual void CreateNewOutputRows()
+    {
+    }
+
+}
+
+public class Connections
+{
+    ScriptComponent ParentComponent;
+
+    public Connections(ScriptComponent Component)
+    {
+        ParentComponent = Component;
+    }
+
+}
+
+public class Variables
+{
+    ScriptComponent ParentComponent;
+
+    public Variables(ScriptComponent Component)
+    {
+        ParentComponent = Component;
+    }
+
+    public Int32 BatchID
+    {
+        get
+        {
+            return (Int32)(ParentComponent.ReadOnlyVariables["BatchID"].GetValueWithContext(ScriptComponent.EvaluatorContext));
+        }
+    }
+
+    public Int32 EmployeeID
+    {
+        get
+        {
+            return (Int32)(ParentComponent.ReadOnlyVariables["EmployeeID"].GetValueWithContext(ScriptComponent.EvaluatorContext));
+        }
+    }
+
+    public String FullFilePath
+    {
+        get
+        {
+            return (String)(ParentComponent.ReadOnlyVariables["FullFilePath"].GetValueWithContext(ScriptComponent.EvaluatorContext));
+        }
+    }
+
+    public String Month
+    {
+        get
+        {
+            return (String)(ParentComponent.ReadOnlyVariables["Month"].GetValueWithContext(ScriptComponent.EvaluatorContext));
+        }
+    }
+
+    public String SheetNameTimesheet
+    {
+        get
+        {
+            return (String)(ParentComponent.ReadOnlyVariables["SheetNameTimesheet"].GetValueWithContext(ScriptComponent.EvaluatorContext));
+        }
+    }
+
+    public String CurrentFolder
+    {
+        get
+        {
+            return (String)(ParentComponent.ReadWriteVariables["CurrentFolder"].GetValueWithContext(ScriptComponent.EvaluatorContext));
+        }
+        set
+        {
+            ParentComponent.ReadWriteVariables["CurrentFolder"].Value = value;
+        }
+    }
+
+    public String EmployeeName
+    {
+        get
+        {
+            return (String)(ParentComponent.ReadWriteVariables["EmployeeName"].GetValueWithContext(ScriptComponent.EvaluatorContext));
+        }
+        set
+        {
+            ParentComponent.ReadWriteVariables["EmployeeName"].Value = value;
+        }
+    }
+
+    public String filePath
+    {
+        get
+        {
+            return (String)(ParentComponent.ReadWriteVariables["filePath"].GetValueWithContext(ScriptComponent.EvaluatorContext));
+        }
+        set
+        {
+            ParentComponent.ReadWriteVariables["filePath"].Value = value;
+        }
+    }
+
+    public Boolean ProcessTimesheet
+    {
+        get
+        {
+            return (Boolean)(ParentComponent.ReadWriteVariables["ProcessTimesheet"].GetValueWithContext(ScriptComponent.EvaluatorContext));
+        }
+        set
+        {
+            ParentComponent.ReadWriteVariables["ProcessTimesheet"].Value = value;
+        }
+    }
+
+    public String RootFolder
+    {
+        get
+        {
+            return (String)(ParentComponent.ReadWriteVariables["RootFolder"].GetValueWithContext(ScriptComponent.EvaluatorContext));
+        }
+        set
+        {
+            ParentComponent.ReadWriteVariables["RootFolder"].Value = value;
+        }
+    }
+
+    public String SheetName
+    {
+        get
+        {
+            return (String)(ParentComponent.ReadWriteVariables["SheetName"].GetValueWithContext(ScriptComponent.EvaluatorContext));
+        }
+        set
+        {
+            ParentComponent.ReadWriteVariables["SheetName"].Value = value;
+        }
+    }
+
+    public String TableName
+    {
+        get
+        {
+            return (String)(ParentComponent.ReadWriteVariables["TableName"].GetValueWithContext(ScriptComponent.EvaluatorContext));
+        }
+        set
+        {
+            ParentComponent.ReadWriteVariables["TableName"].Value = value;
+        }
+    }
+
 }
 ]]></arrayElement>
                         <arrayElement
@@ -1556,10 +1523,10 @@ namespace SC_1c22d19af6f54906b5588cd1440648c0.Properties {
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="Microsoft.SqlServer.TxScript, Version=16.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
-    <Reference Include="Microsoft.SqlServer.DTSRuntimeWrap, Version=16.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
-    <Reference Include="Microsoft.SqlServer.DTSPipelineWrap, Version=16.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
-    <Reference Include="Microsoft.SqlServer.PipelineHost, Version=16.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
+    <Reference Include="Microsoft.SqlServer.TxScript, Version=15.0.0.0, Culture=Neutral, PublicKeyToken=89845dcd8080cc91" />
+    <Reference Include="Microsoft.SqlServer.DTSRuntimeWrap, Version=15.0.0.0, Culture=Neutral, PublicKeyToken=89845dcd8080cc91" />
+    <Reference Include="Microsoft.SqlServer.DTSPipelineWrap, Version=15.0.0.0, Culture=Neutral, PublicKeyToken=89845dcd8080cc91" />
+    <Reference Include="Microsoft.SqlServer.PipelineHost, Version=15.0.0.0, Culture=Neutral, PublicKeyToken=89845dcd8080cc91" />
     <Compile Include="main.cs" />
     <Compile Include="BufferWrapper.cs" />
     <Compile Include="ComponentWrapper.cs" />
@@ -1595,12 +1562,45 @@ namespace SC_1c22d19af6f54906b5588cd1440648c0.Properties {
         <ProjectProperties HostName="VSTAHostName" HostPackage="{B3A685AA-7EAF-4BC6-9940-57959FA5AC07}" ApplicationType="usd" Language="cs" TemplatesPath="" />
         <Host Name="ScriptComponent" IconIndex="0" />
         <ProjectClient>
-          <HostIdentifier>SSIS_SC160</HostIdentifier>
+          <HostIdentifier>SSIS_SC150</HostIdentifier>
         </ProjectClient>
       </FlavorProperties>
     </VisualStudio>
   </ProjectExtensions>
 </Project>]]></arrayElement>
+                        <arrayElement
+                          dataType="System.String"><![CDATA[Properties\Settings.Designer.cs]]></arrayElement>
+                        <arrayElement
+                          dataType="System.String"><![CDATA[UTF8]]></arrayElement>
+                        <arrayElement
+                          dataType="System.String"><![CDATA[//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="SC_1c22d19af6f54906b5588cd1440648c0.Properties.Settings.get_Default():SC_1c22d19af6f54906b5588cd1440648c0.Properties.Sett" +
+    "ings")]
+
+namespace SC_1c22d19af6f54906b5588cd1440648c0.Properties {
+    
+    
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
+        
+        [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+        private static Settings defaultInstance = new Settings();
+        
+        public static Settings Default {
+            get {
+                return defaultInstance;
+            }
+        }
+    }
+}
+]]></arrayElement>
                         <arrayElement
                           dataType="System.String"><![CDATA[Project]]></arrayElement>
                         <arrayElement
@@ -1612,7 +1612,7 @@ namespace SC_1c22d19af6f54906b5588cd1440648c0.Properties {
     <msb:CodeName>SC_1c22d19af6f54906b5588cd1440648c0</msb:CodeName>
     <msb:Language>msBuild</msb:Language>
     <msb:DisplayName>SC_1c22d19af6f54906b5588cd1440648c0</msb:DisplayName>
-    <msb:ProjectId>{D4E37721-10D8-4FEA-B223-B00DA5884C16}</msb:ProjectId>
+    <msb:ProjectId>{555C8DD8-937A-46E7-B33B-809CC52C63B4}</msb:ProjectId>
   </msb:PropertyGroup>
   <msb:ItemGroup>
     <msb:Project Include="SC_1c22d19af6f54906b5588cd1440648c0.csproj" />
@@ -1759,7 +1759,7 @@ namespace SC_1c22d19af6f54906b5588cd1440648c0.Properties {
                         <arrayElement
                           dataType="System.String"><![CDATA[TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAgAAAAA4fug4AtAnNIbgBTM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1v
-ZGUuDQ0KJAAAAAAAAABQRQAATAEDAHfOSWoAAAAAAAAAAOAAIiALATAAADIAAAAIAAAAAAAA0lEA
+ZGUuDQ0KJAAAAAAAAABQRQAATAEDAKb6T2oAAAAAAAAAAOAAIiALATAAADIAAAAIAAAAAAAA0lEA
 AAAgAAAAYAAAAAAAEAAgAAAAAgAABAAAAAAAAAAGAAAAAAAAAACgAAAAAgAAAAAAAAMAYIUAABAA
 ABAAAAAAEAAAEAAAAAAAABAAAAAAAAAAAAAAAIBRAABPAAAAAGAAAEgEAAAAAAAAAAAAAAAAAAAA
 AAAAAIAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -1888,9 +1888,9 @@ AC0AAQAaAC8AAQAbADEAAQAcADMAAQAdADUAAQAeADcAAQAfADkAAQAgADsAAQAhAD0AAQAiAD8A
 AQAjAEEAAQAkAEMAAQAlAEUAAQAmAEcAAQAnAEkAAgAyAEsAAgAzAE0AAgA0AE8AAgA1AFEAAgA2
 AFMAAgA3AFUAAQA4AFUAAgA5AFcAAQA6AFcAAgA7AFkAAQA8AFkAAgA9AFsAAQA+AFsAAgA/AF0A
 AQBAAF0AAgBBAF8AAQBCAF8AAgBDAGEAAQBEAGEAAgBGAGMAAgBHAGUAAQBIAGUAAgBJAGcABIAA
-AAEAAAAAAAAAAAAAAAAAUwAAAAQAAAAAAAAAAAAAADIB/AAAAAAAEAAAAAAAAAAAAAAAOwGsCwAA
-AAAEAAAAAAAAAAAAAAAyAcgAAAAAABAAAAAAAAAAAAAAADsByQsAAAAABAAAAAAAAAAAAAAAMgH2
-BgAAAAAQAAAAAAAAAAAAAAA7Af8HAAAAABAAAAAAAAAAAAAAADsB3AcAAAAAAAAAAAEAAACRCQAA
+AAEAAAAAAAAAAAAAAAAAUwAAAAQAAAAAAAAAAAAAADIB/AAAAAAADwAAAAAAAAAAAAAAOwGsCwAA
+AAAEAAAAAAAAAAAAAAAyAcgAAAAAAA8AAAAAAAAAAAAAADsByQsAAAAABAAAAAAAAAAAAAAAMgH2
+BgAAAAAPAAAAAAAAAAAAAAA7Af8HAAAAAA8AAAAAAAAAAAAAADsB3AcAAAAAAAAAAAEAAACRCQAA
 AAAASURUU0NvbXBvbmVudE1ldGFEYXRhMTAwAElEVFNWYXJpYWJsZTEwMABJRFRTVmFyaWFibGVz
 MTAwAElEVFNFdmFsdWF0b3JDb250ZXh0MTAwAFNDXzFjMjJkMTlhZjZmNTQ5MDZiNTU4OGNkMTQ0
 MDY0OGMwAEludDMyADxNb2R1bGU+AGdldF9FbXBsb3llZUlEAHNldF9FbXBsb3llZUlEAGdldF9C
@@ -1973,8 +1973,8 @@ AHUAcgByAGUAbgB0AEYAbwBsAGQAZQByAAAZRQBtAHAAbABvAHkAZQBlAE4AYQBtAGUAABFmAGkA
 bABlAFAAYQB0AGgAACFQAHIAbwBjAGUAcwBzAFQAaQBtAGUAcwBoAGUAZQB0AAAVUgBvAG8AdABG
 AG8AbABkAGUAcgAAE1MAaABlAGUAdABOAGEAbQBlAAATVABhAGIAbABlAE4AYQBtAGUAAHFTAEMA
 XwAxAGMAMgAyAGQAMQA5AGEAZgA2AGYANQA0ADkAMAA2AGIANQA1ADgAOABjAGQAMQA0ADQAMAA2
-ADQAOABjADAALgBQAHIAbwBwAGUAcgB0AGkAZQBzAC4AUgBlAHMAbwB1AHIAYwBlAHMAAOagcAe0
-YNJEmLeSGSUb/ngABCABAQgDIAABBSABARERBCABAQ4FIAEBEXE6ByoODggOCA4SORI9EkEIHA4C
+ADQAOABjADAALgBQAHIAbwBwAGUAcgB0AGkAZQBzAC4AUgBlAHMAbwB1AHIAYwBlAHMAACUazNqM
+irxNu+LaXl6NR80ABCABAQgDIAABBSABARERBCABAQ4FIAEBEXE6ByoODggOCA4SORI9EkEIHA4C
 Dg4ODg4ODhwOHA4cAg4OEUkOEUkNEUkdDhFJEU0RSRFNEUkRTRJRAgYAAw4ODg4GIAIBDhI5BCAA
 EkEEIAEcCAQGEoCNBCABDg4DIAAOBAABAg4FAAICDg4DIAAIBwACAg4QEUkGAAICDhANBQABEUkN
 BAAAEm0PAAUCDh0OEoCVEYCZEBFJBQABDh0OBCABAg4DIAACBSAAEoClBQACDg4OCiAGAQgODg4I
@@ -2525,19 +2525,10 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA]]></arrayElement>
           <DTS:ObjectData>
             <ScriptProject
               Name="ST_e6c80ceb23674a6c8ef0b9f3b7acae61"
-              VSTAMajorVersion="16"
+              VSTAMajorVersion="15"
               VSTAMinorVersion="0"
               Language="CSharp"
               ReadWriteVariables="User::CurrentFolder,User::EmployeeID,User::EmployeeName,User::filePath,User::FullFilePath,User::Month,User::ProcessTimesheet,User::RootFolder,User::SheetName,User::SheetNameTimesheet,User::TableName">
-              <ProjectItem
-                Name="Properties\Settings.settings"
-                Encoding="UTF8"><![CDATA[<?xml version='1.0' encoding='iso-8859-1'?>
-<SettingsFile xmlns="uri:settings" CurrentProfile="(Default)">
-  <Profiles>
-    <Profile Name="(Default)" />
-  </Profiles>
-  <Settings />
-</SettingsFile>]]></ProjectItem>
               <ProjectItem
                 Name="Properties\Resources.resx"
                 Encoding="UTF8"><![CDATA[<?xml version="1.0" encoding="utf-8"?>
@@ -2658,6 +2649,35 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA]]></arrayElement>
   </resheader>
 </root>]]></ProjectItem>
               <ProjectItem
+                Name="Properties\Settings.Designer.cs"
+                Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_e6c80ceb23674a6c8ef0b9f3b7acae61.Properties.Settings.get_Default():ST_e6c80ceb23674a6c8ef0b9f3b7acae61.Properties.Sett" +
+    "ings")]
+
+namespace ST_e6c80ceb23674a6c8ef0b9f3b7acae61.Properties {
+    
+    
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
+        
+        [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+        private static Settings defaultInstance = new Settings();
+        
+        public static Settings Default {
+            get {
+                return defaultInstance;
+            }
+        }
+    }
+}]]></ProjectItem>
+              <ProjectItem
                 Name="ST_e6c80ceb23674a6c8ef0b9f3b7acae61.csproj"
                 Encoding="UTF8"><![CDATA[<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -2701,8 +2721,8 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA]]></arrayElement>
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="Microsoft.SqlServer.ManagedDTS, Version=16.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
-    <Reference Include="Microsoft.SqlServer.ScriptTask, Version=16.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
+    <Reference Include="Microsoft.SqlServer.ManagedDTS, Version=15.0.0.0, Culture=Neutral, PublicKeyToken=89845dcd8080cc91" />
+    <Reference Include="Microsoft.SqlServer.ScriptTask, Version=15.0.0.0, Culture=Neutral, PublicKeyToken=89845dcd8080cc91" />
   </ItemGroup>
   <ItemGroup>
     <AppDesigner Include="Properties\" />
@@ -2737,7 +2757,7 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA]]></arrayElement>
         <ProjectProperties HostName="ScriptTask" HostPackage="{B3A685AA-7EAF-4BC6-9940-57959FA5AC07}" ApplicationType="usd" Language="cs" TemplatesPath="" DebugInfoCommandLine="" DebugInfoWorkingDir="" IconImageList="" />
         <Host Name="ScriptTask" GeneratedNamespace="$safeprojectname" IconIndex=""></Host>
         <ProjectClient>
-          <HostIdentifier>SSIS_ST160</HostIdentifier>
+          <HostIdentifier>SSIS_ST150</HostIdentifier>
         </ProjectClient>
       </FlavorProperties>
     </VisualStudio>
@@ -2973,7 +2993,7 @@ namespace ST_e6c80ceb23674a6c8ef0b9f3b7acae61
     <msb:CodeName>ST_e6c80ceb23674a6c8ef0b9f3b7acae61</msb:CodeName>
     <msb:Language>msBuild</msb:Language>
     <msb:DisplayName>ST_e6c80ceb23674a6c8ef0b9f3b7acae61</msb:DisplayName>
-    <msb:ProjectId>{842A4BD8-6EBC-4BE9-AB97-97FE6151D9EE}</msb:ProjectId>
+    <msb:ProjectId>{7F71F36A-D993-43BB-82B1-2FAB7CFEA77A}</msb:ProjectId>
   </msb:PropertyGroup>
   <msb:ItemGroup>
     <msb:Project Include="ST_e6c80ceb23674a6c8ef0b9f3b7acae61.csproj" />
@@ -2985,35 +3005,6 @@ namespace ST_e6c80ceb23674a6c8ef0b9f3b7acae61
     <msb:File Include="ScriptMain.cs" />
   </msb:ItemGroup>
 </c:Project>]]></ProjectItem>
-              <ProjectItem
-                Name="Properties\Settings.Designer.cs"
-                Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
-// <auto-generated>
-//     This code was generated by a tool.
-//
-//     Changes to this file may cause incorrect behavior and will be lost if
-//     the code is regenerated.
-// </auto-generated>
-//------------------------------------------------------------------------------
-
-[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_e6c80ceb23674a6c8ef0b9f3b7acae61.Properties.Settings.get_Default():ST_e6c80ceb23674a6c8ef0b9f3b7acae61.Properties.Sett" +
-    "ings")]
-
-namespace ST_e6c80ceb23674a6c8ef0b9f3b7acae61.Properties {
-    
-    
-    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
-        
-        [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-        private static Settings defaultInstance = new Settings();
-        
-        public static Settings Default {
-            get {
-                return defaultInstance;
-            }
-        }
-    }
-}]]></ProjectItem>
               <ProjectItem
                 Name="Properties\AssemblyInfo.cs"
                 Encoding="UTF8"><![CDATA[using System.Reflection;
@@ -3044,6 +3035,15 @@ using System.Runtime.CompilerServices;
 // by using the '*' as shown below:
 
 [assembly: AssemblyVersion("1.0.*")]]]></ProjectItem>
+              <ProjectItem
+                Name="Properties\Settings.settings"
+                Encoding="UTF8"><![CDATA[<?xml version='1.0' encoding='iso-8859-1'?>
+<SettingsFile xmlns="uri:settings" CurrentProfile="(Default)">
+  <Profiles>
+    <Profile Name="(Default)" />
+  </Profiles>
+  <Settings />
+</SettingsFile>]]></ProjectItem>
               <ProjectItem
                 Name="Properties\Resources.Designer.cs"
                 Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
@@ -3115,7 +3115,7 @@ namespace ST_e6c80ceb23674a6c8ef0b9f3b7acae61.Properties {
               <BinaryItem
                 Name="ST_e6c80ceb23674a6c8ef0b9f3b7acae61.dll">TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAgAAAAA4fug4AtAnNIbgBTM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1v
-ZGUuDQ0KJAAAAAAAAABQRQAATAEDADPtT2oAAAAAAAAAAOAAIiALATAAABoAAAAIAAAAAAAA+jkA
+ZGUuDQ0KJAAAAAAAAABQRQAATAEDAKv6T2oAAAAAAAAAAOAAIiALATAAABoAAAAIAAAAAAAA+jkA
 AAAgAAAAQAAAAAAAEAAgAAAAAgAABAAAAAAAAAAGAAAAAAAAAACAAAAAAgAAAAAAAAMAYIUAABAA
 ABAAAAAAEAAAEAAAAAAAABAAAAAAAAAAAAAAAKg5AABPAAAAAEAAAHgEAAAAAAAAAAAAAAAAAAAA
 AAAAAGAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -3168,9 +3168,9 @@ AIUAEQHnAIUA6QCSA4oA6QCHA48A6QB4A5MADAAtBQYADACWAKAADACIBqgADAAzBK4A6QAfBooA
 4QBFA7UA6QBfBroAgQCqAEgAcQAtBQYAmQAtBQYAIQHVAMEAIQGUBsoAoQAtBdAAwQAtBQYACAAY
 AOoACAAcAO8AKQBzAFoBLgALADIBLgATADsBLgAbAFoBLgAjAGMBLgArAIwBLgAzAIwBLgA7AIwB
 LgBDAGMBLgBLAJIBLgBTAIwBLgBbAKkBQwBjAO8ASQBzAFoBYwBrAO8AgQB7AO8AGwADAAEABAAD
-AAAA/wQjAQAAUQEoAQAAcQYtAQIABAADAAIABQAFAAEABgAFAAIABwAHAJkABIAAAAEAAADWJWmS
-AAAAAAAAAQAAAAQAAAAAAAAAAAAAANgAcgAAAAAAEAAAAAAAAAAAAAAA4QCbAwAAAAAEAAAAAAAA
-AAAAAADYADwEAAAAABAAAAAAAAAAAAAAAOEASwAAAAAAAAAAAAEAAAB+BQAABQACAAAAAFNUX2U2
+AAAA/wQjAQAAUQEoAQAAcQYtAQIABAADAAIABQAFAAEABgAFAAIABwAHAJkABIAAAAEAAADWJSWZ
+AAAAAAAAAQAAAAQAAAAAAAAAAAAAANgAcgAAAAAADwAAAAAAAAAAAAAA4QCbAwAAAAAEAAAAAAAA
+AAAAAADYADwEAAAAAA8AAAAAAAAAAAAAAOEASwAAAAAAAAAAAAEAAAB+BQAABQACAAAAAFNUX2U2
 YzgwY2ViMjM2NzRhNmM4ZWYwYjlmM2I3YWNhZTYxAEludDMyAERpY3Rpb25hcnlgMgA8TW9kdWxl
 PgBTeXN0ZW0uSU8ATWljcm9zb2Z0LlNxbFNlcnZlci5NYW5hZ2VkRFRTAHZhbHVlX18AbXNjb3Js
 aWIAU3lzdGVtLkNvbGxlY3Rpb25zLkdlbmVyaWMAQWRkAGRlZmF1bHRJbnN0YW5jZQBnZXRfTWVz
@@ -3224,8 +3224,8 @@ AHgAdAByAGEAYwB0ACAASQBuAGYAbwAAY0UAbQBwAGwAbwB5AGUAZQA6ACAAewAwAH0AIAAoAEkA
 RAA6ACAAewAxAH0AKQAgAHwAIABNAG8AbgB0AGgAOgAgAHsAMgB9ACAAfAAgAFMAaABlAGUAdAA6
 ACAAewAzAH0AABlTAGMAcgBpAHAAdAAgAEUAcgByAG8AcgAAD0UAcgByAG8AcgA6ACAAAHFTAFQA
 XwBlADYAYwA4ADAAYwBlAGIAMgAzADYANwA0AGEANgBjADgAZQBmADAAYgA5AGYAMwBiADcAYQBj
-AGEAZQA2ADEALgBQAHIAbwBwAGUAcgB0AGkAZQBzAC4AUgBlAHMAbwB1AHIAYwBlAHMAAADu6sKy
-E8yRRrKRNqtOeCvKAAQgAQEIAyAAAQUgAQEREQQgAQEOBSABARFZGAcPDg4OAg4VEj0CDggIDg4O
+AGEAZQA2ADEALgBQAHIAbwBwAGUAcgB0AGkAZQBzAC4AUgBlAHMAbwB1AHIAYwBlAHMAAABiD5Zr
+TBryQ7NhaGGYPbr6AAQgAQEIAyAAAQUgAQEREQQgAQEOBSABARFZGAcPDg4OAg4VEj0CDggIDg4O
 HQ4IDg4SQQQgABJpBCAAEm0FIAEScRwDIAAcAyAADgQAAQIOBCAAEn0FAAIODg4CBg4KIAYBCA4O
 DggQAgggBQIIDg4OCAcgAgIOEYCBCQADHQ4ODhGAhQQAAQ4OBCABAg4DIAAIBSACDggIBhUSPQIO
 CAcgAgETABMBBSABAhMABiABEwETAAQgAQEcBgACDg4dHAgAARKAkRGAlQUgABKAmQcgAgEOEoCZ
@@ -3241,14 +3241,14 @@ AFBBRFBBRFC0AAAA0DkAAAAAAAAAAAAA6jkAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAANw5AAAA
 AAAAAAAAAAAAX0NvckRsbE1haW4AbXNjb3JlZS5kbGwAAAAAAP8lACAAEAAAAAAAAAAAAAAAAAAA
 AQAQAAAAGAAAgAAAAAAAAAAAAAAAAAAAAQABAAAAMAAAgAAAAAAAAAAAAAAAAAAAAQAAAAAASAAA
 AFhAAAAaBAAAAAAAAAAAAAAaBDQAAABWAFMAXwBWAEUAUgBTAEkATwBOAF8ASQBOAEYATwAAAAAA
-vQTv/gAAAQAAAAEAaZLWJQAAAQBpktYlPwAAAAAAAAAEAAAAAgAAAAAAAAAAAAAAAAAAAEQAAAAB
+vQTv/gAAAQAAAAEAJZnWJQAAAQAlmdYlPwAAAAAAAAAEAAAAAgAAAAAAAAAAAAAAAAAAAEQAAAAB
 AFYAYQByAEYAaQBsAGUASQBuAGYAbwAAAAAAJAAEAAAAVAByAGEAbgBzAGwAYQB0AGkAbwBuAAAA
 AAAAALAEegMAAAEAUwB0AHIAaQBuAGcARgBpAGwAZQBJAG4AZgBvAAAAVgMAAAEAMAAwADAAMAAw
 ADQAYgAwAAAAGgABAAEAQwBvAG0AbQBlAG4AdABzAAAAAAAAACIAAQABAEMAbwBtAHAAYQBuAHkA
 TgBhAG0AZQAAAAAAAAAAAHAAJAABAEYAaQBsAGUARABlAHMAYwByAGkAcAB0AGkAbwBuAAAAAABT
 AFQAXwBlADYAYwA4ADAAYwBlAGIAMgAzADYANwA0AGEANgBjADgAZQBmADAAYgA5AGYAMwBiADcA
 YQBjAGEAZQA2ADEAAAA+AA8AAQBGAGkAbABlAFYAZQByAHMAaQBvAG4AAAAAADEALgAwAC4AOQA2
-ADgANgAuADMANwA0ADgAMQAAAAAAcAAoAAEASQBuAHQAZQByAG4AYQBsAE4AYQBtAGUAAABTAFQA
+ADgANgAuADMAOQAyADAANQAAAAAAcAAoAAEASQBuAHQAZQByAG4AYQBsAE4AYQBtAGUAAABTAFQA
 XwBlADYAYwA4ADAAYwBlAGIAMgAzADYANwA0AGEANgBjADgAZQBmADAAYgA5AGYAMwBiADcAYQBj
 AGEAZQA2ADEALgBkAGwAbAAAAEgAEgABAEwAZQBnAGEAbABDAG8AcAB5AHIAaQBnAGgAdAAAAEMA
 bwBwAHkAcgBpAGcAaAB0ACAAQAAgACAAMgAwADIANgAAACoAAQABAEwAZQBnAGEAbABUAHIAYQBk
@@ -3257,8 +3257,8 @@ ZQAAAFMAVABfAGUANgBjADgAMABjAGUAYgAyADMANgA3ADQAYQA2AGMAOABlAGYAMABiADkAZgAz
 AGIANwBhAGMAYQBlADYAMQAuAGQAbABsAAAAaAAkAAEAUAByAG8AZAB1AGMAdABOAGEAbQBlAAAA
 AABTAFQAXwBlADYAYwA4ADAAYwBlAGIAMgAzADYANwA0AGEANgBjADgAZQBmADAAYgA5AGYAMwBi
 ADcAYQBjAGEAZQA2ADEAAABCAA8AAQBQAHIAbwBkAHUAYwB0AFYAZQByAHMAaQBvAG4AAAAxAC4A
-MAAuADkANgA4ADYALgAzADcANAA4ADEAAAAAAEYADwABAEEAcwBzAGUAbQBiAGwAeQAgAFYAZQBy
-AHMAaQBvAG4AAAAxAC4AMAAuADkANgA4ADYALgAzADcANAA4ADEAAAAAAAAAAAAAAAAAAAAAAAAA
+MAAuADkANgA4ADYALgAzADkAMgAwADUAAAAAAEYADwABAEEAcwBzAGUAbQBiAGwAeQAgAFYAZQBy
+AHMAaQBvAG4AAAAxAC4AMAAuADkANgA4ADYALgAzADkAMgAwADUAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -3292,8 +3292,8 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</BinaryItem>
       <DTS:ForEachVariableMappings>
         <DTS:ForEachVariableMapping
           DTS:CreationName=""
-          DTS:DTSID="{A339091D-0435-4003-B868-2F3C56FE4DD1}"
-          DTS:ObjectName="{A339091D-0435-4003-B868-2F3C56FE4DD1}"
+          DTS:DTSID="{073BF5C6-6194-441A-9EF3-C4C3250020E6}"
+          DTS:ObjectName="{073BF5C6-6194-441A-9EF3-C4C3250020E6}"
           DTS:ValueIndex="0"
           DTS:VariableName="User::filePath" />
       </DTS:ForEachVariableMappings>
@@ -3321,39 +3321,9 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</BinaryItem>
           <DTS:ObjectData>
             <ScriptProject
               Name="ST_600f1acf7343499592cd3b896fc8f94f"
-              VSTAMajorVersion="16"
+              VSTAMajorVersion="15"
               VSTAMinorVersion="0"
               Language="CSharp">
-              <ProjectItem
-                Name="Properties\AssemblyInfo.cs"
-                Encoding="UTF8"><![CDATA[using System.Reflection;
-using System.Runtime.CompilerServices;
-
-//
-// General Information about an assembly is controlled through the following 
-// set of attributes. Change these attribute values to modify the information
-// associated with an assembly.
-//
-[assembly: AssemblyTitle("ST_600f1acf7343499592cd3b896fc8f94f")]
-[assembly: AssemblyDescription("")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("ST_600f1acf7343499592cd3b896fc8f94f")]
-[assembly: AssemblyCopyright("Copyright @  2026")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
-//
-// Version information for an assembly consists of the following four values:
-//
-//      Major Version
-//      Minor Version 
-//      Build Number
-//      Revision
-//
-// You can specify all the values or you can default the Revision and Build Numbers 
-// by using the '*' as shown below:
-
-[assembly: AssemblyVersion("1.0.*")]]]></ProjectItem>
               <ProjectItem
                 Name="Properties\Resources.resx"
                 Encoding="UTF8"><![CDATA[<?xml version="1.0" encoding="utf-8"?>
@@ -3517,8 +3487,8 @@ using System.Runtime.CompilerServices;
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="Microsoft.SqlServer.ManagedDTS, Version=16.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
-    <Reference Include="Microsoft.SqlServer.ScriptTask, Version=16.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" />
+    <Reference Include="Microsoft.SqlServer.ManagedDTS, Version=15.0.0.0, Culture=Neutral, PublicKeyToken=89845dcd8080cc91" />
+    <Reference Include="Microsoft.SqlServer.ScriptTask, Version=15.0.0.0, Culture=Neutral, PublicKeyToken=89845dcd8080cc91" />
   </ItemGroup>
   <ItemGroup>
     <AppDesigner Include="Properties\" />
@@ -3553,12 +3523,41 @@ using System.Runtime.CompilerServices;
         <ProjectProperties HostName="ScriptTask" HostPackage="{B3A685AA-7EAF-4BC6-9940-57959FA5AC07}" ApplicationType="usd" Language="cs" TemplatesPath="" DebugInfoCommandLine="" DebugInfoWorkingDir="" IconImageList="" />
         <Host Name="ScriptTask" GeneratedNamespace="$safeprojectname" IconIndex=""></Host>
         <ProjectClient>
-          <HostIdentifier>SSIS_ST160</HostIdentifier>
+          <HostIdentifier>SSIS_ST150</HostIdentifier>
         </ProjectClient>
       </FlavorProperties>
     </VisualStudio>
   </ProjectExtensions>
 </Project>]]></ProjectItem>
+              <ProjectItem
+                Name="Properties\Settings.Designer.cs"
+                Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_600f1acf7343499592cd3b896fc8f94f.Properties.Settings.get_Default():ST_600f1acf7343499592cd3b896fc8f94f.Properties.Sett" +
+    "ings")]
+
+namespace ST_600f1acf7343499592cd3b896fc8f94f.Properties {
+    
+    
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
+        
+        [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+        private static Settings defaultInstance = new Settings();
+        
+        public static Settings Default {
+            get {
+                return defaultInstance;
+            }
+        }
+    }
+}]]></ProjectItem>
               <ProjectItem
                 Name="ScriptMain.cs"
                 Encoding="UTF8"><![CDATA[#region Namespaces
@@ -4046,7 +4045,7 @@ namespace ST_600f1acf7343499592cd3b896fc8f94f
     <msb:CodeName>ST_600f1acf7343499592cd3b896fc8f94f</msb:CodeName>
     <msb:Language>msBuild</msb:Language>
     <msb:DisplayName>ST_600f1acf7343499592cd3b896fc8f94f</msb:DisplayName>
-    <msb:ProjectId>{415C0BB5-7A1F-4AAA-805B-D8EFAFE19D7F}</msb:ProjectId>
+    <msb:ProjectId>{FCD232C7-6BA4-4E4B-A2D8-34673D0A5591}</msb:ProjectId>
   </msb:PropertyGroup>
   <msb:ItemGroup>
     <msb:Project Include="ST_600f1acf7343499592cd3b896fc8f94f.csproj" />
@@ -4059,34 +4058,35 @@ namespace ST_600f1acf7343499592cd3b896fc8f94f
   </msb:ItemGroup>
 </c:Project>]]></ProjectItem>
               <ProjectItem
-                Name="Properties\Settings.Designer.cs"
-                Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
-// <auto-generated>
-//     This code was generated by a tool.
+                Name="Properties\AssemblyInfo.cs"
+                Encoding="UTF8"><![CDATA[using System.Reflection;
+using System.Runtime.CompilerServices;
+
 //
-//     Changes to this file may cause incorrect behavior and will be lost if
-//     the code is regenerated.
-// </auto-generated>
-//------------------------------------------------------------------------------
+// General Information about an assembly is controlled through the following 
+// set of attributes. Change these attribute values to modify the information
+// associated with an assembly.
+//
+[assembly: AssemblyTitle("ST_600f1acf7343499592cd3b896fc8f94f")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("ST_600f1acf7343499592cd3b896fc8f94f")]
+[assembly: AssemblyCopyright("Copyright @  2026")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+//
+// Version information for an assembly consists of the following four values:
+//
+//      Major Version
+//      Minor Version 
+//      Build Number
+//      Revision
+//
+// You can specify all the values or you can default the Revision and Build Numbers 
+// by using the '*' as shown below:
 
-[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_600f1acf7343499592cd3b896fc8f94f.Properties.Settings.get_Default():ST_600f1acf7343499592cd3b896fc8f94f.Properties.Sett" +
-    "ings")]
-
-namespace ST_600f1acf7343499592cd3b896fc8f94f.Properties {
-    
-    
-    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
-        
-        [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-        private static Settings defaultInstance = new Settings();
-        
-        public static Settings Default {
-            get {
-                return defaultInstance;
-            }
-        }
-    }
-}]]></ProjectItem>
+[assembly: AssemblyVersion("1.0.*")]]]></ProjectItem>
               <ProjectItem
                 Name="Properties\Settings.settings"
                 Encoding="UTF8"><![CDATA[<?xml version='1.0' encoding='iso-8859-1'?>
@@ -4167,7 +4167,7 @@ namespace ST_600f1acf7343499592cd3b896fc8f94f.Properties {
               <BinaryItem
                 Name="ST_600f1acf7343499592cd3b896fc8f94f.dll">TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAgAAAAA4fug4AtAnNIbgBTM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1v
-ZGUuDQ0KJAAAAAAAAABQRQAATAEDAJ+ZTmoAAAAAAAAAAOAAIiALATAAAJAAAAAIAAAAAAAAUq4A
+ZGUuDQ0KJAAAAAAAAABQRQAATAEDAK/6T2oAAAAAAAAAAOAAIiALATAAAJAAAAAIAAAAAAAAUq4A
 AAAgAAAAwAAAAAAAEAAgAAAAAgAABAAAAAAAAAAGAAAAAAAAAAAAAQAAAgAAAAAAAAMAYIUAABAA
 ABAAAAAAEAAAEAAAAAAAABAAAAAAAAAAAAAAAACuAABPAAAAAMAAAHgEAAAAAAAAAAAAAAAAAAAA
 AAAAAOAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -4225,9 +4225,9 @@ APEA/QSPAEEBQwWTAEEBkANlAEEBVQWYACkBDwidACkBGgeyACkBkAe3AAwAPwYGACkBiQRlACkB
 AHEB4wACAXEB8gcLAcEAPwYRAeEAPwYGAAgAGAArAQgAHAAwASkAcwCmAS4ACwB+AS4AEwCHAS4A
 GwCmAS4AIwCvAS4AKwDYAS4AMwDYAS4AOwDYAS4AQwCvAS4ASwDeAS4AUwDYAS4AWwD1AUMAYwAw
 AUkAcwCmAWMAawAwAYEAewAwARsAeACiAOMA6QADAAEABAADAAAA8gVvAQAAQgF0AQAAmgd5AQIA
-CAADAAIACQAFAAEACgAFAAIACwAHAL4ABIAAAAEAAADVJV+RAAAAAAAARwMAAAQAAAAAAAAAAAAA
-ABkBWgAAAAAAEAAAAAAAAAAAAAAAIgHhAwAAAAAEAAAAAAAAAAAAAAAZAU4AAAAAAAQAAAAAAAAA
-AAAAABkBggQAAAAAEAAAAAAAAAAAAAAAIgEnAAAAAAAAAAAAAQAAAJAGAAAFAAIAAAAASUVudW1l
+CAADAAIACQAFAAEACgAFAAIACwAHAL4ABIAAAAEAAADWJSeZAAAAAAAARwMAAAQAAAAAAAAAAAAA
+ABkBWgAAAAAADwAAAAAAAAAAAAAAIgHhAwAAAAAEAAAAAAAAAAAAAAAZAU4AAAAAAAQAAAAAAAAA
+AAAAABkBggQAAAAADwAAAAAAAAAAAAAAIgEnAAAAAAAAAAAAAQAAAJAGAAAFAAIAAAAASUVudW1l
 cmFibGVgMQBMaXN0YDEAVG9JbnQzMgA8TW9kdWxlPgBNaWNyb3NvZnQuU3FsU2VydmVyLk1hbmFn
 ZWREVFMAdmFsdWVfXwBTeXN0ZW0uRGF0YQBtc2NvcmxpYgBTeXN0ZW0uQ29sbGVjdGlvbnMuR2Vu
 ZXJpYwBSZWFkAEFkZABEYkNvbW1hbmQAU3FsQ29tbWFuZABkZWZhdWx0SW5zdGFuY2UAZ2V0X01l
@@ -4798,7 +4798,7 @@ IAAgACAAIAAgACAAQABFAHIAcgBvAHIATQBlAHMAcwBhAGcAZQANAAoAIAAgACAAIAAgACAAIAAg
 ACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAIAAgACAAKQABG0AARQByAHIAbwByAE0AZQBzAHMA
 YQBnAGUAAHFTAFQAXwA2ADAAMABmADEAYQBjAGYANwAzADQAMwA0ADkAOQA1ADkAMgBjAGQAMwBi
 ADgAOQA2AGYAYwA4AGYAOQA0AGYALgBQAHIAbwBwAGUAcgB0AGkAZQBzAC4AUgBlAHMAbwB1AHIA
-YwBlAHMAAPvEqymloGhHv29cpUH9pz8ABCABAQgDIAABBSABARERBCABAQ4FIAEBEWkTBwwSPRJB
+YwBlAHMAAPEVMjUKDZFNh3JZ8c4t0yEABCABAQgDIAABBSABARERBCABAQ4FIAEBEWkTBwwSPRJB
 EkUICAgICAgIEkkSTQQgABJ5BCAAEn0KIAYBCA4ODggQAgYgAgEOEj0EIAASRQMgAAIEIAEcDgQA
 AQgcBgACDg4dHAMgAA4FAAIODhwIIAUCCA4ODggEBwIcDgUgABKAnQQgAQIcBiABEoChHAMgABwE
 IAEcHAQgAQEcBAABAg4PBwcdDggOFRJVAQ4dDggOBCABAg4GIAEdDh0DBRUSVQEOByACAg4RgKkF
@@ -4823,14 +4823,14 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEA
 EAAAABgAAIAAAAAAAAAAAAAAAAAAAAEAAQAAADAAAIAAAAAAAAAAAAAAAAAAAAEAAAAAAEgAAABY
 wAAAGgQAAAAAAAAAAAAAGgQ0AAAAVgBTAF8AVgBFAFIAUwBJAE8ATgBfAEkATgBGAE8AAAAAAL0E
-7/4AAAEAAAABAF+R1SUAAAEAX5HVJT8AAAAAAAAABAAAAAIAAAAAAAAAAAAAAAAAAABEAAAAAQBW
+7/4AAAEAAAABACeZ1iUAAAEAJ5nWJT8AAAAAAAAABAAAAAIAAAAAAAAAAAAAAAAAAABEAAAAAQBW
 AGEAcgBGAGkAbABlAEkAbgBmAG8AAAAAACQABAAAAFQAcgBhAG4AcwBsAGEAdABpAG8AbgAAAAAA
 AACwBHoDAAABAFMAdAByAGkAbgBnAEYAaQBsAGUASQBuAGYAbwAAAFYDAAABADAAMAAwADAAMAA0
 AGIAMAAAABoAAQABAEMAbwBtAG0AZQBuAHQAcwAAAAAAAAAiAAEAAQBDAG8AbQBwAGEAbgB5AE4A
 YQBtAGUAAAAAAAAAAABwACQAAQBGAGkAbABlAEQAZQBzAGMAcgBpAHAAdABpAG8AbgAAAAAAUwBU
 AF8ANgAwADAAZgAxAGEAYwBmADcAMwA0ADMANAA5ADkANQA5ADIAYwBkADMAYgA4ADkANgBmAGMA
 OABmADkANABmAAAAPgAPAAEARgBpAGwAZQBWAGUAcgBzAGkAbwBuAAAAAAAxAC4AMAAuADkANgA4
-ADUALgAzADcAMgAxADUAAAAAAHAAKAABAEkAbgB0AGUAcgBuAGEAbABOAGEAbQBlAAAAUwBUAF8A
+ADYALgAzADkAMgAwADcAAAAAAHAAKAABAEkAbgB0AGUAcgBuAGEAbABOAGEAbQBlAAAAUwBUAF8A
 NgAwADAAZgAxAGEAYwBmADcAMwA0ADMANAA5ADkANQA5ADIAYwBkADMAYgA4ADkANgBmAGMAOABm
 ADkANABmAC4AZABsAGwAAABIABIAAQBMAGUAZwBhAGwAQwBvAHAAeQByAGkAZwBoAHQAAABDAG8A
 cAB5AHIAaQBnAGgAdAAgAEAAIAAgADIAMAAyADYAAAAqAAEAAQBMAGUAZwBhAGwAVAByAGEAZABl
@@ -4839,8 +4839,8 @@ AABTAFQAXwA2ADAAMABmADEAYQBjAGYANwAzADQAMwA0ADkAOQA1ADkAMgBjAGQAMwBiADgAOQA2
 AGYAYwA4AGYAOQA0AGYALgBkAGwAbAAAAGgAJAABAFAAcgBvAGQAdQBjAHQATgBhAG0AZQAAAAAA
 UwBUAF8ANgAwADAAZgAxAGEAYwBmADcAMwA0ADMANAA5ADkANQA5ADIAYwBkADMAYgA4ADkANgBm
 AGMAOABmADkANABmAAAAQgAPAAEAUAByAG8AZAB1AGMAdABWAGUAcgBzAGkAbwBuAAAAMQAuADAA
-LgA5ADYAOAA1AC4AMwA3ADIAMQA1AAAAAABGAA8AAQBBAHMAcwBlAG0AYgBsAHkAIABWAGUAcgBz
-AGkAbwBuAAAAMQAuADAALgA5ADYAOAA1AC4AMwA3ADIAMQA1AAAAAAAAAAAAAAAAAAAAAAAAAAAA
+LgA5ADYAOAA2AC4AMwA5ADIAMAA3AAAAAABGAA8AAQBBAHMAcwBlAG0AYgBsAHkAIABWAGUAcgBz
+AGkAbwBuAAAAMQAuADAALgA5ADYAOAA2AC4AMwA5ADIAMAA3AAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
