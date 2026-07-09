@@ -45,7 +45,7 @@ jobs:
           Write-Host "SQL_SERVER: $env:SQL_SERVER"
           Write-Host "SQL_PORT: $env:SQL_PORT"
           Write-Host "DATABASE_NAME: $env:DATABASE_NAME"
-          Write-Host "SQL_JOB_NAME: RunTimesheetProductionMigrationPK"
+          Write-Host "SQL_JOB_NAME (from vars): ${{ vars.SQL_JOB_NAME }}"
 
       - name: Create Database
         shell: powershell
@@ -56,6 +56,49 @@ jobs:
             -P "$env:SQL_PASSWORD" `
             -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "Database/CreateDatabase.sql"
+
+      - name: Create Tables
+        shell: powershell
+        run: |
+          sqlcmd -b `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
+            -U "$env:SQL_USERNAME" `
+            -P "$env:SQL_PASSWORD" `
+            -d "$env:DATABASE_NAME" `
+            -v DATABASE_NAME="$env:DATABASE_NAME" `
+            -i "Database/CreateTable.sql"
+
+      - name: Create Stored Procedures
+        shell: powershell
+        run: |
+          sqlcmd -b `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
+            -U "$env:SQL_USERNAME" `
+            -P "$env:SQL_PASSWORD" `
+            -d "$env:DATABASE_NAME" `
+            -v DATABASE_NAME="$env:DATABASE_NAME" `
+            -i "Database/StoredProcedure.sql"
+
+      - name: Create Triggers
+        shell: powershell
+        run: |
+          sqlcmd -b `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
+            -U "$env:SQL_USERNAME" `
+            -P "$env:SQL_PASSWORD" `
+            -d "$env:DATABASE_NAME" `
+            -i "Database/Triggers.sql"
+
+      - name: Seed Database
+        shell: powershell
+        run: |
+          sqlcmd -b `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
+            -U "$env:SQL_USERNAME" `
+            -P "$env:SQL_PASSWORD" `
+            -d "$env:DATABASE_NAME" `
+            -v DATABASE_NAME="$env:DATABASE_NAME" `
+            -i "Database/SeedData.sql"
 
       - name: Locate Visual Studio DevEnv Tool
         shell: powershell
@@ -101,7 +144,7 @@ jobs:
           $dbUser        = "$env:SQL_USERNAME"
           $dbPassword    = "$env:SQL_PASSWORD"
           $folderName    = "TimesheetProductionMigration"
-          $projectName   = "TimesheetProductionMigration"
+          $projectName   = "TimesheetMigrationTwo"
           $tempTable     = "TempHex_$([System.Guid]::NewGuid().ToString('N'))"
 
           # 3. Read and hex‑encode ISPAC
@@ -342,9 +385,9 @@ jobs:
           $dbUser        = "$env:SQL_USERNAME"
           $dbPassword    = "$env:SQL_PASSWORD"
           $folderName    = "TimesheetProductionMigration"
-          $projectName   = "TimesheetProductionMigration"
+          $projectName   = "TimesheetMigrationTwo"
           $packageName   = "TimesheetProductionMigrationPK.dtsx"
-          $executionJobName = "RunTimesheetProductionMigrationPK"
+          $executionJobName = "${{ vars.SQL_JOB_NAME }}"
 
           $jobSql = @"
           USE [msdb];
@@ -419,4 +462,4 @@ jobs:
           }
 
       - name: Deployment Complete
-        run: echo "Database deployed, SSIS deployed, and job 'RunTimesheetProductionMigrationPK' created with 30-second schedule."
+        run: echo "Database deployed, SSIS deployed, and job '${{ vars.SQL_JOB_NAME }}' created with 30-second schedule."
