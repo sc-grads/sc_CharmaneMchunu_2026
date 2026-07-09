@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     name: Deploy Database and SQL Agent
-    runs-on: [runner-tg-pc]
+    runs-on: [self-hosted, runner-tg-pc]
 
     environment: production
 
@@ -26,6 +26,10 @@ jobs:
       - name: Install Chocolatey and sqlcmd
         shell: powershell
         run: |
+          if (Get-Command sqlcmd -ErrorAction SilentlyContinue) {
+            Write-Host "sqlcmd already installed, skipping Chocolatey install."
+            exit 0
+          }
           if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
             Write-Host "Installing Chocolatey..."
             Set-ExecutionPolicy Bypass -Scope Process -Force
