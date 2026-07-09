@@ -1,5 +1,5 @@
 -- 02_DeploySchema.sql
-USE TimesheetDB;
+USE TimesheetCMDB;
 GO
 
 /* =========================
