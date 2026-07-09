@@ -15,7 +15,7 @@ jobs:
     env:
       SQL_USERNAME: ${{ secrets.SQL_USERNAME }}
       SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
-      SQL_SERVER: ${{ secrets.SQL_SERVER }}
+      SQL_SERVER: ${{ vars.SQL_SERVER }}
       SQL_PORT: ${{ vars.SQL_PORT }}
       DATABASE_NAME: ${{ vars.SQL_DATABASE }}
 
@@ -52,8 +52,7 @@ jobs:
         run: |
           sqlcmd -b `
             -S "$env:SQL_SERVER,$env:SQL_PORT" `
-            -U "$env:SQL_USERNAME" `
-            -P "$env:SQL_PASSWORD" `
+            -E `
             -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "Database/CreateDatabase.sql"
 
@@ -62,8 +61,7 @@ jobs:
         run: |
           sqlcmd -b `
             -S "$env:SQL_SERVER,$env:SQL_PORT" `
-            -U "$env:SQL_USERNAME" `
-            -P "$env:SQL_PASSWORD" `
+            -E `
             -d "$env:DATABASE_NAME" `
             -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "Database/CreateTable.sql"
@@ -73,8 +71,7 @@ jobs:
         run: |
           sqlcmd -b `
             -S "$env:SQL_SERVER,$env:SQL_PORT" `
-            -U "$env:SQL_USERNAME" `
-            -P "$env:SQL_PASSWORD" `
+            -E `
             -d "$env:DATABASE_NAME" `
             -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "Database/StoredProcedure.sql"
@@ -84,8 +81,7 @@ jobs:
         run: |
           sqlcmd -b `
             -S "$env:SQL_SERVER,$env:SQL_PORT" `
-            -U "$env:SQL_USERNAME" `
-            -P "$env:SQL_PASSWORD" `
+            -E `
             -d "$env:DATABASE_NAME" `
             -i "Database/Triggers.sql"
 
@@ -94,8 +90,7 @@ jobs:
         run: |
           sqlcmd -b `
             -S "$env:SQL_SERVER,$env:SQL_PORT" `
-            -U "$env:SQL_USERNAME" `
-            -P "$env:SQL_PASSWORD" `
+            -E `
             -d "$env:DATABASE_NAME" `
             -v DATABASE_NAME="$env:DATABASE_NAME" `
             -i "Database/SeedData.sql"
