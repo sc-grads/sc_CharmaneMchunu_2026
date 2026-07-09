@@ -8,14 +8,14 @@ on:
 jobs:
   deploy:
     name: Deploy Database and SQL Agent
-    runs-on: windows-latest
+    runs-on: [runner-tg-pc]
 
     environment: production
 
     env:
       SQL_USERNAME: ${{ secrets.SQL_USERNAME }}
       SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
-      SQL_SERVER: ${{ vars.SQL_SERVER }}
+      SQL_SERVER: ${{ secrets.SQL_SERVER }}
       SQL_PORT: ${{ vars.SQL_PORT }}
       DATABASE_NAME: ${{ vars.SQL_DATABASE }}
 
