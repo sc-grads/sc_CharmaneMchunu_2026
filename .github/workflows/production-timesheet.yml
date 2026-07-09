@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     name: Deploy Database and SQL Agent
-    runs-on: [self-hosted, runner-tg-pc]
+    runs-on: [runner-tg-pc]
 
     environment: production
 
