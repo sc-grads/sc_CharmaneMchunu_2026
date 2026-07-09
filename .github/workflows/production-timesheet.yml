@@ -47,6 +47,36 @@ jobs:
           Write-Host "DATABASE_NAME: $env:DATABASE_NAME"
           Write-Host "SQL_JOB_NAME (from vars): ${{ vars.SQL_JOB_NAME }}"
 
+      # ----- New step: Check C:\Timesheets folder on the runner -----
+      - name: Check C:\Timesheets folder
+        shell: powershell
+        run: |
+          $folder = "C:\Timesheets"
+
+          Write-Host "========================================"
+          Write-Host "Runner Machine : $env:COMPUTERNAME"
+          Write-Host "Current User   : $env:USERNAME"
+          Write-Host "Checking Folder: $folder"
+          Write-Host "========================================"
+
+          if (Test-Path -Path $folder) {
+              Write-Host "✅ Folder exists."
+
+              Write-Host ""
+              Write-Host "Folder contents:"
+              Get-ChildItem -Path $folder -Force |
+                  Select-Object Name,
+                                @{Name='Type';Expression={if ($_.PSIsContainer) {'Directory'} else {'File'}}},
+                                Length,
+                                LastWriteTime |
+                  Format-Table -AutoSize
+          }
+          else {
+              Write-Error "❌ Folder not found: $folder"
+              exit 1
+          }
+      # --------------------------------------------------------------
+
       - name: Create Database
         shell: powershell
         run: |
@@ -243,6 +273,7 @@ jobs:
           WHERE j.name = N'$helperJobName'
           ORDER BY ja.start_execution_date DESC;
           "@
+
           $outcomeSql = @"
           USE [msdb];
           DECLARE @job_id UNIQUEIDENTIFIER = (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$helperJobName');
@@ -251,6 +282,7 @@ jobs:
           WHERE job_id = @job_id AND step_id = 0
           ORDER BY instance_id DESC;
           "@
+
           $maxWaitSeconds = 300
           $pollInterval = 5
           $elapsed = 0
@@ -278,6 +310,7 @@ jobs:
                   if ($pollConn.State -eq 'Open') { $pollConn.Close() }
               }
           }
+
           if (-not $finished) {
               Write-Error "Helper job did not finish within $maxWaitSeconds seconds."
               exit 1
@@ -371,10 +404,8 @@ jobs:
 
           # 11. Verification skipped – helper job succeeded, so project is deployed.
           Write-Host "Project '$projectName' deployed successfully (verified by helper job success)."
-
           # Clean up temp file
           Remove-Item $tempSql -Force -ErrorAction SilentlyContinue
-
           Write-Host "SUCCESS: SSIS project deployed."
 
       # ==================== CREATE PERMANENT SCHEDULED JOB ====================
@@ -391,12 +422,10 @@ jobs:
 
           $jobSql = @"
           USE [msdb];
-
           IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$executionJobName')
           BEGIN
               EXEC dbo.sp_delete_job @job_name = N'$executionJobName', @delete_unused_schedule=1;
           END
-
           DECLARE @jobId BINARY(16);
           EXEC dbo.sp_add_job
               @job_name = N'$executionJobName',
@@ -405,7 +434,6 @@ jobs:
               @category_name = N'[Uncategorized (Local)]',
               @owner_login_name = N'sa',
               @job_id = @jobId OUTPUT;
-
           DECLARE @run_command NVARCHAR(MAX);
           SET @run_command = N'
           DECLARE @execution_id BIGINT;
@@ -422,18 +450,15 @@ jobs:
               @parameter_value = 1;
           EXEC [SSISDB].[catalog].[start_execution] @execution_id;
           ';
-
           EXEC dbo.sp_add_jobstep
               @job_name = N'$executionJobName',
               @step_name = N'Execute SSIS Package',
               @subsystem = N'TSQL',
               @command = @run_command,
               @retry_attempts = 0;
-
           EXEC dbo.sp_add_jobserver
               @job_name = N'$executionJobName',
               @server_name = N'(local)';
-
           EXEC dbo.sp_add_jobschedule
               @job_name = N'$executionJobName',
               @name = N'Every30Seconds',
