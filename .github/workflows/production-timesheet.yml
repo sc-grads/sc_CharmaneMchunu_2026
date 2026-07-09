@@ -8,35 +8,33 @@ on:
 jobs:
   deploy:
     name: Deploy Database and SQL Agent
-    runs-on: runner-tg-pc   # Use your self-hosted runner label
-
-    environment: production
+    runs-on: runner-tg-pc                     # Your self-hosted runner label
+    environment: production                   # Uses environment variables/secrets
 
     env:
-      # SQL Server settings – use integrated security (Windows auth) because runner is domain-joined
-      SQL_SERVER: ${{ vars.SQL_SERVER }}   # e.g., "localhost" or your SQL instance
-      # If you still need SQL auth, uncomment and use secrets:
-      # SQL_USERNAME: ${{ secrets.SQL_USERNAME }}
-      # SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
+      # ----- SQL Server connection (from GitHub environment variables) -----
+      SQL_SERVER: ${{ vars.SQL_SERVER }}      # e.g., "localhost" or "SQL01"
+      DATABASE_NAME: ${{ vars.SQL_DATABASE }} # Target database for schema
 
-      # SSIS project settings (adjust to your actual names)
+      # ----- SSIS project settings (adjust to your actual names) -----
       SSIS_FOLDER: TimesheetProductionMigration
       SSIS_PROJECT: TimesheetMigrationTwo
       SSIS_PACKAGE: TimesheetProductionMigrationPK.dtsx
-      SQL_AGENT_JOB: ${{ vars.SQL_JOB_NAME }}   # e.g., "TimesheetMigrationETL"
+      SQL_AGENT_JOB: ${{ vars.SQL_JOB_NAME }} # e.g., "TimesheetMigrationETL"
 
       # Path to your .dtproj file (relative to repo root)
       SSIS_PROJECT_PATH: SSIS-Project\TimesheetMigrationTwo\TimesheetMigrationTwo.dtproj
 
-      # Database name for schema deployment
-      DATABASE_NAME: ${{ vars.SQL_DATABASE }}
+      # If you need SQL authentication, uncomment the lines below and set secrets
+      # SQL_USERNAME: ${{ secrets.SQL_USERNAME }}
+      # SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       # ------------------------------------------------------------------
-      # 1. Ensure SqlServer PowerShell module is available (for Invoke-Sqlcmd)
+      # 1. Ensure SqlServer PowerShell module is available
       # ------------------------------------------------------------------
       - name: Ensure SqlServer PowerShell Module
         shell: powershell
@@ -161,7 +159,7 @@ jobs:
           }
 
       # ------------------------------------------------------------------
-      # 3. Deploy database schema (using the scripts from your repo)
+      # 3. Deploy database schema (using your SQL scripts from Database/)
       # ------------------------------------------------------------------
       - name: Deploy Database Schema
         shell: powershell
@@ -171,9 +169,12 @@ jobs:
           $server = $env:SQL_SERVER
           $database = $env:DATABASE_NAME
 
-          # Use integrated security (Windows auth)
+          # Build connection string – Integrated Security (Windows auth)
           $connString = "Server=$server;Database=master;Integrated Security=True;TrustServerCertificate=True;"
+          # If you need SQL authentication, replace with:
+          # $connString = "Server=$server;Database=master;User ID=$env:SQL_USERNAME;Password=$env:SQL_PASSWORD;TrustServerCertificate=True;"
 
+          # List of SQL files in order of dependency
           $sqlFiles = @(
             "Database/CreateDatabase.sql",
             "Database/CreateTable.sql",
@@ -193,8 +194,10 @@ jobs:
             }
           }
 
+          Write-Host "Database schema deployed successfully."
+
       # ------------------------------------------------------------------
-      # 4. Build SSIS Project to ISPAC
+      # 4. Build SSIS project to ISPAC
       # ------------------------------------------------------------------
       - name: Build SSIS Project Into ISPAC
         shell: powershell
@@ -203,6 +206,7 @@ jobs:
               throw "SSIS project file not found: $env:SSIS_PROJECT_PATH"
           }
 
+          # Locate devenv.com / devenv.exe
           $devenv = Get-ChildItem `
             -Path "C:\Program Files\Microsoft Visual Studio" `
             -Recurse `
@@ -223,10 +227,8 @@ jobs:
               if (!$devenvExe) {
                   throw "devenv.com/devenv.exe not found. Full Visual Studio with SSIS Projects support must be installed on this runner."
               }
-
               $devenvPath = $devenvExe.FullName
-          }
-          else {
+          } else {
               $devenvPath = $devenv.FullName
           }
 
@@ -271,6 +273,7 @@ jobs:
           $folder = $env:SSIS_FOLDER.Replace("'", "''")
           $server = $env:SQL_SERVER
           $connString = "Server=$server;Database=SSISDB;Integrated Security=True;TrustServerCertificate=True;"
+          # For SQL auth, replace with User ID/Password as above
 
           $sql = @"
           IF NOT EXISTS (
