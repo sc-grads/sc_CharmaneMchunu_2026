@@ -47,35 +47,69 @@ jobs:
           Write-Host "DATABASE_NAME: $env:DATABASE_NAME"
           Write-Host "SQL_JOB_NAME (from vars): ${{ vars.SQL_JOB_NAME }}"
 
-      # ----- New step: Check C:\Timesheets folder on the runner -----
-      - name: Check C:\Timesheets folder
+      # ========== NEW: Check C:\Timesheets on the SQL Server ==========
+      - name: Check C:\Timesheets folder on SQL Server
         shell: powershell
         run: |
-          $folder = "C:\Timesheets"
+          $tunnelAddress = "$env:SQL_SERVER,$env:SQL_PORT"
+          $dbUser        = "$env:SQL_USERNAME"
+          $dbPassword    = "$env:SQL_PASSWORD"
 
-          Write-Host "========================================"
-          Write-Host "Runner Machine : $env:COMPUTERNAME"
-          Write-Host "Current User   : $env:USERNAME"
-          Write-Host "Checking Folder: $folder"
-          Write-Host "========================================"
+          # T-SQL script to check folder existence using xp_cmdshell
+          $checkSql = @"
+          -- Enable xp_cmdshell temporarily
+          EXEC sp_configure 'show advanced options', 1;
+          RECONFIGURE;
+          EXEC sp_configure 'xp_cmdshell', 1;
+          RECONFIGURE;
 
-          if (Test-Path -Path $folder) {
-              Write-Host "✅ Folder exists."
+          DECLARE @folderExists INT;
+          DECLARE @cmd NVARCHAR(255) = 'IF EXIST "C:\Timesheets" (echo 1) ELSE (echo 0)';
+          DECLARE @output TABLE (line NVARCHAR(100));
 
-              Write-Host ""
-              Write-Host "Folder contents:"
-              Get-ChildItem -Path $folder -Force |
-                  Select-Object Name,
-                                @{Name='Type';Expression={if ($_.PSIsContainer) {'Directory'} else {'File'}}},
-                                Length,
-                                LastWriteTime |
-                  Format-Table -AutoSize
-          }
-          else {
-              Write-Error "❌ Folder not found: $folder"
+          INSERT INTO @output
+          EXEC xp_cmdshell @cmd;
+
+          SELECT TOP 1 CAST(line AS INT) AS ExistsFlag
+          FROM @output
+          WHERE line IS NOT NULL AND line IN ('0','1');
+
+          -- Disable xp_cmdshell after check
+          EXEC sp_configure 'xp_cmdshell', 0;
+          RECONFIGURE;
+          EXEC sp_configure 'show advanced options', 0;
+          RECONFIGURE;
+          "@
+
+          # Write script to a temporary file
+          $sqlFile = Join-Path $env:TEMP "check_folder_$([System.Guid]::NewGuid().ToString('N')).sql"
+          $checkSql | Out-File -FilePath $sqlFile -Encoding utf8
+
+          Write-Host "Checking if C:\Timesheets exists on SQL Server..."
+          $result = sqlcmd -b `
+            -S "$tunnelAddress" `
+            -U "$dbUser" `
+            -P "$dbPassword" `
+            -h -1 `
+            -s "," `
+            -W `
+            -i $sqlFile
+
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Failed to execute folder check on SQL Server."
               exit 1
           }
-      # --------------------------------------------------------------
+
+          $existsFlag = $result.Trim()
+          if ($existsFlag -eq "1") {
+              Write-Host "✅ Folder C:\Timesheets exists on SQL Server."
+          } else {
+              Write-Error "❌ Folder C:\Timesheets NOT found on SQL Server."
+              exit 1
+          }
+
+          Remove-Item $sqlFile -Force -ErrorAction SilentlyContinue
+      # ================================================================
 
       - name: Create Database
         shell: powershell
