@@ -48,7 +48,7 @@ jobs:
           Write-Host "SQL_JOB_NAME (from vars): ${{ vars.SQL_JOB_NAME }}"
 
       # ================================================================
-      # CREATE C:\Timesheets AND COPY FILES FROM REPO
+      # CREATE C:\Timesheets AND COPY FILES FROM REPO (NO EMOJIS)
       # ================================================================
       - name: Ensure C:\Timesheets exists and copy Excel files
         shell: powershell
@@ -56,80 +56,79 @@ jobs:
           $sourceFolder = "${{ github.workspace }}\Timesheets"
           $targetFolder = "C:\Timesheets"
 
-          Write-Host "========================================"
+          Write-Host '========================================'
           Write-Host "Runner Machine : $env:COMPUTERNAME"
           Write-Host "Source Folder : $sourceFolder"
           Write-Host "Target Folder : $targetFolder"
-          Write-Host "========================================"
+          Write-Host '========================================'
 
-          # 1. Create target folder if missing
+          # Create target folder if missing
           if (-not (Test-Path -Path $targetFolder)) {
-              Write-Host "Creating target folder..."
+              Write-Host 'Creating target folder...'
               New-Item -ItemType Directory -Path $targetFolder -Force | Out-Null
           }
 
-          # 2. Check if source folder exists in repo
+          # Check if source folder exists
           if (-not (Test-Path -Path $sourceFolder)) {
-              Write-Error " Source folder '$sourceFolder' not found in repository!"
-              Write-Host "Available folders in repo root:"
+              Write-Error "Source folder '$sourceFolder' not found in repository!"
+              Write-Host 'Available folders in repo root:'
               Get-ChildItem -Path "${{ github.workspace }}" -Directory | Select-Object Name
               exit 1
           }
 
-          # 3. LIST SOURCE FOLDER BEFORE COPY
-          Write-Host ""
-          Write-Host "========================================"
-          Write-Host "SOURCE FOLDER CONTENTS (before copy):"
-          Write-Host "========================================"
+          # List source folder contents before copy
+          Write-Host ''
+          Write-Host '========================================'
+          Write-Host '[SOURCE] FOLDER CONTENTS (before copy):'
+          Write-Host '========================================'
           Get-ChildItem -Path $sourceFolder -Force -Recurse |
               Select-Object FullName, Length, LastWriteTime, @{Name='Type';Expression={if ($_.PSIsContainer) {'Directory'} else {'File'}}} |
               Format-Table -AutoSize
 
-          # 4. Copy files using robocopy (preserves subfolder structure)
-          Write-Host ""
-          Write-Host "========================================"
+          # Copy files using robocopy (preserves subfolder structure)
+          Write-Host ''
+          Write-Host '========================================'
           Write-Host "Copying files from '$sourceFolder' to '$targetFolder'..."
-          Write-Host "========================================"
+          Write-Host '========================================'
           $robocopyArgs = @(
               "`"$sourceFolder`"",
               "`"$targetFolder`"",
-              "/E",        # Copy subdirectories, including empty ones
-              "/Z",        # Restartable mode
-              "/NP",       # No Progress (keeps log clean)
-              "/NDL",      # No Directory Logging
-              "/R:2",      # Retry 2 times on failure
-              "/W:5"       # Wait 5 seconds between retries
+              '/E',
+              '/Z',
+              '/NP',
+              '/NDL',
+              '/R:2',
+              '/W:5'
           )
           & robocopy @robocopyArgs
 
-          # 5. Check if copy succeeded (robocopy exit code 0-7 are success)
           $exitCode = $LASTEXITCODE
           if ($exitCode -ge 8) {
               Write-Error "Robocopy failed with exit code $exitCode"
               exit 1
           }
 
-          Write-Host ""
-          Write-Host " Files copied successfully! (Robocopy exit code: $exitCode)"
+          Write-Host ''
+          Write-Host "Files copied successfully! (Robocopy exit code: $exitCode)"
 
-          # 6. LIST TARGET FOLDER AFTER COPY
-          Write-Host ""
-          Write-Host "========================================"
-          Write-Host " TARGET FOLDER CONTENTS (after copy):"
-          Write-Host "========================================"
+          # List target folder contents after copy
+          Write-Host ''
+          Write-Host '========================================'
+          Write-Host '[TARGET] FOLDER CONTENTS (after copy):'
+          Write-Host '========================================'
           Get-ChildItem -Path $targetFolder -Force -Recurse |
               Select-Object FullName, Length, LastWriteTime, @{Name='Type';Expression={if ($_.PSIsContainer) {'Directory'} else {'File'}}} |
               Format-Table -AutoSize
 
-          # 7. Summary counts
+          # Summary counts
           $totalFiles = (Get-ChildItem -Path $targetFolder -File -Recurse).Count
           $totalFolders = (Get-ChildItem -Path $targetFolder -Directory -Recurse).Count
-          Write-Host ""
-          Write-Host "========================================"
-          Write-Host "📊 SUMMARY:"
+          Write-Host ''
+          Write-Host '========================================'
+          Write-Host 'SUMMARY:'
           Write-Host "   Total folders: $totalFolders"
           Write-Host "   Total files:   $totalFiles"
-          Write-Host "========================================"
+          Write-Host '========================================'
       # ================================================================
 
       - name: Create Database
