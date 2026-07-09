@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     name: Deploy Database and SQL Agent
-    runs-on: [self-hosted, runner-tg-pc]
+    runs-on: windows-latest
 
     environment: production
 
@@ -16,6 +16,7 @@ jobs:
       SQL_USERNAME: ${{ secrets.SQL_USERNAME }}
       SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
       SQL_SERVER: ${{ secrets.SQL_SERVER }}
+      SQL_PORT: ${{ vars.SQL_PORT }}
       DATABASE_NAME: ${{ vars.SQL_DATABASE }}
 
     steps:
@@ -25,10 +26,6 @@ jobs:
       - name: Install Chocolatey and sqlcmd
         shell: powershell
         run: |
-          if (Get-Command sqlcmd -ErrorAction SilentlyContinue) {
-            Write-Host "sqlcmd already installed, skipping Chocolatey install."
-            exit 0
-          }
           if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
             Write-Host "Installing Chocolatey..."
             Set-ExecutionPolicy Bypass -Scope Process -Force
@@ -46,6 +43,7 @@ jobs:
         shell: powershell
         run: |
           Write-Host "SQL_SERVER: $env:SQL_SERVER"
+          Write-Host "SQL_PORT: $env:SQL_PORT"
           Write-Host "DATABASE_NAME: $env:DATABASE_NAME"
           Write-Host "SQL_JOB_NAME (from vars): ${{ vars.SQL_JOB_NAME }}"
 
@@ -53,7 +51,7 @@ jobs:
         shell: powershell
         run: |
           sqlcmd -b `
-            -S "$env:SQL_SERVER" `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
             -U "$env:SQL_USERNAME" `
             -P "$env:SQL_PASSWORD" `
             -v DATABASE_NAME="$env:DATABASE_NAME" `
@@ -63,7 +61,7 @@ jobs:
         shell: powershell
         run: |
           sqlcmd -b `
-            -S "$env:SQL_SERVER" `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
             -U "$env:SQL_USERNAME" `
             -P "$env:SQL_PASSWORD" `
             -d "$env:DATABASE_NAME" `
@@ -74,7 +72,7 @@ jobs:
         shell: powershell
         run: |
           sqlcmd -b `
-            -S "$env:SQL_SERVER" `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
             -U "$env:SQL_USERNAME" `
             -P "$env:SQL_PASSWORD" `
             -d "$env:DATABASE_NAME" `
@@ -85,7 +83,7 @@ jobs:
         shell: powershell
         run: |
           sqlcmd -b `
-            -S "$env:SQL_SERVER" `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
             -U "$env:SQL_USERNAME" `
             -P "$env:SQL_PASSWORD" `
             -d "$env:DATABASE_NAME" `
@@ -95,7 +93,7 @@ jobs:
         shell: powershell
         run: |
           sqlcmd -b `
-            -S "$env:SQL_SERVER" `
+            -S "$env:SQL_SERVER,$env:SQL_PORT" `
             -U "$env:SQL_USERNAME" `
             -P "$env:SQL_PASSWORD" `
             -d "$env:DATABASE_NAME" `
@@ -142,7 +140,7 @@ jobs:
           Write-Host "Found ISPAC at: $ispacPath"
 
           # 2. Prepare variables
-          $sqlServer = "$env:SQL_SERVER"
+          $tunnelAddress = "$env:SQL_SERVER,$env:SQL_PORT"
           $dbUser        = "$env:SQL_USERNAME"
           $dbPassword    = "$env:SQL_PASSWORD"
           $folderName    = "TimesheetProductionMigration"
@@ -172,7 +170,7 @@ jobs:
           # 5. Execute the script using sqlcmd (SQL Authentication)
           Write-Host "Inserting hex string into temp table using sqlcmd..."
           sqlcmd -b `
-            -S "$sqlServer" `
+            -S "$tunnelAddress" `
             -U "$dbUser" `
             -P "$dbPassword" `
             -i $tempSql
@@ -221,7 +219,7 @@ jobs:
           EXEC dbo.sp_start_job @job_name = N'$helperJobName';
           "@
 
-          $connStrMsdb = "Data Source=$sqlServer;Initial Catalog=msdb;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
+          $connStrMsdb = "Data Source=$tunnelAddress;Initial Catalog=msdb;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
           $conn2 = New-Object System.Data.SqlClient.SqlConnection($connStrMsdb)
           try {
               $conn2.Open()
@@ -322,7 +320,7 @@ jobs:
           WHERE operation_id = $operationId
           ORDER BY message_time;
           "@
-                      $detailConn = New-Object System.Data.SqlClient.SqlConnection("Data Source=$sqlServer;Initial Catalog=SSISDB;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;")
+                      $detailConn = New-Object System.Data.SqlClient.SqlConnection("Data Source=$tunnelAddress;Initial Catalog=SSISDB;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;")
                       try {
                           $detailConn.Open()
                           $detailCmd = $detailConn.CreateCommand()
@@ -383,7 +381,7 @@ jobs:
       - name: Create SQL Agent Job (T-SQL step)
         shell: powershell
         run: |
-          $sqlServer = "$env:SQL_SERVER"
+          $tunnelAddress = "$env:SQL_SERVER,$env:SQL_PORT"
           $dbUser        = "$env:SQL_USERNAME"
           $dbPassword    = "$env:SQL_PASSWORD"
           $folderName    = "TimesheetProductionMigration"
@@ -448,7 +446,7 @@ jobs:
               @active_end_time = 235959;
           "@
 
-          $connStr = "Data Source=$sqlServer;Initial Catalog=msdb;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
+          $connStr = "Data Source=$tunnelAddress;Initial Catalog=msdb;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
           $connection = New-Object System.Data.SqlClient.SqlConnection($connStr)
           try {
               $connection.Open()
