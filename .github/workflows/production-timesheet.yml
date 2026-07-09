@@ -126,7 +126,7 @@ jobs:
 
       # ==================== DEPLOY SSIS USING HELPER JOB ====================
       - name: Deploy SSIS via Helper Job (Hex stored in temp table)
-        shell: pwsh
+        shell: powershell
         run: |
           # 1. Locate ISPAC
           $ispacPath = "${{ github.workspace }}\SSIS-Project\TimesheetMigrationTwo\bin\Development\TimesheetMigrationTwo.ispac"
@@ -381,7 +381,7 @@ jobs:
 
       # ==================== CREATE PERMANENT SCHEDULED JOB ====================
       - name: Create SQL Agent Job (T-SQL step)
-        shell: pwsh
+        shell: powershell
         run: |
           $sqlServer = "$env:SQL_SERVER"
           $dbUser        = "$env:SQL_USERNAME"
