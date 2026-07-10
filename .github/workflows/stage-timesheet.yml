@@ -47,6 +47,14 @@ jobs:
           Write-Host "DATABASE_NAME: $env:DATABASE_NAME"
           Write-Host "SQL_JOB_NAME (from vars): ${{ vars.SQL_JOB_NAME }}"
 
+      # ==================== NEW STEP ====================
+      - name: Install SSDT for Visual Studio
+        shell: powershell
+        run: |
+          choco install sqlserver-ssdt -y
+          refreshenv
+      # ==================================================
+
       - name: Create Database
         shell: powershell
         run: |
@@ -138,7 +146,6 @@ jobs:
               exit 1
           }
           Write-Host "Found ISPAC at: $ispacPath"
-
           # 2. Prepare variables
           $tunnelAddress = "$env:SQL_SERVER,$env:SQL_PORT"
           $dbUser        = "$env:SQL_USERNAME"
@@ -146,7 +153,6 @@ jobs:
           $folderName    = "TimesheetDevTestMigrationCM"
           $projectName   = "TimesheetMigration"
           $tempTable     = "TempHex_$([System.Guid]::NewGuid().ToString('N'))"
-
           # 3. Read and hex‑encode ISPAC
           try {
               $fileBytes = [System.IO.File]::ReadAllBytes($ispacPath)
@@ -155,7 +161,6 @@ jobs:
               Write-Error "Failed to read ISPAC or convert to hex: $_"
               exit 1
           }
-
           # 4. Create temporary SQL file to insert hex into temp table
           $tempSql = Join-Path $env:TEMP "create_temp_$([System.Guid]::NewGuid().ToString('N')).sql"
           $createTableSql = @"
@@ -166,7 +171,6 @@ jobs:
           "@
           $createTableSql | Out-File -FilePath $tempSql -Encoding utf8
           Write-Host "Created temporary SQL file for hex insertion: $tempSql"
-
           # 5. Execute the script using sqlcmd (SQL Authentication) via ngrok
           Write-Host "Inserting hex string into temp table using sqlcmd..."
           sqlcmd -b `
@@ -179,7 +183,6 @@ jobs:
               exit 1
           }
           Write-Host "Hex string inserted into temporary table."
-
           # 6. Build the T‑SQL script for the helper job (reads hex from table)
           $deployScript = @"
           USE SSISDB;
@@ -195,9 +198,7 @@ jobs:
               @project_name = N'$projectName',
               @project_stream = @project_stream;
           "@
-
           $helperJobName = "${{ vars.SQL_JOB_NAME }}_Deploy_Helper"
-
           # 7. Create and start the helper job (T‑SQL step)
           $createJobSql = @"
           USE [msdb];
@@ -218,7 +219,6 @@ jobs:
               @server_name = N'(local)';
           EXEC dbo.sp_start_job @job_name = N'$helperJobName';
           "@
-
           $connStrMsdb = "Data Source=$tunnelAddress;Initial Catalog=msdb;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
           $conn2 = New-Object System.Data.SqlClient.SqlConnection($connStrMsdb)
           try {
@@ -233,7 +233,6 @@ jobs:
           } finally {
               if ($conn2.State -eq 'Open') { $conn2.Close() }
           }
-
           # 8. Wait for job to complete
           $isRunningSql = @"
           USE [msdb];
@@ -282,7 +281,6 @@ jobs:
               Write-Error "Helper job did not finish within $maxWaitSeconds seconds."
               exit 1
           }
-
           # 9. Get outcome from sysjobhistory
           $statusConn = New-Object System.Data.SqlClient.SqlConnection($connStrMsdb)
           try {
@@ -345,7 +343,6 @@ jobs:
           } finally {
               if ($statusConn.State -eq 'Open') { $statusConn.Close() }
           }
-
           # 10. Clean up helper job and temp table
           $cleanupSql = @"
           USE [msdb];
@@ -368,13 +365,10 @@ jobs:
           } finally {
               if ($cleanConn.State -eq 'Open') { $cleanConn.Close() }
           }
-
           # 11. Verification skipped – helper job succeeded, so project is deployed.
           Write-Host "Project '$projectName' deployed successfully (verified by helper job success)."
-
           # Clean up temp file
           Remove-Item $tempSql -Force -ErrorAction SilentlyContinue
-
           Write-Host "SUCCESS: SSIS project deployed."
 
       # ==================== CREATE PERMANENT SCHEDULED JOB ====================
@@ -389,15 +383,12 @@ jobs:
           $packageName   = "TimesheetMigrationPipeline.dtsx"
           $databaseName  = "$env:DATABASE_NAME"
           $executionJobName = "${{ vars.SQL_JOB_NAME }}"
-
           $jobSql = @"
           USE [msdb];
-
           IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$executionJobName')
           BEGIN
               EXEC dbo.sp_delete_job @job_name = N'$executionJobName', @delete_unused_schedule=1;
           END
-
           DECLARE @jobId BINARY(16);
           EXEC dbo.sp_add_job
               @job_name = N'$executionJobName',
@@ -406,14 +397,12 @@ jobs:
               @category_name = N'[Uncategorized (Local)]',
               @owner_login_name = N'sa',
               @job_id = @jobId OUTPUT;
-
           DECLARE @run_command NVARCHAR(MAX);
           SET @run_command = N'
           DECLARE @folder_name NVARCHAR(128) = N''$folderName'';
           DECLARE @project_name NVARCHAR(128) = N''$projectName'';
           DECLARE @package_name NVARCHAR(128) = N''$packageName'';
           DECLARE @execution_id BIGINT;
-
           -- Overlap guard: skip if this package already has an execution in flight.
           -- status: 2=running, 5=pending, 8=stopping.
           DECLARE @already_running INT;
@@ -423,7 +412,6 @@ jobs:
             AND project_name = @project_name
             AND package_name = @package_name
             AND status IN (2,5,8);
-
           IF @already_running > 0
           BEGIN
               DECLARE @skipBatchId INT = NEXT VALUE FOR $databaseName.dbo.BatchIDSequence;
@@ -435,7 +423,6 @@ jobs:
           ELSE
           BEGIN
               DECLARE @runBatchId INT = NEXT VALUE FOR $databaseName.dbo.BatchIDSequence;
-
               EXEC [SSISDB].[catalog].[create_execution]
                   @folder_name = @folder_name,
                   @project_name = @project_name,
@@ -448,18 +435,15 @@ jobs:
                   @parameter_name = N''LOGGING_LEVEL'',
                   @parameter_value = 1;
               EXEC [SSISDB].[catalog].[start_execution] @execution_id;
-
               -- Log a RUNNING row as soon as the execution kicks off.
               INSERT INTO $databaseName.dbo.AuditLog
                   (BatchID, TableName, OperationType, StatusCode, RowsInserted, RowsUpdated, RowsDeleted, HostName, ApplicationName, EventDateTime, ErrorMessage)
               VALUES
                   (@runBatchId, N''$packageName'', N''PACKAGE_EXECUTION'', N''RUNNING'', 0, 0, 0, HOST_NAME(), N''SQLAgentJob'', GETDATE(), NULL);
-
               -- Poll SSISDB for the execution to finish before logging the outcome.
               DECLARE @exec_status SMALLINT = 2;
               DECLARE @waited INT = 0;
               DECLARE @maxWait INT = 300;
-
               WHILE @exec_status IN (2,5,8) AND @waited < @maxWait
               BEGIN
                   WAITFOR DELAY ''00:00:05'';
@@ -468,10 +452,8 @@ jobs:
                   FROM SSISDB.catalog.executions
                   WHERE execution_id = @execution_id;
               END
-
               DECLARE @auditStatus NVARCHAR(20);
               DECLARE @auditError NVARCHAR(MAX) = NULL;
-
               IF @exec_status = 7
               BEGIN
                   SET @auditStatus = N''SUCCESS'';
@@ -494,29 +476,24 @@ jobs:
                   IF @auditError IS NULL
                       SET @auditError = N''Package execution ended with status '' + CAST(@exec_status AS NVARCHAR(10)) + N'' (no error message found in operation_messages).'';
               END
-
               -- Log the final outcome row, correlated to the RUNNING row via BatchID.
               INSERT INTO $databaseName.dbo.AuditLog
                   (BatchID, TableName, OperationType, StatusCode, RowsInserted, RowsUpdated, RowsDeleted, HostName, ApplicationName, EventDateTime, ErrorMessage)
               VALUES
                   (@runBatchId, N''$packageName'', N''PACKAGE_EXECUTION'', @auditStatus, 0, 0, 0, HOST_NAME(), N''SQLAgentJob'', GETDATE(), @auditError);
-
               IF @auditStatus = N''FAILED''
                   RAISERROR(N''SSIS package execution failed. See AuditLog for details.'', 16, 1);
           END
           ';
-
           EXEC dbo.sp_add_jobstep
               @job_name = N'$executionJobName',
               @step_name = N'Execute SSIS Package',
               @subsystem = N'TSQL',
               @command = @run_command,
               @retry_attempts = 0;
-
           EXEC dbo.sp_add_jobserver
               @job_name = N'$executionJobName',
               @server_name = N'(local)';
-
           EXEC dbo.sp_add_jobschedule
               @job_name = N'$executionJobName',
               @name = N'Every30Seconds',
@@ -528,7 +505,6 @@ jobs:
               @active_start_time = 000000,
               @active_end_time = 235959;
           "@
-
           $connStr = "Data Source=$tunnelAddress;Initial Catalog=msdb;User ID=$dbUser;Password=$dbPassword;TrustServerCertificate=True;Encrypt=False;"
           $connection = New-Object System.Data.SqlClient.SqlConnection($connStr)
           try {
