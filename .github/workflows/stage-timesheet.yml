@@ -384,7 +384,7 @@ jobs:
           $tunnelAddress = "$env:SQL_SERVER,$env:SQL_PORT"
           $dbUser        = "$env:SQL_USERNAME"
           $dbPassword    = "$env:SQL_PASSWORD"
-          $folderName    = "TimesheetDevTestMigration"
+          $folderName    = "TimesheetDevTestMigrationCM"
           $projectName   = "TimesheetMigration"
           $packageName   = "TimesheetMigrationPipeline.dtsx"
           $executionJobName = "${{ vars.SQL_JOB_NAME }}"
