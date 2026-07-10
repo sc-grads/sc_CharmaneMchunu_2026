@@ -26,7 +26,7 @@
           <SSIS:Property SSIS:Name="CreatorComputerName">DESKTOP-CHGLJR8</SSIS:Property>
           <SSIS:Property SSIS:Name="Description">
           </SSIS:Property>
-          <SSIS:Property SSIS:Name="PasswordVerifier" SSIS:Sensitive="1">AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAYQfWdxJpS020D86eZbsB1QAAAAACAAAAAAAQZgAAAAEAACAAAACN+qfmWLdJg2xtoD++VaUclSIUmsb8IngP2BRs27sArgAAAAAOgAAAAAIAACAAAAD4bvdoyx2JQw63O2TFf5dzxqpLADtZwe1arD5kqtu15ZAAAADmiLgiYgk16Q56PXtkb3kTLjYmRfl9n7Cz7vQQqiwnnMN8TaCAFNJV50FxsrU7xwVuiLW3MrIQ90oUb2Xy11fZawH2lsIFk9iLQkPS0LMp/iwkGjYYE6muDbmHyWzuwTTBw5K7kfdvd//TWSBfr4zJacOeJpk4DTFd+UkPedJeKWGHW32K6J1ZaK4nD6taO01AAAAAI5NrLjnXzlanef7VhnlotYgjnx3JstdcQBee5rYUKF303IEN6PVnHc1/T3HprBtxNx+NnMIw9LU0dZV5DpuTXQ==</SSIS:Property>
+          <SSIS:Property SSIS:Name="PasswordVerifier" SSIS:Sensitive="1">AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAYQfWdxJpS020D86eZbsB1QAAAAACAAAAAAAQZgAAAAEAACAAAACyXjyp08SDWmOsEDz/UQ97gd7yx/N35ODLtEZxTki5AwAAAAAOgAAAAAIAACAAAACrhN7cKq0e+QLtv32hEAJiXAXoYYVp3YNA+YQbW9IVGpAAAADbxGyFcjLsaYgyFJkJ+dHzaFf9hNbmAGM1fQ5pWdegPWqS5SnLBbdYssX1gHb4IbZQxIc9JFEkGwKmlLB9YK4CFlqterOE4DyyjoI5Pl/FExhw+QufXQJYUcpfwBf0Mx696IfYTk7o4/3gmgm7eEgjcsHCmMQkZiQ2dYROA1yZrsBlTsYVjDY01cj00ETYxZFAAAAAiwMUEG/c0HxiVRSv7S58MGPgEdHWjfn82CPv8iHRfpUtnCL6iuOAfviM/mwgKWImcLe8Dkme7nL8TEyTQlRc0A==</SSIS:Property>
           <SSIS:Property SSIS:Name="FormatVersion">1</SSIS:Property>
         </SSIS:Properties>
         <SSIS:Packages>
@@ -42,10 +42,10 @@
                 <SSIS:Property SSIS:Name="Name">TimesheetMigrationPipeline</SSIS:Property>
                 <SSIS:Property SSIS:Name="VersionMajor">1</SSIS:Property>
                 <SSIS:Property SSIS:Name="VersionMinor">0</SSIS:Property>
-                <SSIS:Property SSIS:Name="VersionBuild">51</SSIS:Property>
+                <SSIS:Property SSIS:Name="VersionBuild">53</SSIS:Property>
                 <SSIS:Property SSIS:Name="VersionComments">
                 </SSIS:Property>
-                <SSIS:Property SSIS:Name="VersionGUID">{B1CD7D30-F36B-434E-958F-73DD476B1599}</SSIS:Property>
+                <SSIS:Property SSIS:Name="VersionGUID">{E74D0B6B-E622-4EAA-9A50-1C4C4725DA3B}</SSIS:Property>
                 <SSIS:Property SSIS:Name="PackageFormatVersion">8</SSIS:Property>
                 <SSIS:Property SSIS:Name="Description">
                 </SSIS:Property>
@@ -631,7 +631,7 @@
         <ConnectionProviderMappings />
         <ConnectionSecurityMappings />
         <DatabaseStorageLocations />
-        <TargetServerVersion>SQLServer2019</TargetServerVersion>
+        <TargetServerVersion>SQLServer2022</TargetServerVersion>
         <AzureMode>false</AzureMode>
         <LinkedAzureTenantId />
         <LinkedAzureAccountId />
