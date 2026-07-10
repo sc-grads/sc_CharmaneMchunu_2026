@@ -387,6 +387,7 @@ jobs:
           $folderName    = "TimesheetDevTestMigrationCM"
           $projectName   = "TimesheetMigration"
           $packageName   = "TimesheetMigrationPipeline.dtsx"
+          $databaseName  = "$env:DATABASE_NAME"
           $executionJobName = "${{ vars.SQL_JOB_NAME }}"
 
           $jobSql = @"
@@ -408,19 +409,101 @@ jobs:
 
           DECLARE @run_command NVARCHAR(MAX);
           SET @run_command = N'
+          DECLARE @folder_name NVARCHAR(128) = N''$folderName'';
+          DECLARE @project_name NVARCHAR(128) = N''$projectName'';
+          DECLARE @package_name NVARCHAR(128) = N''$packageName'';
           DECLARE @execution_id BIGINT;
-          EXEC [SSISDB].[catalog].[create_execution]
-              @folder_name = N''$folderName'',
-              @project_name = N''$projectName'',
-              @package_name = N''$packageName'',
-              @use32bitruntime = False,
-              @execution_id = @execution_id OUTPUT;
-          EXEC [SSISDB].[catalog].[set_execution_parameter_value]
-              @execution_id,
-              @object_type = 50,
-              @parameter_name = N''LOGGING_LEVEL'',
-              @parameter_value = 1;
-          EXEC [SSISDB].[catalog].[start_execution] @execution_id;
+
+          -- Overlap guard: skip if this package already has an execution in flight.
+          -- status: 2=running, 5=pending, 8=stopping.
+          DECLARE @already_running INT;
+          SELECT @already_running = COUNT(*)
+          FROM SSISDB.catalog.executions
+          WHERE folder_name = @folder_name
+            AND project_name = @project_name
+            AND package_name = @package_name
+            AND status IN (2,5,8);
+
+          IF @already_running > 0
+          BEGIN
+              DECLARE @skipBatchId INT = NEXT VALUE FOR $databaseName.dbo.BatchIDSequence;
+              INSERT INTO $databaseName.dbo.AuditLog
+                  (BatchID, TableName, OperationType, StatusCode, RowsInserted, RowsUpdated, RowsDeleted, HostName, ApplicationName, EventDateTime, ErrorMessage)
+              VALUES
+                  (@skipBatchId, N''$packageName'', N''PACKAGE_EXECUTION'', N''SKIPPED'', 0, 0, 0, HOST_NAME(), N''SQLAgentJob'', GETDATE(), N''Skipped: a previous execution of this package is still running.'');
+          END
+          ELSE
+          BEGIN
+              DECLARE @runBatchId INT = NEXT VALUE FOR $databaseName.dbo.BatchIDSequence;
+
+              EXEC [SSISDB].[catalog].[create_execution]
+                  @folder_name = @folder_name,
+                  @project_name = @project_name,
+                  @package_name = @package_name,
+                  @use32bitruntime = False,
+                  @execution_id = @execution_id OUTPUT;
+              EXEC [SSISDB].[catalog].[set_execution_parameter_value]
+                  @execution_id,
+                  @object_type = 50,
+                  @parameter_name = N''LOGGING_LEVEL'',
+                  @parameter_value = 1;
+              EXEC [SSISDB].[catalog].[start_execution] @execution_id;
+
+              -- Log a RUNNING row as soon as the execution kicks off.
+              INSERT INTO $databaseName.dbo.AuditLog
+                  (BatchID, TableName, OperationType, StatusCode, RowsInserted, RowsUpdated, RowsDeleted, HostName, ApplicationName, EventDateTime, ErrorMessage)
+              VALUES
+                  (@runBatchId, N''$packageName'', N''PACKAGE_EXECUTION'', N''RUNNING'', 0, 0, 0, HOST_NAME(), N''SQLAgentJob'', GETDATE(), NULL);
+
+              -- Poll SSISDB for the execution to finish before logging the outcome.
+              DECLARE @exec_status SMALLINT = 2;
+              DECLARE @waited INT = 0;
+              DECLARE @maxWait INT = 300;
+
+              WHILE @exec_status IN (2,5,8) AND @waited < @maxWait
+              BEGIN
+                  WAITFOR DELAY ''00:00:05'';
+                  SET @waited = @waited + 5;
+                  SELECT @exec_status = [status]
+                  FROM SSISDB.catalog.executions
+                  WHERE execution_id = @execution_id;
+              END
+
+              DECLARE @auditStatus NVARCHAR(20);
+              DECLARE @auditError NVARCHAR(MAX) = NULL;
+
+              IF @exec_status = 7
+              BEGIN
+                  SET @auditStatus = N''SUCCESS'';
+                  SET @auditError = N''SSIS package executed successfully in '' + CAST(@waited AS NVARCHAR(10)) + N'' second(s).'';
+              END
+              ELSE IF @exec_status IN (2,5,8)
+              BEGIN
+                  -- Polling gave up before the package reported a final status.
+                  -- Logged as FAILED per policy, but the package may still be running in SSISDB.
+                  SET @auditStatus = N''FAILED'';
+                  SET @auditError = N''Timed out after '' + CAST(@waited AS NVARCHAR(10)) + N'' second(s) waiting for the package to finish. Execution ID '' + CAST(@execution_id AS NVARCHAR(20)) + N'' may still be running; check SSISDB.catalog.executions.'';
+              END
+              ELSE
+              BEGIN
+                  SET @auditStatus = N''FAILED'';
+                  SELECT TOP 1 @auditError = message
+                  FROM SSISDB.catalog.operation_messages
+                  WHERE operation_id = @execution_id AND message_type = 120
+                  ORDER BY message_time DESC;
+                  IF @auditError IS NULL
+                      SET @auditError = N''Package execution ended with status '' + CAST(@exec_status AS NVARCHAR(10)) + N'' (no error message found in operation_messages).'';
+              END
+
+              -- Log the final outcome row, correlated to the RUNNING row via BatchID.
+              INSERT INTO $databaseName.dbo.AuditLog
+                  (BatchID, TableName, OperationType, StatusCode, RowsInserted, RowsUpdated, RowsDeleted, HostName, ApplicationName, EventDateTime, ErrorMessage)
+              VALUES
+                  (@runBatchId, N''$packageName'', N''PACKAGE_EXECUTION'', @auditStatus, 0, 0, 0, HOST_NAME(), N''SQLAgentJob'', GETDATE(), @auditError);
+
+              IF @auditStatus = N''FAILED''
+                  RAISERROR(N''SSIS package execution failed. See AuditLog for details.'', 16, 1);
+          END
           ';
 
           EXEC dbo.sp_add_jobstep
