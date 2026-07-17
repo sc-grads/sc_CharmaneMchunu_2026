@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy Database and SQL Agent
+    name: Timesheet Automation(DevTest)
     runs-on: windows-latest
 
     environment: staging
@@ -119,7 +119,7 @@ jobs:
       - name: Build SSIS Project to ISPAC
         shell: powershell
         run: |
-          $projectPath = "SSIS-Project\TimesheetMigration\TimesheetMigration.dtproj"
+          $projectPath = "TimesheetMigration-Project\TimesheetPipelineMigration\TimesheetPipelineMigration.dtproj"
           if (-not (Test-Path $projectPath)) {
             Write-Error "Project file not found: $projectPath"
             exit 1
@@ -135,10 +135,10 @@ jobs:
         shell: pwsh
         run: |
           # 1. Locate ISPAC
-          $ispacPath = "${{ github.workspace }}\SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
+          $ispacPath = "${{ github.workspace }}\TimesheetMigration-Project\TimesheetPipelineMigration\bin\Development\TimesheetPipelineMigration.ispac"
           if (-not (Test-Path -Path $ispacPath)) {
               Write-Host "Primary path not found. Checking alternative..."
-              $ispacPath = "${{ github.workspace }}\..\SSIS-Project\TimesheetMigration\bin\Development\TimesheetMigration.ispac"
+              $ispacPath = "${{ github.workspace }}\..\TimesheetMigration-Project\TimesheetPipelineMigration\bin\Development\TimesheetPipelineMigration.ispac"
               $ispacPath = [System.IO.Path]::GetFullPath($ispacPath)
           }
           if (-not (Test-Path -Path $ispacPath)) {
@@ -151,7 +151,7 @@ jobs:
           $dbUser        = "$env:SQL_USERNAME"
           $dbPassword    = "$env:SQL_PASSWORD"
           $folderName    = "TimesheetDevTestMigrationCM"
-          $projectName   = "TimesheetMigration"
+          $projectName   = "TimesheetPipelineMigration"
           $tempTable     = "TempHex_$([System.Guid]::NewGuid().ToString('N'))"
           # 3. Read and hex‑encode ISPAC
           try {
@@ -379,14 +379,33 @@ jobs:
           $dbUser        = "$env:SQL_USERNAME"
           $dbPassword    = "$env:SQL_PASSWORD"
           $folderName    = "TimesheetDevTestMigrationCM"
-          $projectName   = "TimesheetMigration"
-          $packageName   = "TimesheetMigrationPipeline.dtsx"
+          $projectName   = "TimesheetPipelineMigration"
+          $packageName   = "TimesheetPipeline.dtsx"
           $databaseName  = "$env:DATABASE_NAME"
           $executionJobName = "${{ vars.SQL_JOB_NAME }}"
           $jobSql = @"
           USE [msdb];
+          -- If a previous deployment's job is still mid-run (e.g. this deploy landed
+          -- while the 30-second schedule had a package execution in flight), stop it
+          -- before we delete and recreate the job. Deleting a running job leaves the
+          -- in-flight SSIS execution orphaned with no job to report back to.
           IF EXISTS (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$executionJobName')
           BEGIN
+              DECLARE @existingJobId UNIQUEIDENTIFIER = (SELECT job_id FROM msdb.dbo.sysjobs WHERE name = N'$executionJobName');
+              IF EXISTS (
+                  SELECT 1
+                  FROM msdb.dbo.sysjobactivity ja
+                  WHERE ja.job_id = @existingJobId
+                    AND ja.start_execution_date IS NOT NULL
+                    AND ja.stop_execution_date IS NULL
+                    AND ja.session_id = (SELECT MAX(session_id) FROM msdb.dbo.syssessions)
+              )
+              BEGIN
+                  PRINT 'Existing job ''$executionJobName'' is currently running - stopping it before redeploy.';
+                  EXEC msdb.dbo.sp_stop_job @job_name = N'$executionJobName';
+                  -- Give it a moment to actually stop before we delete it out from under itself.
+                  WAITFOR DELAY '00:00:03';
+              END
               EXEC dbo.sp_delete_job @job_name = N'$executionJobName', @delete_unused_schedule=1;
           END
           DECLARE @jobId BINARY(16);
@@ -418,7 +437,7 @@ jobs:
               INSERT INTO $databaseName.dbo.AuditLog
                   (BatchID, TableName, OperationType, StatusCode, RowsInserted, RowsUpdated, RowsDeleted, HostName, ApplicationName, EventDateTime, ErrorMessage)
               VALUES
-                  (@skipBatchId, N''$packageName'', N''PACKAGE_EXECUTION'', N''SKIPPED'', 0, 0, 0, HOST_NAME(), N''SQLAgentJob'', GETDATE(), N''Skipped: a previous execution of this package is still running.'');
+                  (@skipBatchId, N''$packageName'', N''SKIP'', N''SKIPPED'', 0, 0, 0, HOST_NAME(), N''SQLAgentJob'', GETDATE(), N''Skipped: a previous execution of this package is still running.'');
           END
           ELSE
           BEGIN
@@ -435,11 +454,11 @@ jobs:
                   @parameter_name = N''LOGGING_LEVEL'',
                   @parameter_value = 1;
               EXEC [SSISDB].[catalog].[start_execution] @execution_id;
-              -- Log a RUNNING row as soon as the execution kicks off.
+              -- Log a START/RUNNING row as soon as the execution kicks off.
               INSERT INTO $databaseName.dbo.AuditLog
                   (BatchID, TableName, OperationType, StatusCode, RowsInserted, RowsUpdated, RowsDeleted, HostName, ApplicationName, EventDateTime, ErrorMessage)
               VALUES
-                  (@runBatchId, N''$packageName'', N''PACKAGE_EXECUTION'', N''RUNNING'', 0, 0, 0, HOST_NAME(), N''SQLAgentJob'', GETDATE(), NULL);
+                  (@runBatchId, N''$packageName'', N''START'', N''RUNNING'', 0, 0, 0, HOST_NAME(), N''SQLAgentJob'', GETDATE(), NULL);
               -- Poll SSISDB for the execution to finish before logging the outcome.
               DECLARE @exec_status SMALLINT = 2;
               DECLARE @waited INT = 0;
@@ -476,11 +495,11 @@ jobs:
                   IF @auditError IS NULL
                       SET @auditError = N''Package execution ended with status '' + CAST(@exec_status AS NVARCHAR(10)) + N'' (no error message found in operation_messages).'';
               END
-              -- Log the final outcome row, correlated to the RUNNING row via BatchID.
+              -- Log the final outcome row, correlated to the START row via BatchID.
               INSERT INTO $databaseName.dbo.AuditLog
                   (BatchID, TableName, OperationType, StatusCode, RowsInserted, RowsUpdated, RowsDeleted, HostName, ApplicationName, EventDateTime, ErrorMessage)
               VALUES
-                  (@runBatchId, N''$packageName'', N''PACKAGE_EXECUTION'', @auditStatus, 0, 0, 0, HOST_NAME(), N''SQLAgentJob'', GETDATE(), @auditError);
+                  (@runBatchId, N''$packageName'', N''COMPLETE'', @auditStatus, 0, 0, 0, HOST_NAME(), N''SQLAgentJob'', GETDATE(), @auditError);
               IF @auditStatus = N''FAILED''
                   RAISERROR(N''SSIS package execution failed. See AuditLog for details.'', 16, 1);
           END
