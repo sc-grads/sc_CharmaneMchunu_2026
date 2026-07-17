@@ -1,0 +1,1741 @@
+﻿<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="7/14/2026 8:58:15 PM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="DESKTOP-CHGLJR8"
+  DTS:CreatorName="DESKTOP-CHGLJR8\Charmaine Mchunu"
+  DTS:DTSID="{1A5B5489-CBB3-4DC8-90AC-AE293A00C2B9}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="17.0.1008.3"
+  DTS:LocaleID="7177"
+  DTS:ObjectName="TimesheetPipeline"
+  DTS:PackageType="5"
+  DTS:VersionBuild="67"
+  DTS:VersionGUID="{776D280A-39C9-4349-9BF3-917109390E44}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:ConnectionManagers>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[Excel Connection Manager]"
+      DTS:CreationName="EXCEL"
+      DTS:DelayValidation="True"
+      DTS:DTSID="{660ABCCC-5C2F-4038-B2A3-A674CA0BE81B}"
+      DTS:ObjectName="Excel Connection Manager">
+      <DTS:PropertyExpression
+        DTS:Name="ConnectionString">"Provider=Microsoft.ACE.OLEDB.16.0;Data Source=" + @[User::CurrentFilePath] + ";Extended Properties=\"Excel 12.0 Xml;HDR=NO\";"</DTS:PropertyExpression>
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectRetryCount="0"
+          DTS:ConnectRetryInterval="0"
+          DTS:ConnectionString="Provider=Microsoft.ACE.OLEDB.16.0;Data Source=C:\Timesheets\BuhleTimesheet\Buhle_Mukhuba_April_FinalWeek.xlsx;Extended Properties=&quot;EXCEL 12.0 XML;HDR=NO&quot;;" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[Excel Connection Manager 1]"
+      DTS:CreationName="EXCEL"
+      DTS:DelayValidation="True"
+      DTS:DTSID="{4BE59A83-14C6-433D-A143-C347123BE6B4}"
+      DTS:ObjectName="Excel Connection Manager 1">
+      <DTS:PropertyExpression
+        DTS:Name="ConnectionString">"Provider=Microsoft.ACE.OLEDB.16.0;Data Source=" + @[User::CurrentFilePath] + ";Extended Properties=\"Excel 12.0 Xml;HDR=NO\";"</DTS:PropertyExpression>
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectRetryCount="0"
+          DTS:ConnectRetryInterval="0"
+          DTS:ConnectionString="Provider=Microsoft.ACE.OLEDB.16.0;Data Source=C:\Timesheets\BuhleTimesheet\Buhle_Mukhuba_April_FinalWeek.xlsx;Extended Properties=&quot;EXCEL 12.0 XML;HDR=NO&quot;;" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[LocalHost.master]"
+      DTS:CreationName="OLEDB"
+      DTS:DTSID="{1D77EA3E-5CA3-4320-9FDB-ADD125B1B002}"
+      DTS:ObjectName="LocalHost.master">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectRetryCount="1"
+          DTS:ConnectRetryInterval="5"
+          DTS:ConnectionString="Data Source=.;Initial Catalog=master;Provider=SQLOLEDB.1;Integrated Security=SSPI;Application Name=SSIS-TimesheetPipeline-{1D77EA3E-5CA3-4320-9FDB-ADD125B1B002}LocalHost.master;Auto Translate=False;" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[LocalHost.MigrationDB]"
+      DTS:CreationName="OLEDB"
+      DTS:DTSID="{EA351801-EC7B-4892-933A-21B2BF38CDD4}"
+      DTS:ObjectName="LocalHost.MigrationDB">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectRetryCount="1"
+          DTS:ConnectRetryInterval="5"
+          DTS:ConnectionString="Data Source=.;Initial Catalog=MigrationDB;Provider=MSOLEDBSQL.1;Integrated Security=SSPI;Application Name=SSIS-TimesheetPipeline-{EA351801-EC7B-4892-933A-21B2BF38CDD4}LocalHost.MigrationDB;Auto Translate=False;" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[LocalHost.TimesheetCMDB]"
+      DTS:CreationName="OLEDB"
+      DTS:DTSID="{564628C3-12EF-4931-8F46-AF6F516D1DFE}"
+      DTS:ObjectName="LocalHost.TimesheetCMDB">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectRetryCount="1"
+          DTS:ConnectRetryInterval="5"
+          DTS:ConnectionString="Data Source=.;Initial Catalog=TimesheetCMDB;Provider=SQLOLEDB.1;Integrated Security=SSPI;Application Name=SSIS-TimesheetPipeline-{564628C3-12EF-4931-8F46-AF6F516D1DFE}LocalHost.TimesheetCMDB;Auto Translate=False;" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+  </DTS:ConnectionManagers>
+  <DTS:Variables>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{1E84C386-8576-4BEB-8FEE-C311DE2245F0}"
+      DTS:IncludeInDebugDump="6789"
+      DTS:Namespace="User"
+      DTS:ObjectName="CurrentEmployeeID">
+      <DTS:VariableValue
+        DTS:DataType="3">0</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{F6BF616C-E395-45C6-93B4-6C29E9B2C653}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="TOKEN(TOKEN(@[User::CurrentFilePath], &quot;\\&quot;, TOKENCOUNT(@[User::CurrentFilePath], &quot;\\&quot;)), &quot;.&quot;, 1)"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="CurrentFileNameNoExt">
+      <DTS:VariableValue
+        DTS:DataType="8">Buhle_Mukhuba_April_FinalWeek</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{669666F3-D725-46D7-9615-6B1ED203E82D}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="CurrentFilePath">
+      <DTS:VariableValue
+        DTS:DataType="8">C:\Timesheets\BuhleTimesheet\Buhle_Mukhuba_April_FinalWeek.xlsx</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{3E22EBBF-3EFD-4DAB-A00E-22CC738727E6}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="TOKEN(@[User::CurrentFileNameNoExt], &quot;_&quot;, 1)"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="EmployeeFirstName">
+      <DTS:VariableValue
+        DTS:DataType="8">Buhle</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{0D770740-DD16-40FE-A35C-54A568DA234F}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="TOKEN(@[User::CurrentFileNameNoExt], &quot;_&quot;, 2)"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="EmployeeLastName">
+      <DTS:VariableValue
+        DTS:DataType="8">Mukhuba</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{76A91870-0C88-4E6B-9D27-C16ED66E3D19}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;SELECT * FROM [&quot; + @[User::SheetName] + &quot;$A9:J1000]&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="ExcelSqlCommand">
+      <DTS:VariableValue
+        DTS:DataType="8">SELECT * FROM [Apr$A9:J1000]</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{07B64F3E-D289-4C4A-B81A-CD85A254D5F1}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="SUBSTRING(TOKEN(@[User::CurrentFileNameNoExt], &quot;_&quot;, 3), 1, 3)"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="SheetName">
+      <DTS:VariableValue
+        DTS:DataType="8">Apr</DTS:VariableValue>
+    </DTS:Variable>
+  </DTS:Variables>
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\Load data"
+      DTS:CreationName="STOCK:SEQUENCE"
+      DTS:Description="Sequence Container"
+      DTS:DTSID="{B4E23B80-7532-4157-B7B4-B7F1858CDEAB}"
+      DTS:ExecutableType="STOCK:SEQUENCE"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Load data">
+      <DTS:Variables />
+      <DTS:Executables>
+        <DTS:Executable
+          DTS:refId="Package\Load data\Load"
+          DTS:CreationName="Microsoft.ExecuteSQLTask"
+          DTS:Description="Execute SQL Task"
+          DTS:DTSID="{7C6E5A82-542F-48E6-8251-9D7093D21F8E}"
+          DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+          DTS:LocaleID="-1"
+          DTS:ObjectName="Load"
+          DTS:ThreadHint="0">
+          <DTS:Variables />
+          <DTS:ObjectData>
+            <SQLTask:SqlTaskData
+              SQLTask:Connection="{564628C3-12EF-4931-8F46-AF6F516D1DFE}"
+              SQLTask:SqlStatementSource="SET NOCOUNT ON;&#xA;&#xA;BEGIN TRY&#xA;    DECLARE @BatchID INT;&#xA;    DECLARE @TotalStagingRecords INT;&#xA;    DECLARE @InsertedCount INT = 0;&#xA;    DECLARE @LeaveInsertedCount INT = 0;&#xA;    DECLARE @UpdatedCount INT = 0;&#xA;    DECLARE @StartTime DATETIME = GETDATE();&#xA;    DECLARE @EndTime DATETIME;&#xA;    DECLARE @Context VARBINARY(128);&#xA;&#xA;    -- Nothing to do? Exit quietly, same as the script task's early return.&#xA;    SELECT @TotalStagingRecords = COUNT(*)&#xA;    FROM dbo.StagingTimesheet&#xA;    WHERE IsProcessed = 0;&#xA;&#xA;    IF @TotalStagingRecords = 0&#xA;    BEGIN&#xA;        PRINT 'No unprocessed staging records found. Exiting.';&#xA;        RETURN;&#xA;    END&#xA;&#xA;    -- Generate BatchID from SEQUENCE&#xA;    SET @BatchID = NEXT VALUE FOR dbo.BatchIDSequence;&#xA;    SET @Context = CAST(@BatchID AS VARBINARY(128));&#xA;    SET CONTEXT_INFO @Context;&#xA;&#xA;    -- LOG: Migration STARTED&#xA;    INSERT INTO dbo.AuditLog (&#xA;        BatchID, TableName, OperationType, StatusCode,&#xA;        RowsInserted, RowsUpdated, RowsDeleted,&#xA;        HostName, ApplicationName, EventDateTime&#xA;    )&#xA;    VALUES (&#xA;        @BatchID, 'Migration', 'START', 'RUNNING',&#xA;        0, 0, 0,&#xA;        HOST_NAME(), 'SSIS_ETL', GETDATE()&#xA;    );&#xA;&#xA;    BEGIN TRANSACTION;&#xA;&#xA;    -- =====================================================&#xA;    -- STEP 1: Mark the new staging records with this run's&#xA;    -- BatchID FIRST, so Timesheet can be filtered on it below.&#xA;    -- =====================================================&#xA;    UPDATE dbo.StagingTimesheet&#xA;    SET IsProcessed = 1, ProcessedDate = GETDATE(), BatchID = @BatchID&#xA;    WHERE IsProcessed = 0;&#xA;&#xA;    SET @UpdatedCount = @@ROWCOUNT;&#xA;&#xA;    -- =====================================================&#xA;    -- STEP 2: REBUILD Timesheet from ONLY this run's newly&#xA;    -- processed batch (not the full staging history).&#xA;    -- Truncate wipes whatever was loaded by the previous run.&#xA;    -- =====================================================&#xA;    TRUNCATE TABLE dbo.Timesheet;&#xA;&#xA;    INSERT INTO dbo.Timesheet (&#xA;        EmployeeID, ClientID, Date, DayOfWeek,&#xA;        Description, BillableType, Duration,&#xA;        StartTime, EndTime, Comments, CreatedDate, ModifiedDate&#xA;    )&#xA;    SELECT&#xA;        s.EmployeeID,&#xA;        c.ClientID,&#xA;        TRY_CAST(s.Date AS DATE) AS Date,&#xA;        s.DayOfWeek,&#xA;        NULLIF(s.Description, '') AS Description,&#xA;        NULLIF(s.BillableType, '') AS BillableType,&#xA;        CONVERT(VARCHAR(8), TRY_CAST(s.TotalHours AS TIME), 108) AS Duration,&#xA;        TRY_CAST(s.StartTime AS TIME) AS StartTime,&#xA;        TRY_CAST(s.EndTime AS TIME) AS EndTime,&#xA;        NULLIF(s.Comments, '') AS Comments,&#xA;        GETDATE() AS CreatedDate,&#xA;        NULL AS ModifiedDate&#xA;    FROM dbo.StagingTimesheet s&#xA;    LEFT JOIN dbo.Client c ON c.ClientName = s.Client&#xA;    WHERE s.BatchID = @BatchID&#xA;      AND s.IsProcessed = 1&#xA;      AND TRY_CAST(s.Date AS DATE) IS NOT NULL&#xA;      AND UPPER(LTRIM(RTRIM(s.DayOfWeek))) NOT IN ('SATURDAY', 'SUNDAY')&#xA;      AND NOT EXISTS (&#xA;          SELECT 1&#xA;          FROM dbo.LeaveCategory lc&#xA;          WHERE UPPER(LTRIM(RTRIM(s.Description))) = UPPER(LTRIM(RTRIM(lc.SourceText)))&#xA;            AND lc.LeaveType NOT IN ('Public Holiday', 'Family Responsibility Leave')&#xA;      );&#xA;&#xA;    SET @InsertedCount = @@ROWCOUNT;&#xA;&#xA;    -- =====================================================&#xA;    -- STEP 3: INSERT into Leave for this batch only&#xA;    -- (excludes Public Holiday / Family Responsibility Leave)&#xA;    -- =====================================================&#xA;    INSERT INTO dbo.[Leave] (&#xA;        EmployeeID, LeaveType, StartDate, EndDate, LeaveDays,&#xA;        Comments, CreatedDate, ModifiedDate&#xA;    )&#xA;    SELECT&#xA;        s.EmployeeID,&#xA;        lc.LeaveType,&#xA;        TRY_CAST(s.Date AS DATE) AS StartDate,&#xA;        TRY_CAST(s.Date AS DATE) AS EndDate,&#xA;        CASE&#xA;            WHEN TRY_CAST(s.TotalHours AS DECIMAL(10,2)) IS NOT NULL&#xA;            THEN TRY_CAST(s.TotalHours AS DECIMAL(10,2))&#xA;            ELSE 1&#xA;        END AS LeaveDays,&#xA;        NULLIF(s.Comments, '') AS Comments,&#xA;        GETDATE() AS CreatedDate,&#xA;        NULL AS ModifiedDate&#xA;    FROM dbo.StagingTimesheet s&#xA;    INNER JOIN dbo.LeaveCategory lc&#xA;        ON UPPER(LTRIM(RTRIM(s.Description))) = UPPER(LTRIM(RTRIM(lc.SourceText)))&#xA;    WHERE s.BatchID = @BatchID&#xA;      AND s.IsProcessed = 1&#xA;      AND TRY_CAST(s.Date AS DATE) IS NOT NULL&#xA;      AND lc.LeaveType NOT IN ('Public Holiday', 'Family Responsibility Leave');&#xA;&#xA;    SET @LeaveInsertedCount = @@ROWCOUNT;&#xA;&#xA;    COMMIT TRANSACTION;&#xA;&#xA;    SET @EndTime = GETDATE();&#xA;&#xA;    -- =====================================================&#xA;    -- STEP 4: LOG results (Timesheet / Leave / Staging update)&#xA;    -- =====================================================&#xA;    IF @InsertedCount &gt; 0&#xA;        INSERT INTO dbo.AuditLog (BatchID, TableName, OperationType, StatusCode, RowsInserted, RowsUpdated, RowsDeleted, HostName, ApplicationName, EventDateTime)&#xA;        VALUES (@BatchID, 'Timesheet', 'INSERT', 'SUCCESS', @InsertedCount, 0, 0, HOST_NAME(), 'SSIS_ETL', GETDATE());&#xA;&#xA;    IF @LeaveInsertedCount &gt; 0&#xA;        INSERT INTO dbo.AuditLog (BatchID, TableName, OperationType, StatusCode, RowsInserted, RowsUpdated, RowsDeleted, HostName, ApplicationName, EventDateTime)&#xA;        VALUES (@BatchID, 'Leave', 'INSERT', 'SUCCESS', @LeaveInsertedCount, 0, 0, HOST_NAME(), 'SSIS_ETL', GETDATE());&#xA;&#xA;    IF @UpdatedCount &gt; 0&#xA;        INSERT INTO dbo.AuditLog (BatchID, TableName, OperationType, StatusCode, RowsInserted, RowsUpdated, RowsDeleted, HostName, ApplicationName, EventDateTime)&#xA;        VALUES (@BatchID, 'StagingTimesheet', 'UPDATE', 'SUCCESS', 0, @UpdatedCount, 0, HOST_NAME(), 'SSIS_ETL', GETDATE());&#xA;&#xA;    -- LOG: Migration COMPLETED&#xA;    INSERT INTO dbo.AuditLog (BatchID, TableName, OperationType, StatusCode, RowsInserted, RowsUpdated, RowsDeleted, HostName, ApplicationName, EventDateTime)&#xA;    VALUES (@BatchID, 'Migration', 'COMPLETE', 'SUCCESS', @InsertedCount + @LeaveInsertedCount, @UpdatedCount, 0, HOST_NAME(), 'SSIS_ETL', GETDATE());&#xA;&#xA;    SET CONTEXT_INFO 0x00000000;&#xA;&#xA;    -- Summary result set (visible in Execute SQL Task if ResultSet = &quot;Single row&quot; and mapped to variables)&#xA;    SELECT&#xA;        @BatchID AS BatchID,&#xA;        @InsertedCount AS TimesheetRecordsInserted,&#xA;        @LeaveInsertedCount AS LeaveRecordsInserted,&#xA;        @TotalStagingRecords AS TotalRecords,&#xA;        @UpdatedCount AS StagingRecordsUpdated,&#xA;        DATEDIFF(MILLISECOND, @StartTime, @EndTime) AS ProcessingTimeMs;&#xA;&#xA;END TRY&#xA;BEGIN CATCH&#xA;    IF @@TRANCOUNT &gt; 0 ROLLBACK TRANSACTION;&#xA;&#xA;    DECLARE @ErrMsg NVARCHAR(4000) = ERROR_MESSAGE();&#xA;    DECLARE @ErrBatchID INT = ISNULL(@BatchID, -1);&#xA;&#xA;    INSERT INTO dbo.AuditLog (&#xA;        BatchID, TableName, OperationType, StatusCode,&#xA;        RowsInserted, RowsUpdated, RowsDeleted,&#xA;        HostName, ApplicationName, EventDateTime, ErrorMessage&#xA;    )&#xA;    VALUES (&#xA;        @ErrBatchID, 'Migration', 'ERROR', 'FAILED',&#xA;        0, 0, 0,&#xA;        HOST_NAME(), 'SSIS_ETL', GETDATE(), @ErrMsg&#xA;    );&#xA;&#xA;    THROW;&#xA;END CATCH" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+          </DTS:ObjectData>
+        </DTS:Executable>
+      </DTS:Executables>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Loop through files"
+      DTS:CreationName="STOCK:FOREACHLOOP"
+      DTS:Description="Foreach Loop Container"
+      DTS:DTSID="{C6067F7E-582A-4212-98AE-9BF844812B25}"
+      DTS:ExecutableType="STOCK:FOREACHLOOP"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Loop through files">
+      <DTS:ForEachEnumerator
+        DTS:CreationName="Microsoft.ForEachFileEnumerator"
+        DTS:DTSID="{D44DB70C-B03F-4107-8616-A2A1DE351D0A}"
+        DTS:ObjectName="{D44DB70C-B03F-4107-8616-A2A1DE351D0A}">
+        <DTS:ObjectData>
+          <ForEachFileEnumeratorProperties>
+            <FEFEProperty
+              Folder="C:\Timesheets" />
+            <FEFEProperty
+              FileSpec="*.*" />
+            <FEFEProperty
+              FileNameRetrievalType="0" />
+            <FEFEProperty
+              Recurse="-1" />
+          </ForEachFileEnumeratorProperties>
+        </DTS:ObjectData>
+      </DTS:ForEachEnumerator>
+      <DTS:Variables />
+      <DTS:Executables>
+        <DTS:Executable
+          DTS:refId="Package\Loop through files\Extract"
+          DTS:CreationName="Microsoft.ExecuteSQLTask"
+          DTS:Description="Execute SQL Task"
+          DTS:DTSID="{1FA74188-60D2-4261-8937-05BDC24B2012}"
+          DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+          DTS:LocaleID="-1"
+          DTS:ObjectName="Extract"
+          DTS:ThreadHint="0">
+          <DTS:Variables />
+          <DTS:ObjectData>
+            <SQLTask:SqlTaskData
+              SQLTask:Connection="{564628C3-12EF-4931-8F46-AF6F516D1DFE}"
+              SQLTask:SqlStatementSource="SELECT EmployeeID FROM dbo.Employee WHERE EmployeeName = ? AND EmployeeSurname = ?"
+              SQLTask:ResultType="ResultSetType_SingleRow" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask">
+              <SQLTask:ResultBinding
+                SQLTask:ResultName="EmployeeID"
+                SQLTask:DtsVariableName="User::CurrentEmployeeID" />
+              <SQLTask:ParameterBinding
+                SQLTask:ParameterName="0"
+                SQLTask:DtsVariableName="User::EmployeeFirstName"
+                SQLTask:ParameterDirection="Input"
+                SQLTask:DataType="129"
+                SQLTask:ParameterSize="-1" />
+              <SQLTask:ParameterBinding
+                SQLTask:ParameterName="1"
+                SQLTask:DtsVariableName="User::EmployeeLastName"
+                SQLTask:ParameterDirection="Input"
+                SQLTask:DataType="129"
+                SQLTask:ParameterSize="-1" />
+            </SQLTask:SqlTaskData>
+          </DTS:ObjectData>
+        </DTS:Executable>
+        <DTS:Executable
+          DTS:refId="Package\Loop through files\Transform"
+          DTS:CreationName="Microsoft.Pipeline"
+          DTS:Description="Data Flow Task"
+          DTS:DTSID="{F323F820-E508-46B5-8105-1634C4911DA7}"
+          DTS:ExecutableType="Microsoft.Pipeline"
+          DTS:LocaleID="-1"
+          DTS:ObjectName="Transform"
+          DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+          <DTS:Variables />
+          <DTS:ObjectData>
+            <pipeline
+              version="1">
+              <components>
+                <component
+                  refId="Package\Loop through files\Transform\Conditional Split"
+                  componentClassID="Microsoft.ConditionalSplit"
+                  contactInfo="Conditional Split;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;0"
+                  description="Routes data rows to different outputs depending on the content of the data. Use conditions (SSIS expressions) to specify which rows are routed. For example, separate records that need to be cleaned from those that are ready to be loaded or route only a subset of records."
+                  name="Conditional Split"
+                  usesDispositions="true">
+                  <inputs>
+                    <input
+                      refId="Package\Loop through files\Transform\Conditional Split.Inputs[Conditional Split Input]"
+                      description="Input to the Conditional Split Transformation"
+                      name="Conditional Split Input">
+                      <inputColumns>
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\Conditional Split.Inputs[Conditional Split Input].Columns[Date]"
+                          cachedDataType="date"
+                          cachedName="Date"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Date]" />
+                      </inputColumns>
+                      <externalMetadataColumns />
+                    </input>
+                  </inputs>
+                  <outputs>
+                    <output
+                      refId="Package\Loop through files\Transform\Conditional Split.Outputs[Case 1]"
+                      description="Output 1 of the Conditional Split Transformation"
+                      errorOrTruncationOperation="Computation"
+                      errorRowDisposition="FailComponent"
+                      exclusionGroup="1"
+                      name="Case 1"
+                      synchronousInputId="Package\Loop through files\Transform\Conditional Split.Inputs[Conditional Split Input]"
+                      truncationRowDisposition="FailComponent">
+                      <properties>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Specifies the expression. This expression version uses lineage identifiers instead of column names."
+                          name="Expression">[ISNULL](#{Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Date]}) ==  FALSE </property>
+                        <property
+                          containsID="true"
+                          dataType="System.String"
+                          description="Specifies the friendly version of the expression. This expression version uses column names."
+                          expressionType="Notify"
+                          name="FriendlyExpression">ISNULL(Date) ==  FALSE </property>
+                        <property
+                          dataType="System.Int32"
+                          description="Specifies the position of the condition in the list of conditions that the transformation evaluates. The evaluation order is from the lowest to the highest value."
+                          name="EvaluationOrder">0</property>
+                      </properties>
+                      <externalMetadataColumns />
+                    </output>
+                    <output
+                      refId="Package\Loop through files\Transform\Conditional Split.Outputs[Conditional Split Default Output]"
+                      description="Default Output of the Conditional Split Transformation"
+                      exclusionGroup="1"
+                      name="Conditional Split Default Output"
+                      synchronousInputId="Package\Loop through files\Transform\Conditional Split.Inputs[Conditional Split Input]">
+                      <properties>
+                        <property
+                          dataType="System.Boolean"
+                          name="IsDefaultOut">true</property>
+                      </properties>
+                      <externalMetadataColumns />
+                    </output>
+                    <output
+                      refId="Package\Loop through files\Transform\Conditional Split.Outputs[Conditional Split Error Output]"
+                      description="Error Output of the Conditional Split Transformation"
+                      exclusionGroup="1"
+                      isErrorOut="true"
+                      name="Conditional Split Error Output"
+                      synchronousInputId="Package\Loop through files\Transform\Conditional Split.Inputs[Conditional Split Input]">
+                      <outputColumns>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Conditional Split.Outputs[Conditional Split Error Output].Columns[ErrorCode]"
+                          dataType="i4"
+                          lineageId="Package\Loop through files\Transform\Conditional Split.Outputs[Conditional Split Error Output].Columns[ErrorCode]"
+                          name="ErrorCode"
+                          specialFlags="1" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Conditional Split.Outputs[Conditional Split Error Output].Columns[ErrorColumn]"
+                          dataType="i4"
+                          lineageId="Package\Loop through files\Transform\Conditional Split.Outputs[Conditional Split Error Output].Columns[ErrorColumn]"
+                          name="ErrorColumn"
+                          specialFlags="2" />
+                      </outputColumns>
+                      <externalMetadataColumns />
+                    </output>
+                  </outputs>
+                </component>
+                <component
+                  refId="Package\Loop through files\Transform\Data Conversion"
+                  componentClassID="Microsoft.DataConvert"
+                  contactInfo="Data Conversion;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;0"
+                  description="Data Conversion"
+                  name="Data Conversion"
+                  usesDispositions="true">
+                  <inputs>
+                    <input
+                      refId="Package\Loop through files\Transform\Data Conversion.Inputs[Data Conversion Input]"
+                      name="Data Conversion Input">
+                      <inputColumns>
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Inputs[Data Conversion Input].Columns[Client]"
+                          cachedDataType="wstr"
+                          cachedLength="255"
+                          cachedName="Client"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Client]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Inputs[Data Conversion Input].Columns[Date]"
+                          cachedDataType="date"
+                          cachedName="Date"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Date]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Inputs[Data Conversion Input].Columns[Day Of Week]"
+                          cachedDataType="wstr"
+                          cachedLength="255"
+                          cachedName="Day Of Week"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Day Of Week]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Inputs[Data Conversion Input].Columns[Client Project Name]"
+                          cachedDataType="wstr"
+                          cachedLength="255"
+                          cachedName="Client Project Name"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Client Project Name]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Inputs[Data Conversion Input].Columns[Description]"
+                          cachedDataType="wstr"
+                          cachedLength="255"
+                          cachedName="Description"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Description]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Inputs[Data Conversion Input].Columns[Billable Type]"
+                          cachedDataType="wstr"
+                          cachedLength="255"
+                          cachedName="Billable Type"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Billable Type]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Inputs[Data Conversion Input].Columns[Comments]"
+                          cachedDataType="wstr"
+                          cachedLength="255"
+                          cachedName="Comments"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Comments]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Inputs[Data Conversion Input].Columns[Total Hours]"
+                          cachedDataType="date"
+                          cachedName="Total Hours"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Total Hours]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Inputs[Data Conversion Input].Columns[Start Time]"
+                          cachedDataType="date"
+                          cachedName="Start Time"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Start Time]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Inputs[Data Conversion Input].Columns[End Time]"
+                          cachedDataType="date"
+                          cachedName="End Time"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[End Time]" />
+                      </inputColumns>
+                      <externalMetadataColumns />
+                    </input>
+                  </inputs>
+                  <outputs>
+                    <output
+                      refId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output]"
+                      exclusionGroup="1"
+                      name="Data Conversion Output"
+                      synchronousInputId="Package\Loop through files\Transform\Data Conversion.Inputs[Data Conversion Input]">
+                      <outputColumns>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Client Name]"
+                          dataType="wstr"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Client Name]"
+                          name="Client Name"
+                          truncationRowDisposition="FailComponent">
+                          <properties>
+                            <property
+                              containsID="true"
+                              dataType="System.Int32"
+                              description="Specifies the input column used as the source of data for the conversion."
+                              name="SourceInputColumnLineageID">#{Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Client]}</property>
+                            <property
+                              dataType="System.Boolean"
+                              description="Indicates whether the column uses the faster, locale-neutral parsing routines."
+                              name="FastParse">false</property>
+                          </properties>
+                        </outputColumn>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Date]"
+                          dataType="date"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          lineageId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Date]"
+                          name="Copy of Date"
+                          truncationRowDisposition="FailComponent">
+                          <properties>
+                            <property
+                              containsID="true"
+                              dataType="System.Int32"
+                              description="Specifies the input column used as the source of data for the conversion."
+                              name="SourceInputColumnLineageID">#{Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Date]}</property>
+                            <property
+                              dataType="System.Boolean"
+                              description="Indicates whether the column uses the faster, locale-neutral parsing routines."
+                              name="FastParse">false</property>
+                          </properties>
+                        </outputColumn>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Day Of Week]"
+                          dataType="wstr"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Day Of Week]"
+                          name="Copy of Day Of Week"
+                          truncationRowDisposition="FailComponent">
+                          <properties>
+                            <property
+                              containsID="true"
+                              dataType="System.Int32"
+                              description="Specifies the input column used as the source of data for the conversion."
+                              name="SourceInputColumnLineageID">#{Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Day Of Week]}</property>
+                            <property
+                              dataType="System.Boolean"
+                              description="Indicates whether the column uses the faster, locale-neutral parsing routines."
+                              name="FastParse">false</property>
+                          </properties>
+                        </outputColumn>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Client Project Name]"
+                          dataType="wstr"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Client Project Name]"
+                          name="Copy of Client Project Name"
+                          truncationRowDisposition="FailComponent">
+                          <properties>
+                            <property
+                              containsID="true"
+                              dataType="System.Int32"
+                              description="Specifies the input column used as the source of data for the conversion."
+                              name="SourceInputColumnLineageID">#{Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Client Project Name]}</property>
+                            <property
+                              dataType="System.Boolean"
+                              description="Indicates whether the column uses the faster, locale-neutral parsing routines."
+                              name="FastParse">false</property>
+                          </properties>
+                        </outputColumn>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Description]"
+                          dataType="wstr"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Description]"
+                          name="Copy of Description"
+                          truncationRowDisposition="FailComponent">
+                          <properties>
+                            <property
+                              containsID="true"
+                              dataType="System.Int32"
+                              description="Specifies the input column used as the source of data for the conversion."
+                              name="SourceInputColumnLineageID">#{Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Description]}</property>
+                            <property
+                              dataType="System.Boolean"
+                              description="Indicates whether the column uses the faster, locale-neutral parsing routines."
+                              name="FastParse">false</property>
+                          </properties>
+                        </outputColumn>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Billable Type]"
+                          dataType="wstr"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Billable Type]"
+                          name="Copy of Billable Type"
+                          truncationRowDisposition="FailComponent">
+                          <properties>
+                            <property
+                              containsID="true"
+                              dataType="System.Int32"
+                              description="Specifies the input column used as the source of data for the conversion."
+                              name="SourceInputColumnLineageID">#{Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Billable Type]}</property>
+                            <property
+                              dataType="System.Boolean"
+                              description="Indicates whether the column uses the faster, locale-neutral parsing routines."
+                              name="FastParse">false</property>
+                          </properties>
+                        </outputColumn>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Comments]"
+                          dataType="wstr"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Comments]"
+                          name="Copy of Comments"
+                          truncationRowDisposition="FailComponent">
+                          <properties>
+                            <property
+                              containsID="true"
+                              dataType="System.Int32"
+                              description="Specifies the input column used as the source of data for the conversion."
+                              name="SourceInputColumnLineageID">#{Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Comments]}</property>
+                            <property
+                              dataType="System.Boolean"
+                              description="Indicates whether the column uses the faster, locale-neutral parsing routines."
+                              name="FastParse">false</property>
+                          </properties>
+                        </outputColumn>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Total Hours]"
+                          dataType="date"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          lineageId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Total Hours]"
+                          name="Copy of Total Hours"
+                          truncationRowDisposition="FailComponent">
+                          <properties>
+                            <property
+                              containsID="true"
+                              dataType="System.Int32"
+                              description="Specifies the input column used as the source of data for the conversion."
+                              name="SourceInputColumnLineageID">#{Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Total Hours]}</property>
+                            <property
+                              dataType="System.Boolean"
+                              description="Indicates whether the column uses the faster, locale-neutral parsing routines."
+                              name="FastParse">false</property>
+                          </properties>
+                        </outputColumn>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Start Time]"
+                          dataType="date"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          lineageId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Start Time]"
+                          name="Copy of Start Time"
+                          truncationRowDisposition="FailComponent">
+                          <properties>
+                            <property
+                              containsID="true"
+                              dataType="System.Int32"
+                              description="Specifies the input column used as the source of data for the conversion."
+                              name="SourceInputColumnLineageID">#{Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Start Time]}</property>
+                            <property
+                              dataType="System.Boolean"
+                              description="Indicates whether the column uses the faster, locale-neutral parsing routines."
+                              name="FastParse">false</property>
+                          </properties>
+                        </outputColumn>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of End Time]"
+                          dataType="date"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          lineageId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of End Time]"
+                          name="Copy of End Time"
+                          truncationRowDisposition="FailComponent">
+                          <properties>
+                            <property
+                              containsID="true"
+                              dataType="System.Int32"
+                              description="Specifies the input column used as the source of data for the conversion."
+                              name="SourceInputColumnLineageID">#{Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[End Time]}</property>
+                            <property
+                              dataType="System.Boolean"
+                              description="Indicates whether the column uses the faster, locale-neutral parsing routines."
+                              name="FastParse">false</property>
+                          </properties>
+                        </outputColumn>
+                      </outputColumns>
+                      <externalMetadataColumns />
+                    </output>
+                    <output
+                      refId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Error Output]"
+                      exclusionGroup="1"
+                      isErrorOut="true"
+                      name="Data Conversion Error Output"
+                      synchronousInputId="Package\Loop through files\Transform\Data Conversion.Inputs[Data Conversion Input]">
+                      <outputColumns>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Error Output].Columns[ErrorCode]"
+                          dataType="i4"
+                          lineageId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Error Output].Columns[ErrorCode]"
+                          name="ErrorCode"
+                          specialFlags="1" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Error Output].Columns[ErrorColumn]"
+                          dataType="i4"
+                          lineageId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Error Output].Columns[ErrorColumn]"
+                          name="ErrorColumn"
+                          specialFlags="2" />
+                      </outputColumns>
+                      <externalMetadataColumns />
+                    </output>
+                  </outputs>
+                </component>
+                <component
+                  refId="Package\Loop through files\Transform\Derived Column"
+                  componentClassID="Microsoft.DerivedColumn"
+                  contactInfo="Derived Column;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;0"
+                  description="Creates new column values by applying expressions to transformation input columns. Create new columns or overwrite existing ones. For example, concatenate the values from the 'first name' and 'last name' column to make a 'full name' column."
+                  name="Derived Column"
+                  usesDispositions="true">
+                  <inputs>
+                    <input
+                      refId="Package\Loop through files\Transform\Derived Column.Inputs[Derived Column Input]"
+                      description="Input to the Derived Column Transformation"
+                      name="Derived Column Input">
+                      <externalMetadataColumns />
+                    </input>
+                  </inputs>
+                  <outputs>
+                    <output
+                      refId="Package\Loop through files\Transform\Derived Column.Outputs[Derived Column Output]"
+                      description="Default Output of the Derived Column Transformation"
+                      exclusionGroup="1"
+                      name="Derived Column Output"
+                      synchronousInputId="Package\Loop through files\Transform\Derived Column.Inputs[Derived Column Input]">
+                      <outputColumns>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Derived Column.Outputs[Derived Column Output].Columns[EmployeeID]"
+                          dataType="i4"
+                          errorOrTruncationOperation="Computation"
+                          errorRowDisposition="FailComponent"
+                          lineageId="Package\Loop through files\Transform\Derived Column.Outputs[Derived Column Output].Columns[EmployeeID]"
+                          name="EmployeeID"
+                          truncationRowDisposition="FailComponent">
+                          <properties>
+                            <property
+                              containsID="true"
+                              dataType="System.String"
+                              description="Derived Column Expression"
+                              name="Expression">(DT_I4)@[User::CurrentEmployeeID]</property>
+                            <property
+                              containsID="true"
+                              dataType="System.String"
+                              description="Derived Column Friendly Expression"
+                              expressionType="Notify"
+                              name="FriendlyExpression">(DT_I4)@[User::CurrentEmployeeID]</property>
+                          </properties>
+                        </outputColumn>
+                      </outputColumns>
+                      <externalMetadataColumns />
+                    </output>
+                    <output
+                      refId="Package\Loop through files\Transform\Derived Column.Outputs[Derived Column Error Output]"
+                      description="Error Output of the Derived Column Transformation"
+                      exclusionGroup="1"
+                      isErrorOut="true"
+                      name="Derived Column Error Output"
+                      synchronousInputId="Package\Loop through files\Transform\Derived Column.Inputs[Derived Column Input]">
+                      <outputColumns>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Derived Column.Outputs[Derived Column Error Output].Columns[ErrorCode]"
+                          dataType="i4"
+                          lineageId="Package\Loop through files\Transform\Derived Column.Outputs[Derived Column Error Output].Columns[ErrorCode]"
+                          name="ErrorCode"
+                          specialFlags="1" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Derived Column.Outputs[Derived Column Error Output].Columns[ErrorColumn]"
+                          dataType="i4"
+                          lineageId="Package\Loop through files\Transform\Derived Column.Outputs[Derived Column Error Output].Columns[ErrorColumn]"
+                          name="ErrorColumn"
+                          specialFlags="2" />
+                      </outputColumns>
+                      <externalMetadataColumns />
+                    </output>
+                  </outputs>
+                </component>
+                <component
+                  refId="Package\Loop through files\Transform\Excel Source"
+                  componentClassID="Microsoft.ExcelSource"
+                  contactInfo="Excel Source;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;1"
+                  description="Excel Source"
+                  name="Excel Source"
+                  usesDispositions="true"
+                  version="1">
+                  <properties>
+                    <property
+                      dataType="System.Int32"
+                      description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
+                      name="CommandTimeout">0</property>
+                    <property
+                      dataType="System.String"
+                      description="Specifies the name of the database object used to open a rowset."
+                      name="OpenRowset"></property>
+                    <property
+                      dataType="System.String"
+                      description="Specifies the variable that contains the name of the database object used to open a rowset."
+                      name="OpenRowsetVariable"></property>
+                    <property
+                      dataType="System.String"
+                      description="The SQL command to be executed."
+                      name="SqlCommand"
+                      UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor, Microsoft.DataTransformationServices.Controls, Version=17.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91"></property>
+                    <property
+                      dataType="System.String"
+                      description="The variable that contains the SQL command to be executed."
+                      name="SqlCommandVariable">User::ExcelSqlCommand</property>
+                    <property
+                      dataType="System.Int32"
+                      description="Specifies the mode used to access the database."
+                      name="AccessMode"
+                      typeConverter="AccessMode">3</property>
+                    <property
+                      dataType="System.String"
+                      description="The mapping from parameters in the SQL command to variables."
+                      name="ParameterMapping"></property>
+                  </properties>
+                  <connections>
+                    <connection
+                      refId="Package\Loop through files\Transform\Excel Source.Connections[OleDbConnection]"
+                      connectionManagerID="Package.ConnectionManagers[Excel Connection Manager 1]"
+                      connectionManagerRefId="Package.ConnectionManagers[Excel Connection Manager 1]"
+                      description="The OLE DB runtime connection used to access the database."
+                      name="OleDbConnection" />
+                  </connections>
+                  <outputs>
+                    <output
+                      refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output]"
+                      name="Excel Source Output">
+                      <outputColumns>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Date]"
+                          dataType="date"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          externalMetadataColumnId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F1]"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Date]"
+                          name="Date"
+                          truncationRowDisposition="FailComponent" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Day Of Week]"
+                          dataType="wstr"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          externalMetadataColumnId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F2]"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Day Of Week]"
+                          name="Day Of Week"
+                          truncationRowDisposition="FailComponent" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Client]"
+                          dataType="wstr"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          externalMetadataColumnId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F3]"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Client]"
+                          name="Client"
+                          truncationRowDisposition="FailComponent" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Client Project Name]"
+                          dataType="wstr"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          externalMetadataColumnId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F4]"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Client Project Name]"
+                          name="Client Project Name"
+                          truncationRowDisposition="FailComponent" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Description]"
+                          dataType="wstr"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          externalMetadataColumnId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F5]"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Description]"
+                          name="Description"
+                          truncationRowDisposition="FailComponent" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Billable Type]"
+                          dataType="wstr"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          externalMetadataColumnId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F6]"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Billable Type]"
+                          name="Billable Type"
+                          truncationRowDisposition="FailComponent" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Comments]"
+                          dataType="wstr"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          externalMetadataColumnId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F7]"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Comments]"
+                          name="Comments"
+                          truncationRowDisposition="FailComponent" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Total Hours]"
+                          dataType="date"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          externalMetadataColumnId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F8]"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Total Hours]"
+                          name="Total Hours"
+                          truncationRowDisposition="FailComponent" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Start Time]"
+                          dataType="date"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          externalMetadataColumnId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F9]"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Start Time]"
+                          name="Start Time"
+                          truncationRowDisposition="FailComponent" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[End Time]"
+                          dataType="date"
+                          errorOrTruncationOperation="Conversion"
+                          errorRowDisposition="FailComponent"
+                          externalMetadataColumnId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F10]"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[End Time]"
+                          name="End Time"
+                          truncationRowDisposition="FailComponent" />
+                      </outputColumns>
+                      <externalMetadataColumns
+                        isUsed="True">
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F1]"
+                          dataType="date"
+                          name="F1" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F2]"
+                          dataType="wstr"
+                          length="255"
+                          name="F2" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F3]"
+                          dataType="wstr"
+                          length="255"
+                          name="F3" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F4]"
+                          dataType="wstr"
+                          length="255"
+                          name="F4" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F5]"
+                          dataType="wstr"
+                          length="255"
+                          name="F5" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F6]"
+                          dataType="wstr"
+                          length="255"
+                          name="F6" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F7]"
+                          dataType="wstr"
+                          length="255"
+                          name="F7" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F8]"
+                          dataType="date"
+                          name="F8" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F9]"
+                          dataType="date"
+                          name="F9" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].ExternalColumns[F10]"
+                          dataType="date"
+                          name="F10" />
+                      </externalMetadataColumns>
+                    </output>
+                    <output
+                      refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output]"
+                      isErrorOut="true"
+                      name="Excel Source Error Output">
+                      <outputColumns>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F1]"
+                          dataType="date"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F1]"
+                          name="F1" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F2]"
+                          dataType="wstr"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F2]"
+                          name="F2" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F3]"
+                          dataType="wstr"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F3]"
+                          name="F3" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F4]"
+                          dataType="wstr"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F4]"
+                          name="F4" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F5]"
+                          dataType="wstr"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F5]"
+                          name="F5" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F6]"
+                          dataType="wstr"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F6]"
+                          name="F6" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F7]"
+                          dataType="wstr"
+                          length="255"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F7]"
+                          name="F7" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F8]"
+                          dataType="date"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F8]"
+                          name="F8" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F9]"
+                          dataType="date"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F9]"
+                          name="F9" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F10]"
+                          dataType="date"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[F10]"
+                          name="F10" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[ErrorCode]"
+                          dataType="i4"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[ErrorCode]"
+                          name="ErrorCode"
+                          specialFlags="1" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[ErrorColumn]"
+                          dataType="i4"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Error Output].Columns[ErrorColumn]"
+                          name="ErrorColumn"
+                          specialFlags="2" />
+                      </outputColumns>
+                      <externalMetadataColumns />
+                    </output>
+                  </outputs>
+                </component>
+                <component
+                  refId="Package\Loop through files\Transform\OLE DB Destination"
+                  componentClassID="Microsoft.OLEDBDestination"
+                  contactInfo="OLE DB Destination;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;4"
+                  description="OLE DB Destination"
+                  name="OLE DB Destination"
+                  usesDispositions="true"
+                  version="4">
+                  <properties>
+                    <property
+                      dataType="System.Int32"
+                      description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
+                      name="CommandTimeout">0</property>
+                    <property
+                      dataType="System.String"
+                      description="Specifies the name of the database object used to open a rowset."
+                      name="OpenRowset">[dbo].[StagingTimesheet]</property>
+                    <property
+                      dataType="System.String"
+                      description="Specifies the variable that contains the name of the database object used to open a rowset."
+                      name="OpenRowsetVariable"></property>
+                    <property
+                      dataType="System.String"
+                      description="The SQL command to be executed."
+                      name="SqlCommand"
+                      UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor, Microsoft.DataTransformationServices.Controls, Version=17.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91"></property>
+                    <property
+                      dataType="System.Int32"
+                      description="Specifies the column code page to use when code page information is unavailable from the data source."
+                      name="DefaultCodePage">1252</property>
+                    <property
+                      dataType="System.Boolean"
+                      description="Forces the use of the DefaultCodePage property value when describing character data."
+                      name="AlwaysUseDefaultCodePage">false</property>
+                    <property
+                      dataType="System.Int32"
+                      description="Specifies the mode used to access the database."
+                      name="AccessMode"
+                      typeConverter="AccessMode">3</property>
+                    <property
+                      dataType="System.Boolean"
+                      description="Indicates whether the values supplied for identity columns will be copied to the destination. If false, values for identity columns will be auto-generated at the destination. Applies only if fast load is turned on."
+                      name="FastLoadKeepIdentity">false</property>
+                    <property
+                      dataType="System.Boolean"
+                      description="Indicates whether the columns containing null will have null inserted in the destination. If false, columns containing null will have their default values inserted at the destination. Applies only if fast load is turned on."
+                      name="FastLoadKeepNulls">false</property>
+                    <property
+                      dataType="System.String"
+                      description="Specifies options to be used with fast load.  Applies only if fast load is turned on."
+                      name="FastLoadOptions">TABLOCK,CHECK_CONSTRAINTS</property>
+                    <property
+                      dataType="System.Int32"
+                      description="Specifies when commits are issued during data insertion.  A value of 0 specifies that one commit will be issued at the end of data insertion.  Applies only if fast load is turned on."
+                      name="FastLoadMaxInsertCommitSize">2147483647</property>
+                  </properties>
+                  <connections>
+                    <connection
+                      refId="Package\Loop through files\Transform\OLE DB Destination.Connections[OleDbConnection]"
+                      connectionManagerID="Package.ConnectionManagers[LocalHost.TimesheetCMDB]"
+                      connectionManagerRefId="Package.ConnectionManagers[LocalHost.TimesheetCMDB]"
+                      description="The OLE DB runtime connection used to access the database."
+                      name="OleDbConnection" />
+                  </connections>
+                  <inputs>
+                    <input
+                      refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input]"
+                      errorOrTruncationOperation="Insert"
+                      errorRowDisposition="FailComponent"
+                      hasSideEffects="true"
+                      name="OLE DB Destination Input">
+                      <inputColumns>
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Comments]"
+                          cachedDataType="wstr"
+                          cachedLength="255"
+                          cachedName="Comments"
+                          externalMetadataColumnId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Comments]"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Comments]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Description]"
+                          cachedDataType="wstr"
+                          cachedLength="255"
+                          cachedName="Description"
+                          externalMetadataColumnId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Description]"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Description]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[End Time]"
+                          cachedDataType="date"
+                          cachedName="End Time"
+                          externalMetadataColumnId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[EndTime]"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[End Time]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Start Time]"
+                          cachedDataType="date"
+                          cachedName="Start Time"
+                          externalMetadataColumnId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[StartTime]"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Start Time]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Day Of Week]"
+                          cachedDataType="wstr"
+                          cachedLength="255"
+                          cachedName="Day Of Week"
+                          externalMetadataColumnId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[DayOfWeek]"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Day Of Week]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Billable Type]"
+                          cachedDataType="wstr"
+                          cachedLength="255"
+                          cachedName="Billable Type"
+                          externalMetadataColumnId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[BillableType]"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Billable Type]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Date]"
+                          cachedDataType="date"
+                          cachedName="Date"
+                          externalMetadataColumnId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Date]"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Date]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Client]"
+                          cachedDataType="wstr"
+                          cachedLength="255"
+                          cachedName="Client"
+                          externalMetadataColumnId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Client]"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Client]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Client Project Name]"
+                          cachedDataType="wstr"
+                          cachedLength="255"
+                          cachedName="Client Project Name"
+                          externalMetadataColumnId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[ProjectName]"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Client Project Name]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Total Hours]"
+                          cachedDataType="date"
+                          cachedName="Total Hours"
+                          externalMetadataColumnId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[TotalHours]"
+                          lineageId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output].Columns[Total Hours]" />
+                        <inputColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[EmployeeID]"
+                          cachedDataType="i4"
+                          cachedName="EmployeeID"
+                          externalMetadataColumnId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[EmployeeID]"
+                          lineageId="Package\Loop through files\Transform\Derived Column.Outputs[Derived Column Output].Columns[EmployeeID]" />
+                      </inputColumns>
+                      <externalMetadataColumns
+                        isUsed="True">
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[EmployeeID]"
+                          dataType="i4"
+                          name="EmployeeID" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[LeaveType]"
+                          dataType="wstr"
+                          length="255"
+                          name="LeaveType" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[BatchID]"
+                          dataType="i4"
+                          name="BatchID" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[DayOfWeek]"
+                          dataType="wstr"
+                          length="255"
+                          name="DayOfWeek" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[BillableType]"
+                          dataType="wstr"
+                          length="255"
+                          name="BillableType" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Comments]"
+                          dataType="nText"
+                          name="Comments" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[StartTime]"
+                          dataType="wstr"
+                          length="255"
+                          name="StartTime" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[EndTime]"
+                          dataType="wstr"
+                          length="255"
+                          name="EndTime" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Description]"
+                          dataType="nText"
+                          name="Description" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[StagingID]"
+                          dataType="i4"
+                          name="StagingID" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Date]"
+                          dataType="wstr"
+                          length="255"
+                          name="Date" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Client]"
+                          dataType="wstr"
+                          length="255"
+                          name="Client" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[ProjectName]"
+                          dataType="wstr"
+                          length="255"
+                          name="ProjectName" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[TotalHours]"
+                          dataType="wstr"
+                          length="255"
+                          name="TotalHours" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[IsLeave]"
+                          dataType="wstr"
+                          length="255"
+                          name="IsLeave" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Month]"
+                          dataType="wstr"
+                          length="255"
+                          name="Month" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[SourceFile]"
+                          dataType="wstr"
+                          length="255"
+                          name="SourceFile" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[LoadDate]"
+                          dataType="dbTimeStamp"
+                          name="LoadDate" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[IsProcessed]"
+                          dataType="bool"
+                          name="IsProcessed" />
+                        <externalMetadataColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[ProcessedDate]"
+                          dataType="dbTimeStamp"
+                          name="ProcessedDate" />
+                      </externalMetadataColumns>
+                    </input>
+                  </inputs>
+                  <outputs>
+                    <output
+                      refId="Package\Loop through files\Transform\OLE DB Destination.Outputs[OLE DB Destination Error Output]"
+                      exclusionGroup="1"
+                      isErrorOut="true"
+                      name="OLE DB Destination Error Output"
+                      synchronousInputId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input]">
+                      <outputColumns>
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Outputs[OLE DB Destination Error Output].Columns[ErrorCode]"
+                          dataType="i4"
+                          lineageId="Package\Loop through files\Transform\OLE DB Destination.Outputs[OLE DB Destination Error Output].Columns[ErrorCode]"
+                          name="ErrorCode"
+                          specialFlags="1" />
+                        <outputColumn
+                          refId="Package\Loop through files\Transform\OLE DB Destination.Outputs[OLE DB Destination Error Output].Columns[ErrorColumn]"
+                          dataType="i4"
+                          lineageId="Package\Loop through files\Transform\OLE DB Destination.Outputs[OLE DB Destination Error Output].Columns[ErrorColumn]"
+                          name="ErrorColumn"
+                          specialFlags="2" />
+                      </outputColumns>
+                      <externalMetadataColumns />
+                    </output>
+                  </outputs>
+                </component>
+              </components>
+              <paths>
+                <path
+                  refId="Package\Loop through files\Transform.Paths[Case 1]"
+                  endId="Package\Loop through files\Transform\Data Conversion.Inputs[Data Conversion Input]"
+                  name="Case 1"
+                  startId="Package\Loop through files\Transform\Conditional Split.Outputs[Case 1]" />
+                <path
+                  refId="Package\Loop through files\Transform.Paths[Data Conversion Output]"
+                  endId="Package\Loop through files\Transform\Derived Column.Inputs[Derived Column Input]"
+                  name="Data Conversion Output"
+                  startId="Package\Loop through files\Transform\Data Conversion.Outputs[Data Conversion Output]" />
+                <path
+                  refId="Package\Loop through files\Transform.Paths[Derived Column Output]"
+                  endId="Package\Loop through files\Transform\OLE DB Destination.Inputs[OLE DB Destination Input]"
+                  name="Derived Column Output"
+                  startId="Package\Loop through files\Transform\Derived Column.Outputs[Derived Column Output]" />
+                <path
+                  refId="Package\Loop through files\Transform.Paths[Excel Source Output]"
+                  endId="Package\Loop through files\Transform\Conditional Split.Inputs[Conditional Split Input]"
+                  name="Excel Source Output"
+                  startId="Package\Loop through files\Transform\Excel Source.Outputs[Excel Source Output]" />
+              </paths>
+            </pipeline>
+          </DTS:ObjectData>
+        </DTS:Executable>
+      </DTS:Executables>
+      <DTS:PrecedenceConstraints>
+        <DTS:PrecedenceConstraint
+          DTS:refId="Package\Loop through files.PrecedenceConstraints[Constraint]"
+          DTS:CreationName=""
+          DTS:DTSID="{8BFFEAC7-D6B5-495B-A3F5-8187A3300EA6}"
+          DTS:From="Package\Loop through files\Extract"
+          DTS:LogicalAnd="True"
+          DTS:ObjectName="Constraint"
+          DTS:To="Package\Loop through files\Transform" />
+      </DTS:PrecedenceConstraints>
+      <DTS:ForEachVariableMappings>
+        <DTS:ForEachVariableMapping
+          DTS:CreationName=""
+          DTS:DTSID="{3DA94F73-2090-4D87-9352-9438E1F3D7A5}"
+          DTS:ObjectName="{3DA94F73-2090-4D87-9352-9438E1F3D7A5}"
+          DTS:ValueIndex="0"
+          DTS:VariableName="User::CurrentFilePath" />
+      </DTS:ForEachVariableMappings>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Schema"
+      DTS:CreationName="STOCK:SEQUENCE"
+      DTS:Description="Sequence Container"
+      DTS:DTSID="{B6EE5367-530B-4D29-8D3B-D2C2D284BF4B}"
+      DTS:ExecutableType="STOCK:SEQUENCE"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Schema">
+      <DTS:Variables />
+      <DTS:Executables>
+        <DTS:Executable
+          DTS:refId="Package\Schema\Create Database &amp; Tables"
+          DTS:CreationName="Microsoft.ExecuteSQLTask"
+          DTS:Description="Execute SQL Task"
+          DTS:DTSID="{FBDA442D-A245-4E38-8BBC-A2C722888DEE}"
+          DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+          DTS:LocaleID="-1"
+          DTS:ObjectName="Create Database &amp; Tables"
+          DTS:ThreadHint="0">
+          <DTS:Variables />
+          <DTS:ObjectData>
+            <SQLTask:SqlTaskData
+              SQLTask:Connection="{564628C3-12EF-4931-8F46-AF6F516D1DFE}"
+              SQLTask:SqlStatementSource="-- ============================================&#xA;-- Ensure the TimesheetDB database exists&#xA;-- ============================================&#xA;IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'TimesheetCMDB')&#xA;BEGIN&#xA;    CREATE DATABASE TimesheetCMDB;&#xA;END&#xA;GO&#xA;&#xA;USE TimesheetCMDB;&#xA;GO&#xA;&#xA;&#xA;&#xA;-- ============================================&#xA;-- Table: Employee&#xA;-- ============================================&#xA;IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Employee')&#xA;BEGIN&#xA;    CREATE TABLE dbo.Employee&#xA;    (&#xA;        EmployeeID       INT IDENTITY (1001, 1) PRIMARY KEY,&#xA;        EmployeeName     NVARCHAR(100) NOT NULL,&#xA;        EmployeeSurname  NVARCHAR(100) NOT NULL,&#xA;        IsActive         BIT DEFAULT 1,&#xA;        CreatedDate      DATETIME DEFAULT GETDATE(),&#xA;        ModifiedDate     DATETIME NULL&#xA;    );&#xA;    PRINT 'Employee table created';&#xA;END&#xA;ELSE&#xA;    PRINT 'Employee table already exists';&#xA;GO&#xA;&#xA;-- ============================================&#xA;-- Table: Client&#xA;-- ============================================&#xA;IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Client')&#xA;BEGIN&#xA;    CREATE TABLE dbo.Client&#xA;    (&#xA;        ClientID     INT IDENTITY (1, 1) PRIMARY KEY,&#xA;        ClientName   NVARCHAR(200) NOT NULL,&#xA;        ClientCode   NVARCHAR(50),&#xA;        IsActive     BIT DEFAULT 1,&#xA;        CreatedDate  DATETIME DEFAULT GETDATE(),&#xA;        ModifiedDate DATETIME NULL&#xA;    );&#xA;    PRINT 'Client table created';&#xA;END&#xA;ELSE&#xA;    PRINT 'Client table already exists';&#xA;GO&#xA;&#xA;-- ============================================&#xA;-- Table: StagingTimesheet&#xA;-- ============================================&#xA;IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'StagingTimesheet')&#xA;BEGIN&#xA;    CREATE TABLE dbo.StagingTimesheet&#xA;    (&#xA;        StagingID    INT IDENTITY (1, 1) PRIMARY KEY,&#xA;        EmployeeID   INT NOT NULL,&#xA;        Date         NVARCHAR(255),&#xA;        DayOfWeek    NVARCHAR(255),&#xA;        Client       NVARCHAR(255),&#xA;        ProjectName  NVARCHAR(255),&#xA;        Description  NVARCHAR(MAX),&#xA;        BillableType NVARCHAR(255),&#xA;        Comments     NVARCHAR(MAX),&#xA;        TotalHours   NVARCHAR(255),&#xA;        StartTime    NVARCHAR(255),&#xA;        EndTime      NVARCHAR(255),&#xA;        IsLeave      NVARCHAR(255),&#xA;        LeaveType    NVARCHAR(255),&#xA;        Month        NVARCHAR(255),&#xA;        SourceFile   NVARCHAR(255),&#xA;        LoadDate     DATETIME DEFAULT GETDATE(),&#xA;        IsProcessed  BIT DEFAULT 0,&#xA;        ProcessedDate DATETIME NULL,&#xA;        BatchID      INT NULL&#xA;    );&#xA;    PRINT 'StagingTimesheet table created';&#xA;END&#xA;ELSE&#xA;    PRINT 'StagingTimesheet table already exists';&#xA;GO&#xA;&#xA;-- ============================================&#xA;-- Table: Timesheet&#xA;-- ============================================&#xA;IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Timesheet')&#xA;BEGIN&#xA;    CREATE TABLE dbo.Timesheet&#xA;    (&#xA;        TimesheetID  INT IDENTITY (1, 1) PRIMARY KEY,&#xA;        EmployeeID   INT NOT NULL,&#xA;        ClientID     INT NULL,&#xA;        Date         DATE NOT NULL,&#xA;        DayOfWeek    NVARCHAR(50) NULL,&#xA;        Description  NVARCHAR(2000) NULL,&#xA;        BillableType NVARCHAR(50) NULL,&#xA;        Duration     NVARCHAR(20) NULL,&#xA;        StartTime    TIME(0) NULL,&#xA;        EndTime      TIME(0) NULL,&#xA;        Comments     NVARCHAR(2000) NULL,&#xA;        CreatedDate  DATETIME DEFAULT GETDATE(),&#xA;        ModifiedDate DATETIME NULL,&#xA;        CONSTRAINT FK_Timesheet_Employee FOREIGN KEY (EmployeeID) REFERENCES dbo.Employee(EmployeeID),&#xA;        CONSTRAINT FK_Timesheet_Client FOREIGN KEY (ClientID) REFERENCES dbo.Client(ClientID)&#xA;    );&#xA;    PRINT 'Timesheet table created';&#xA;END&#xA;ELSE&#xA;BEGIN&#xA;    -- Table already exists — normalize StartTime/EndTime precision if still TIME(7)&#xA;    IF EXISTS (&#xA;        SELECT 1&#xA;        FROM sys.columns c&#xA;        JOIN sys.types t ON c.user_type_id = t.user_type_id&#xA;        WHERE c.object_id = OBJECT_ID('dbo.Timesheet')&#xA;          AND c.name = 'StartTime'&#xA;          AND t.name = 'time'&#xA;          AND c.scale &gt; 0&#xA;    )&#xA;    BEGIN&#xA;        ALTER TABLE dbo.Timesheet ALTER COLUMN StartTime TIME(0) NULL;&#xA;        PRINT 'Timesheet.StartTime precision changed to TIME(0)';&#xA;    END&#xA;&#xA;    IF EXISTS (&#xA;        SELECT 1&#xA;        FROM sys.columns c&#xA;        JOIN sys.types t ON c.user_type_id = t.user_type_id&#xA;        WHERE c.object_id = OBJECT_ID('dbo.Timesheet')&#xA;          AND c.name = 'EndTime'&#xA;          AND t.name = 'time'&#xA;          AND c.scale &gt; 0&#xA;    )&#xA;    BEGIN&#xA;        ALTER TABLE dbo.Timesheet ALTER COLUMN EndTime TIME(0) NULL;&#xA;        PRINT 'Timesheet.EndTime precision changed to TIME(0)';&#xA;    END&#xA;&#xA;    PRINT 'Timesheet table already exists';&#xA;END&#xA;GO&#xA;&#xA;-- ============================================&#xA;-- Table: Leave&#xA;-- ============================================&#xA;IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Leave')&#xA;BEGIN&#xA;    CREATE TABLE dbo.[Leave]&#xA;    (&#xA;        LeaveID      INT IDENTITY (1, 1) PRIMARY KEY,&#xA;        EmployeeID   INT NOT NULL,&#xA;        LeaveType    NVARCHAR(50) NOT NULL,&#xA;        StartDate    DATE NOT NULL,&#xA;        EndDate      DATE NOT NULL,&#xA;        LeaveDays    DECIMAL(10, 2) NOT NULL,&#xA;        Comments     NVARCHAR(500),&#xA;        CreatedDate  DATETIME DEFAULT GETDATE(),&#xA;        ModifiedDate DATETIME NULL,&#xA;        CONSTRAINT FK_Leave_Employee FOREIGN KEY (EmployeeID) REFERENCES dbo.Employee(EmployeeID)&#xA;    );&#xA;    PRINT 'Leave table created';&#xA;END&#xA;ELSE&#xA;    PRINT 'Leave table already exists';&#xA;GO&#xA;&#xA;-- ============================================&#xA;-- Table: LeaveCategory&#xA;-- ============================================&#xA;IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'LeaveCategory')&#xA;BEGIN&#xA;    CREATE TABLE dbo.LeaveCategory&#xA;    (&#xA;        LeaveCategoryID INT IDENTITY (1, 1) PRIMARY KEY,&#xA;        SourceText      NVARCHAR(200) NOT NULL,  -- exact text as it appears in StagingTimesheet.Description&#xA;        LeaveType       NVARCHAR(50) NOT NULL,   -- normalized value stored in dbo.[Leave].LeaveType&#xA;        CreatedDate     DATETIME NOT NULL DEFAULT GETDATE()&#xA;    );&#xA;    PRINT 'LeaveCategory table created';&#xA;END&#xA;ELSE&#xA;    PRINT 'LeaveCategory table already exists';&#xA;GO&#xA;&#xA;-- Populate LeaveCategory if empty&#xA;IF NOT EXISTS (SELECT 1 FROM dbo.LeaveCategory WHERE SourceText = 'Annual Leave')&#xA;BEGIN&#xA;    INSERT INTO dbo.LeaveCategory (SourceText, LeaveType)&#xA;    VALUES&#xA;        ('Annual Leave', 'Annual Leave'),&#xA;        ('Sick leave', 'Sick Leave'),&#xA;        ('Study Leave', 'Study Leave'),&#xA;        ('Family Responsibility Leave', 'Family Responsibility Leave'),&#xA;        ('Birthday leave', 'Birthday Leave'),&#xA;        ('Public Holiday', 'Public Holiday'),&#xA;        ('Sick Leave - half day', 'Sick Leave - half day'),&#xA;        ('Annual Leave - half day', 'Annual Leave - half day');&#xA;    PRINT 'LeaveCategory populated';&#xA;END&#xA;ELSE&#xA;    PRINT 'LeaveCategory already populated';&#xA;GO&#xA;&#xA;-- ============================================&#xA;-- Table: AuditStatusCode&#xA;-- ============================================&#xA;IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AuditStatusCode')&#xA;BEGIN&#xA;    CREATE TABLE dbo.AuditStatusCode&#xA;    (&#xA;        StatusID    INT IDENTITY (1, 1) PRIMARY KEY,&#xA;        StatusCode  NVARCHAR(20) UNIQUE NOT NULL,&#xA;        StatusName  NVARCHAR(50) NOT NULL,&#xA;        Description NVARCHAR(200),&#xA;        IsSuccess   BIT DEFAULT 0,&#xA;        IsError     BIT DEFAULT 0,&#xA;        IsActive    BIT DEFAULT 1&#xA;    );&#xA;    PRINT 'AuditStatusCode table created';&#xA;END&#xA;ELSE&#xA;    PRINT 'AuditStatusCode table already exists';&#xA;GO&#xA;&#xA;-- Populate AuditStatusCode if empty&#xA;IF NOT EXISTS (SELECT 1 FROM dbo.AuditStatusCode WHERE StatusCode = 'SUCCESS')&#xA;BEGIN&#xA;    INSERT INTO dbo.AuditStatusCode (StatusCode, StatusName, Description, IsSuccess, IsError)&#xA;    VALUES&#xA;        ('SUCCESS', 'Success', 'Operation completed successfully', 1, 0),&#xA;        ('FAILED',  'Failed',  'Operation failed', 0, 1),&#xA;        ('RUNNING', 'Running', 'Operation is in progress', 0, 0),&#xA;        ('WARNING', 'Warning', 'Operation completed with warnings', 0, 0),&#xA;        ('SKIPPED', 'Skipped', 'Operation was skipped', 0, 0);&#xA;    PRINT 'AuditStatusCode populated';&#xA;END&#xA;ELSE&#xA;    PRINT 'AuditStatusCode already populated';&#xA;GO&#xA;&#xA;-- ============================================&#xA;-- Table: AuditLog&#xA;-- ============================================&#xA;IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AuditLog')&#xA;BEGIN&#xA;    CREATE TABLE dbo.AuditLog&#xA;    (&#xA;        AuditID        BIGINT IDENTITY (1, 1) PRIMARY KEY,&#xA;        BatchID        INT NOT NULL,&#xA;        TableName      NVARCHAR(128) NOT NULL,&#xA;        OperationType  NVARCHAR(20) NOT NULL,   -- INSERT, UPDATE, DELETE, START, COMPLETE, ERROR&#xA;        StatusCode     NVARCHAR(20) NOT NULL DEFAULT 'SUCCESS',&#xA;        RowsInserted   INT DEFAULT 0,&#xA;        RowsUpdated    INT DEFAULT 0,&#xA;        RowsDeleted    INT DEFAULT 0,&#xA;        HostName       NVARCHAR(255) NULL,&#xA;        ApplicationName NVARCHAR(255) NULL,&#xA;        EventDateTime  DATETIME NOT NULL DEFAULT GETDATE(),&#xA;        ErrorMessage   NVARCHAR(MAX) NULL&#xA;    );&#xA;    PRINT 'AuditLog table created';&#xA;END&#xA;ELSE&#xA;BEGIN&#xA;    PRINT 'AuditLog table already exists. Checking for missing columns...';&#xA;    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.AuditLog') AND name = 'RowsInserted')&#xA;        ALTER TABLE dbo.AuditLog ADD RowsInserted INT DEFAULT 0;&#xA;    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.AuditLog') AND name = 'RowsUpdated')&#xA;        ALTER TABLE dbo.AuditLog ADD RowsUpdated INT DEFAULT 0;&#xA;    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.AuditLog') AND name = 'RowsDeleted')&#xA;        ALTER TABLE dbo.AuditLog ADD RowsDeleted INT DEFAULT 0;&#xA;    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.AuditLog') AND name = 'HostName')&#xA;        ALTER TABLE dbo.AuditLog ADD HostName NVARCHAR(255) NULL;&#xA;    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.AuditLog') AND name = 'ApplicationName')&#xA;        ALTER TABLE dbo.AuditLog ADD ApplicationName NVARCHAR(255) NULL;&#xA;    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.AuditLog') AND name = 'ErrorMessage')&#xA;        ALTER TABLE dbo.AuditLog ADD ErrorMessage NVARCHAR(MAX) NULL;&#xA;    PRINT 'AuditLog table structure verified';&#xA;END&#xA;GO&#xA;&#xA;-- ============================================&#xA;-- Indexes for AuditLog&#xA;-- ============================================&#xA;IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_AuditLog_BatchID' AND object_id = OBJECT_ID('AuditLog'))&#xA;    CREATE NONCLUSTERED INDEX IX_AuditLog_BatchID ON dbo.AuditLog(BatchID);&#xA;IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_AuditLog_EventDateTime' AND object_id = OBJECT_ID('AuditLog'))&#xA;    CREATE NONCLUSTERED INDEX IX_AuditLog_EventDateTime ON dbo.AuditLog(EventDateTime);&#xA;IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_AuditLog_TableName' AND object_id = OBJECT_ID('AuditLog'))&#xA;    CREATE NONCLUSTERED INDEX IX_AuditLog_TableName ON dbo.AuditLog(TableName);&#xA;IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_AuditLog_StatusCode' AND object_id = OBJECT_ID('AuditLog'))&#xA;    CREATE NONCLUSTERED INDEX IX_AuditLog_StatusCode ON dbo.AuditLog(StatusCode);&#xA;GO&#xA;&#xA;-- ============================================&#xA;-- Sequence: BatchIDSequence&#xA;-- ============================================&#xA;IF NOT EXISTS (SELECT 1 FROM sys.sequences WHERE name = 'BatchIDSequence')&#xA;BEGIN&#xA;    CREATE SEQUENCE dbo.BatchIDSequence AS INT START WITH 1 INCREMENT BY 1 NO CYCLE;&#xA;    PRINT 'BatchIDSequence created';&#xA;END&#xA;ELSE&#xA;    PRINT 'BatchIDSequence already exists';&#xA;GO&#xA;&#xA;-- ============================================&#xA;-- Populate Client (if empty)&#xA;-- ============================================&#xA;IF NOT EXISTS (SELECT 1 FROM dbo.Client WHERE ClientName = 'Internal Sambe')&#xA;BEGIN&#xA;    INSERT INTO dbo.Client (ClientName, ClientCode, IsActive)&#xA;    VALUES&#xA;        ('Internal Sambe', 'INT001', 1),&#xA;        ('ADVTech', 'ADV001', 1),&#xA;        ('AFA Sasfin', 'AFA001', 1),&#xA;        ('Artist Proof Studio', 'ART001', 1),&#xA;        ('Assimil8', 'ASS001', 1),&#xA;        ('Base 3', 'BAS001', 1),&#xA;        ('Blue Legacy', 'BLU001', 1),&#xA;        ('C. Steinweg', 'CST001', 1),&#xA;        ('Conekt – Aurum', 'CON001', 1),&#xA;        ('Conekt – Clientele', 'CON002', 1),&#xA;        ('Conekt – Internal Meeting', 'CON003', 1),&#xA;        ('Conekt – Meridian', 'CON004', 1),&#xA;        ('Conekt – Winning Business', 'CON005', 1),&#xA;        ('Conekt AGSA SharePoint', 'CON006', 1),&#xA;        ('Dentons', 'DEN001', 1),&#xA;        ('Discovery', 'DIS001', 1),&#xA;        ('Discovery Bank', 'DIS002', 1),&#xA;        ('Discovery CRES', 'DIS003', 1),&#xA;        ('Discovery CSI', 'DIS004', 1),&#xA;        ('Discovery Health', 'DIS005', 1),&#xA;        ('Discovery Information Governance and Security', 'DIS006', 1),&#xA;        ('Discovery Innovation Lab', 'DIS007', 1),&#xA;        ('Discovery People', 'DIS008', 1),&#xA;        ('Discovery Skills', 'DIS009', 1),&#xA;        ('Discovery Vitality', 'DIS010', 1),&#xA;        ('Gyro', 'GYR001', 1),&#xA;        ('KFC Digistics', 'KFC001', 1),&#xA;        ('Life Healthcare', 'LIF001', 1),&#xA;        ('Medi-Charge', 'MED001', 1),&#xA;        ('MICA Build', 'MIC001', 1),&#xA;        ('Michelin', 'MIE001', 1),&#xA;        ('Mistro Foods', 'MIS001', 1),&#xA;        ('OK Furnitures', 'OKF001', 1),&#xA;        ('Olympic Paints', 'OLY001', 1),&#xA;        ('RMB', 'RMB001', 1),&#xA;        ('RMB CM Data Warehouse support', 'RMB002', 1),&#xA;        ('RMB CORE NRTI', 'RMB003', 1),&#xA;        ('RMB Tumelo', 'RMB004', 1),&#xA;        ('Sachar Mobile', 'SAC001', 1),&#xA;        ('Sanlam', 'SAN001', 1),&#xA;        ('SBV', 'SBV001', 1),&#xA;        ('Sibanya', 'SIB001', 1),&#xA;        ('Transport Holdings', 'TRA001', 1);&#xA;    PRINT 'Clients inserted';&#xA;END&#xA;ELSE&#xA;    PRINT 'Clients already exist';&#xA;GO&#xA;&#xA;-- ============================================&#xA;-- Populate Employee (if empty)&#xA;-- ============================================&#xA;IF NOT EXISTS (SELECT 1 FROM dbo.Employee WHERE EmployeeName = 'Buhle' AND EmployeeSurname = 'Mukhuba')&#xA;BEGIN&#xA;    INSERT INTO dbo.Employee (EmployeeName, EmployeeSurname, IsActive)&#xA;    VALUES&#xA;        ('Buhle', 'Mukhuba', 1),&#xA;        ('Charmane', 'Mchunu', 1),&#xA;        ('Jabulane', 'Poulo', 1),&#xA;        ('Kayden', 'Padayachee', 1),&#xA;        ('Lwazisile', 'Mhlambi', 1),&#xA;        ('Rushil', 'Jivan', 1),&#xA;        ('Shriya', 'Hariparsad', 1),&#xA;        ('Teolan', 'Govender', 1);&#xA;    PRINT 'Employees inserted';&#xA;END&#xA;ELSE&#xA;    PRINT 'Employees already exist';&#xA;GO&#xA;&#xA;-- ============================================&#xA;-- Additional indexes for performance&#xA;-- ============================================&#xA;IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_StagingTimesheet_IsProcessed' AND object_id = OBJECT_ID('StagingTimesheet'))&#xA;    CREATE NONCLUSTERED INDEX IX_StagingTimesheet_IsProcessed ON dbo.StagingTimesheet(IsProcessed);&#xA;&#xA;IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Timesheet_EmployeeID' AND object_id = OBJECT_ID('Timesheet'))&#xA;    CREATE NONCLUSTERED INDEX IX_Timesheet_EmployeeID ON dbo.Timesheet(EmployeeID);&#xA;&#xA;IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Timesheet_Date' AND object_id = OBJECT_ID('Timesheet'))&#xA;    CREATE NONCLUSTERED INDEX IX_Timesheet_Date ON dbo.Timesheet(Date);&#xA;&#xA;IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Timesheet_ClientID' AND object_id = OBJECT_ID('Timesheet'))&#xA;    CREATE NONCLUSTERED INDEX IX_Timesheet_ClientID ON dbo.Timesheet(ClientID);&#xA;&#xA;IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Leave_EmployeeID' AND object_id = OBJECT_ID('dbo.Leave'))&#xA;    CREATE NONCLUSTERED INDEX IX_Leave_EmployeeID ON dbo.[Leave](EmployeeID);&#xA;&#xA;IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_LeaveCategory_SourceText' AND object_id = OBJECT_ID('LeaveCategory'))&#xA;    CREATE UNIQUE NONCLUSTERED INDEX IX_LeaveCategory_SourceText ON dbo.LeaveCategory(SourceText);&#xA;GO" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+          </DTS:ObjectData>
+        </DTS:Executable>
+      </DTS:Executables>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Triggers"
+      DTS:CreationName="STOCK:SEQUENCE"
+      DTS:Description="Sequence Container"
+      DTS:DTSID="{5EA45C1A-F8EE-452F-8149-C61122019AAE}"
+      DTS:ExecutableType="STOCK:SEQUENCE"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Triggers">
+      <DTS:Variables />
+      <DTS:Executables>
+        <DTS:Executable
+          DTS:refId="Package\Triggers\Execute SQL Task"
+          DTS:CreationName="Microsoft.ExecuteSQLTask"
+          DTS:Description="Execute SQL Task"
+          DTS:DTSID="{377AD13D-380E-4366-B9C8-D8F2F7CC5B12}"
+          DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+          DTS:LocaleID="-1"
+          DTS:ObjectName="Execute SQL Task"
+          DTS:ThreadHint="0">
+          <DTS:Variables />
+          <DTS:ObjectData>
+            <SQLTask:SqlTaskData
+              SQLTask:Connection="{564628C3-12EF-4931-8F46-AF6F516D1DFE}"
+              SQLTask:SqlStatementSource="USE TimesheetCMDB;&#xA;GO&#xA;&#xA;-- ============================================================&#xA;-- 1. Add ModifiedDate to LeaveCategory (&quot;leave type&quot; table)&#xA;--    Employee, Timesheet, and Leave already have this column.&#xA;-- ============================================================&#xA;IF NOT EXISTS (&#xA;    SELECT 1 FROM sys.columns&#xA;    WHERE object_id = OBJECT_ID('dbo.LeaveCategory') AND name = 'ModifiedDate'&#xA;)&#xA;    ALTER TABLE dbo.LeaveCategory ADD ModifiedDate DATETIME NULL;&#xA;GO&#xA;&#xA;-- ============================================================&#xA;-- 2. TRIGGER: Employee&#xA;-- ============================================================&#xA;DROP TRIGGER IF EXISTS dbo.trg_Employee_Audit;&#xA;GO&#xA;CREATE TRIGGER dbo.trg_Employee_Audit&#xA;ON dbo.Employee&#xA;AFTER UPDATE&#xA;AS&#xA;BEGIN&#xA;    SET NOCOUNT ON;&#xA;&#xA;    DECLARE @BatchID INT;&#xA;    DECLARE @ContextInfo VARBINARY(128) = CONTEXT_INFO();&#xA;    IF @ContextInfo IS NOT NULL AND @ContextInfo != 0x00000000&#xA;        SET @BatchID = CONVERT(INT, @ContextInfo);&#xA;    IF @BatchID IS NULL OR @BatchID = 0&#xA;        SET @BatchID = -1;&#xA;&#xA;    -- Stamp ModifiedDate on the rows that changed&#xA;    UPDATE e&#xA;    SET ModifiedDate = GETDATE()&#xA;    FROM dbo.Employee e&#xA;    INNER JOIN inserted i ON e.EmployeeID = i.EmployeeID;&#xA;&#xA;    BEGIN TRY&#xA;        INSERT INTO dbo.AuditLog (BatchID, TableName, OperationType, StatusCode, RowsUpdated, HostName, ApplicationName, EventDateTime)&#xA;        SELECT @BatchID, 'Employee', 'UPDATE', 'SUCCESS', COUNT(*), HOST_NAME(), APP_NAME(), GETDATE()&#xA;        FROM inserted;&#xA;    END TRY&#xA;    BEGIN CATCH&#xA;        INSERT INTO dbo.AuditLog (BatchID, TableName, OperationType, StatusCode, HostName, ApplicationName, EventDateTime, ErrorMessage)&#xA;        VALUES (@BatchID, 'Employee', 'TRIGGER_ERROR', 'FAILED', HOST_NAME(), APP_NAME(), GETDATE(), ERROR_MESSAGE());&#xA;    END CATCH&#xA;END;&#xA;GO&#xA;&#xA;-- ============================================================&#xA;-- 3. TRIGGER: Timesheet (replaces the old trg_Timesheet_Audit,&#xA;--    which never set ModifiedDate)&#xA;-- ============================================================&#xA;DROP TRIGGER IF EXISTS dbo.trg_Timesheet_Audit;&#xA;GO&#xA;CREATE TRIGGER dbo.trg_Timesheet_Audit&#xA;ON dbo.Timesheet&#xA;AFTER UPDATE&#xA;AS&#xA;BEGIN&#xA;    SET NOCOUNT ON;&#xA;&#xA;    DECLARE @BatchID INT;&#xA;    DECLARE @ContextInfo VARBINARY(128) = CONTEXT_INFO();&#xA;    IF @ContextInfo IS NOT NULL AND @ContextInfo != 0x00000000&#xA;        SET @BatchID = CONVERT(INT, @ContextInfo);&#xA;    IF @BatchID IS NULL OR @BatchID = 0&#xA;        SET @BatchID = -1;&#xA;&#xA;    UPDATE t&#xA;    SET ModifiedDate = GETDATE()&#xA;    FROM dbo.Timesheet t&#xA;    INNER JOIN inserted i ON t.TimesheetID = i.TimesheetID;&#xA;&#xA;    BEGIN TRY&#xA;        INSERT INTO dbo.AuditLog (BatchID, TableName, OperationType, StatusCode, RowsUpdated, HostName, ApplicationName, EventDateTime)&#xA;        SELECT @BatchID, 'Timesheet', 'UPDATE', 'SUCCESS', COUNT(*), HOST_NAME(), APP_NAME(), GETDATE()&#xA;        FROM inserted;&#xA;    END TRY&#xA;    BEGIN CATCH&#xA;        INSERT INTO dbo.AuditLog (BatchID, TableName, OperationType, StatusCode, HostName, ApplicationName, EventDateTime, ErrorMessage)&#xA;        VALUES (@BatchID, 'Timesheet', 'TRIGGER_ERROR', 'FAILED', HOST_NAME(), APP_NAME(), GETDATE(), ERROR_MESSAGE());&#xA;    END CATCH&#xA;END;&#xA;GO&#xA;&#xA;-- ============================================================&#xA;-- 4. TRIGGER: Leave (bracketed [Leave] - reserved keyword)&#xA;-- ============================================================&#xA;DROP TRIGGER IF EXISTS dbo.trg_Leave_Audit;&#xA;GO&#xA;CREATE TRIGGER dbo.trg_Leave_Audit&#xA;ON dbo.[Leave]&#xA;AFTER UPDATE&#xA;AS&#xA;BEGIN&#xA;    SET NOCOUNT ON;&#xA;&#xA;    DECLARE @BatchID INT;&#xA;    DECLARE @ContextInfo VARBINARY(128) = CONTEXT_INFO();&#xA;    IF @ContextInfo IS NOT NULL AND @ContextInfo != 0x00000000&#xA;        SET @BatchID = CONVERT(INT, @ContextInfo);&#xA;    IF @BatchID IS NULL OR @BatchID = 0&#xA;        SET @BatchID = -1;&#xA;&#xA;    UPDATE l&#xA;    SET ModifiedDate = GETDATE()&#xA;    FROM dbo.[Leave] l&#xA;    INNER JOIN inserted i ON l.LeaveID = i.LeaveID;&#xA;&#xA;    BEGIN TRY&#xA;        INSERT INTO dbo.AuditLog (BatchID, TableName, OperationType, StatusCode, RowsUpdated, HostName, ApplicationName, EventDateTime)&#xA;        SELECT @BatchID, 'Leave', 'UPDATE', 'SUCCESS', COUNT(*), HOST_NAME(), APP_NAME(), GETDATE()&#xA;        FROM inserted;&#xA;    END TRY&#xA;    BEGIN CATCH&#xA;        INSERT INTO dbo.AuditLog (BatchID, TableName, OperationType, StatusCode, HostName, ApplicationName, EventDateTime, ErrorMessage)&#xA;        VALUES (@BatchID, 'Leave', 'TRIGGER_ERROR', 'FAILED', HOST_NAME(), APP_NAME(), GETDATE(), ERROR_MESSAGE());&#xA;    END CATCH&#xA;END;&#xA;GO&#xA;&#xA;-- ============================================================&#xA;-- 5. TRIGGER: LeaveCategory (&quot;leave type&quot; table)&#xA;-- ============================================================&#xA;DROP TRIGGER IF EXISTS dbo.trg_LeaveCategory_Audit;&#xA;GO&#xA;CREATE TRIGGER dbo.trg_LeaveCategory_Audit&#xA;ON dbo.LeaveCategory&#xA;AFTER UPDATE&#xA;AS&#xA;BEGIN&#xA;    SET NOCOUNT ON;&#xA;&#xA;    DECLARE @BatchID INT;&#xA;    DECLARE @ContextInfo VARBINARY(128) = CONTEXT_INFO();&#xA;    IF @ContextInfo IS NOT NULL AND @ContextInfo != 0x00000000&#xA;        SET @BatchID = CONVERT(INT, @ContextInfo);&#xA;    IF @BatchID IS NULL OR @BatchID = 0&#xA;        SET @BatchID = -1;&#xA;&#xA;    UPDATE lc&#xA;    SET ModifiedDate = GETDATE()&#xA;    FROM dbo.LeaveCategory lc&#xA;    INNER JOIN inserted i ON lc.LeaveCategoryID = i.LeaveCategoryID;&#xA;&#xA;    BEGIN TRY&#xA;        INSERT INTO dbo.AuditLog (BatchID, TableName, OperationType, StatusCode, RowsUpdated, HostName, ApplicationName, EventDateTime)&#xA;        SELECT @BatchID, 'LeaveCategory', 'UPDATE', 'SUCCESS', COUNT(*), HOST_NAME(), APP_NAME(), GETDATE()&#xA;        FROM inserted;&#xA;    END TRY&#xA;    BEGIN CATCH&#xA;        INSERT INTO dbo.AuditLog (BatchID, TableName, OperationType, StatusCode, HostName, ApplicationName, EventDateTime, ErrorMessage)&#xA;        VALUES (@BatchID, 'LeaveCategory', 'TRIGGER_ERROR', 'FAILED', HOST_NAME(), APP_NAME(), GETDATE(), ERROR_MESSAGE());&#xA;    END CATCH&#xA;END;&#xA;GO&#xA;&#xA;-- ============================================================&#xA;-- 6. Verify&#xA;-- ============================================================&#xA;SELECT t.name AS TriggerName, OBJECT_NAME(t.parent_id) AS TableName,&#xA;       CASE WHEN t.is_disabled = 0 THEN 'ACTIVE' ELSE 'DISABLED' END AS Status&#xA;FROM sys.triggers t&#xA;WHERE t.parent_class = 0 AND t.name LIKE 'trg_%_Audit'&#xA;ORDER BY TableName;&#xA;GO" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+          </DTS:ObjectData>
+        </DTS:Executable>
+      </DTS:Executables>
+    </DTS:Executable>
+  </DTS:Executables>
+  <DTS:PrecedenceConstraints>
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint]"
+      DTS:CreationName=""
+      DTS:DTSID="{62A69B41-6C13-4016-AE1F-7A433A2FCDF8}"
+      DTS:From="Package\Schema"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint"
+      DTS:To="Package\Triggers" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 1]"
+      DTS:CreationName=""
+      DTS:DTSID="{98B9ECEC-0C80-4C2C-8217-B0D738D4D3BA}"
+      DTS:From="Package\Loop through files"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 1"
+      DTS:To="Package\Load data" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 2]"
+      DTS:CreationName=""
+      DTS:DTSID="{6D483E11-DE9E-4B73-B0A4-F2DF40BF0871}"
+      DTS:From="Package\Triggers"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 2"
+      DTS:To="Package\Loop through files" />
+  </DTS:PrecedenceConstraints>
+  <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
+<!--This CDATA section contains the layout information of the package. The section includes information such as (x,y) coordinates, width, and height.-->
+<!--If you manually edit this section and make a mistake, you can delete it. -->
+<!--The package will still be able to load normally but the previous layout information will be lost and the designer will automatically re-arrange the elements on the design surface.-->
+<Objects
+  Version="8">
+  <!--Each node below will contain properties that do not affect runtime behavior.-->
+  <Package
+    design-time-name="Package">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="101.6,41.6"
+          Id="Package\Load data\Load"
+          TopLeft="52.3332979099634,28.9333315855924" />
+        <ContainerLayout
+          HeaderHeight="43"
+          IsExpanded="True"
+          PanelSize="204.8,125.6"
+          Size="204.8,168.8"
+          Id="Package\Load data"
+          TopLeft="708.333294631708,219.266665141914" />
+        <NodeLayout
+          Size="110.4,41.6"
+          Id="Package\Loop through files\Extract"
+          TopLeft="59.8666504575153,33.4666647983922" />
+        <NodeLayout
+          Size="125.6,41.6"
+          Id="Package\Loop through files\Transform"
+          TopLeft="59.666646359696,140.899999692639" />
+        <EdgeLayout
+          Id="Package\Loop through files.PrecedenceConstraints[Constraint]"
+          TopLeft="118.766648408606,75.0666647983922">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,65.8333348942468"
+              Start="0,0"
+              End="0,58.3333348942468">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,58.3333348942468" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <ContainerLayout
+          HeaderHeight="43"
+          IsExpanded="True"
+          PanelSize="250.4,237.6"
+          Size="250.4,280.8"
+          Id="Package\Loop through files"
+          TopLeft="384.999978964529,190.666665340794" />
+        <NodeLayout
+          Size="200.8,41.6"
+          Id="Package\Schema\Create Database &amp; Tables"
+          TopLeft="17.4999924873314,15.0333332670397" />
+        <ContainerLayout
+          HeaderHeight="43"
+          IsExpanded="True"
+          PanelSize="223.2,112"
+          Size="223.2,155.2"
+          Id="Package\Schema"
+          TopLeft="56.6666635705367,40.7333330500788" />
+        <NodeLayout
+          Size="164.8,41.6"
+          Id="Package\Triggers\Execute SQL Task"
+          TopLeft="42.6666608386572,23.9333308081497" />
+        <ContainerLayout
+          HeaderHeight="43"
+          IsExpanded="True"
+          PanelSize="257.6,120.8"
+          Size="257.6,164"
+          Id="Package\Triggers"
+          TopLeft="64.1666631607548,296.399997938871" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint]"
+          TopLeft="168.266663570537,195.933333050079">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="24.6999995902181,100.466664888792"
+              Start="0,0"
+              End="24.6999995902181,92.9666648887923">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,46.2333324443961" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,46.2333324443961"
+                    Point2="0,50.2333324443961"
+                    Point3="4,50.2333324443961" />
+                  <mssgle:LineSegment
+                    End="20.6999995902181,50.2333324443961" />
+                  <mssgle:CubicBezierSegment
+                    Point1="20.6999995902181,50.2333324443961"
+                    Point2="24.6999995902181,50.2333324443961"
+                    Point3="24.6999995902181,54.2333324443961" />
+                  <mssgle:LineSegment
+                    End="24.6999995902181,92.9666648887923" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 1]"
+          TopLeft="635.399978964529,331.066665340794">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="72.9333156671789,-27.4000001988803"
+              Start="0,0"
+              End="65.4333156671789,-27.4000001988803">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="32.4666578335895,0" />
+                  <mssgle:CubicBezierSegment
+                    Point1="32.4666578335895,0"
+                    Point2="36.4666578335895,0"
+                    Point3="36.4666578335895,-4" />
+                  <mssgle:LineSegment
+                    End="36.4666578335895,-23.4000001988803" />
+                  <mssgle:CubicBezierSegment
+                    Point1="36.4666578335895,-23.4000001988803"
+                    Point2="36.4666578335895,-27.4000001988803"
+                    Point3="40.4666578335895,-27.4000001988803" />
+                  <mssgle:LineSegment
+                    End="65.4333156671789,-27.4000001988803" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 2]"
+          TopLeft="321.766663160755,378.399997938871">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="63.2333158037742,-47.333332598077"
+              Start="0,0"
+              End="55.7333158037742,-47.333332598077">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="27.6166579018871,0" />
+                  <mssgle:CubicBezierSegment
+                    Point1="27.6166579018871,0"
+                    Point2="31.6166579018871,0"
+                    Point3="31.6166579018871,-4" />
+                  <mssgle:LineSegment
+                    End="31.6166579018871,-43.333332598077" />
+                  <mssgle:CubicBezierSegment
+                    Point1="31.6166579018871,-43.333332598077"
+                    Point2="31.6166579018871,-47.333332598077"
+                    Point3="35.6166579018871,-47.333332598077" />
+                  <mssgle:LineSegment
+                    End="55.7333158037742,-47.333332598077" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </Package>
+  <TaskHost
+    design-time-name="Package\Loop through files\Transform">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:mssgm="clr-namespace:Microsoft.SqlServer.Graph.Model;assembly=Microsoft.SqlServer.Graph">
+        <NodeLayout
+          Size="156,41.6"
+          Id="Package\Loop through files\Transform\Data Conversion"
+          TopLeft="284.999984428287,232.266665051513" />
+        <NodeLayout
+          Size="171.2,41.6"
+          Id="Package\Loop through files\Transform\OLE DB Destination"
+          TopLeft="276.666651550267,422.066663731668" />
+        <NodeLayout
+          Size="152.8,41.6"
+          Id="Package\Loop through files\Transform\Derived Column"
+          TopLeft="279.166651413673,325.999997794231" />
+        <NodeLayout
+          Size="153.6,41.6"
+          Id="Package\Loop through files\Transform\Conditional Split"
+          TopLeft="284.999984428288,142.133332344956" />
+        <NodeLayout
+          Size="140,41.6"
+          Id="Package\Loop through files\Transform\Excel Source"
+          TopLeft="289.999984155099,65.8666662086381" />
+        <EdgeLayout
+          Id="Package\Loop through files\Transform.Paths[Case 1]"
+          TopLeft="362.399984428287,183.733332344956">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,48.5333327065573"
+              Start="0,0"
+              End="0,41.0333327065573">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,41.0333327065573" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-15.2180859375,15.7398108845286,30.436171875,9.5537109375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Loop through files\Transform.Paths[Excel Source Output]"
+          TopLeft="360.899984291693,107.466666208638">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,34.6666661363174"
+              Start="0,0"
+              End="0,27.1666661363174">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,27.1666661363174" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Loop through files\Transform.Paths[Derived Column Output]"
+          TopLeft="358.91665148197,367.599997794231">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,54.4666659374373"
+              Start="0,0"
+              End="0,46.9666659374373">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,46.9666659374373" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-8,15.4833329687186,16,16"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Loop through files\Transform.Paths[Data Conversion Output]"
+          TopLeft="359.28331792098,273.866665051513">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,52.1333327427176"
+              Start="0,0"
+              End="0,44.6333327427176">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,44.6333327427176" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\Loop through files\Transform\Excel Source">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\Loop through files\Transform\OLE DB Destination">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value
+          type="q2:string">Table</Value>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+</Objects>]]></DTS:DesignTimeProperties>
+</DTS:Executable>
